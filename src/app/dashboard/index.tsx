@@ -106,9 +106,9 @@ export default function DashboardScreen() {
         <SafeAreaView style={styles.staffSafeArea}>
           <ScrollView contentContainerStyle={styles.staffScroll} keyboardShouldPersistTaps="handled">
             <View style={styles.staffHeader}>
-            <View>
-              <Text style={[styles.staffGreeting, { color: theme.textSecondary }]}>Hii Office Staff,</Text>
-              <Text style={[styles.staffWelcome, { color: theme.text }]}>Welcome!</Text>
+            <View style={{ flex: 1, paddingRight: 10 }}>
+              <Text style={[styles.staffGreeting, { color: theme.textSecondary }]} numberOfLines={1} adjustsFontSizeToFit>Hii Office Staff,</Text>
+              <Text style={[styles.staffWelcome, { color: theme.text }]} numberOfLines={1} adjustsFontSizeToFit>Welcome!</Text>
             </View>
             <Pressable style={[styles.staffMenuButton, { backgroundColor: theme.backgroundElement, borderColor: theme.backgroundSelected }]} onPress={signOut}>
               <Text style={[styles.staffMenuText, { color: theme.text }]}>Sign Out</Text>

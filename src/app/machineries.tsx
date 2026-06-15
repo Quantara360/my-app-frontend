@@ -247,8 +247,8 @@ export default function MachineriesPage() {
               <ThemedText type="smallBold">+ Add Machine</ThemedText>
             </Pressable>
             
-            <View style={{ position: 'relative', zIndex: 10, flex: 1, minWidth: 140, height: 40 }}>
-              <Pressable style={[styles.searchInput, { flex: 0, height: '100%', justifyContent: 'center' }]} onPress={() => setFilterPickerOpen((prev) => !prev)}>
+            <View style={{ position: 'relative', zIndex: 10, flex: 1, minWidth: 140 }}>
+              <Pressable style={[styles.searchInput, { flex: 0, minHeight: 44, justifyContent: 'center' }]} onPress={() => setFilterPickerOpen((prev) => !prev)}>
                 <Text style={{ color: theme.text }}>
                   {siteFilter ? worksites.find((site) => site.id === siteFilter)?.name : 'Site Selection'}
                 </Text>
