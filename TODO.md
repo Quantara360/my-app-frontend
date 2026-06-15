@@ -1,0 +1,3 @@
+- [x] Fix `tsconfig.json` so TypeScript can enable JSX.
+- [ ] Re-run typecheck to confirm remaining errors are addressed.
+- [ ] Keep changes limited to `face-recognition.tsx`, expo-camera usage typings, and `tsconfig.json`.

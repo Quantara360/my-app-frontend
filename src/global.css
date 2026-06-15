@@ -1,0 +1,84 @@
+:root {
+  --font-display:
+    Spline Sans, Inter, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji,
+    Segoe UI Symbol, Noto Color Emoji;
+  --font-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
+  --font-rounded: 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif;
+  --font-serif: Georgia, 'Times New Roman', serif;
+
+  /* Light theme colors (default) */
+  --color-text: #000000;
+  --color-background: #ffffff;
+  --color-background-element: #F0F0F3;
+  --color-background-selected: #E0E1E6;
+  --color-text-secondary: #60646C;
+
+  /* Breakpoints / resolutions */
+  --breakpoint-xs: 480px;
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+
+  --max-content-width: 800px;
+}
+
+/* Dark theme overrides */
+[data-theme='dark'] {
+  --color-text: #ffffff;
+  --color-background: #000000;
+  --color-background-element: #212225;
+  --color-background-selected: #2E3135;
+  --color-text-secondary: #B0B4BA;
+}
+
+/* Light theme overrides (explicit) */
+[data-theme='light'] {
+  --color-text: #000000;
+  --color-background: #ffffff;
+  --color-background-element: #F0F0F3;
+  --color-background-selected: #E0E1E6;
+  --color-text-secondary: #60646C;
+}
+
+/* Respect system preference as a fallback */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --color-text: #ffffff;
+    --color-background: #000000;
+    --color-background-element: #212225;
+    --color-background-selected: #2E3135;
+    --color-text-secondary: #B0B4BA;
+  }
+}
+
+/* Basic utilities using the variables */
+html, body, #root {
+  height: 100%;
+  background-color: var(--color-background);
+  color: var(--color-text);
+  font-family: var(--font-display);
+}
+
+.container {
+  width: 100%;
+  max-width: var(--max-content-width);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Simple responsive grid helper */
+.two-column {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .two-column {
+    grid-template-columns: 1fr 1fr;
+  }
+}

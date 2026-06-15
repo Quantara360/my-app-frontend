@@ -1,0 +1,31 @@
+[Unit]
+Description=MyFirstProject Laravel Backend (PHP artisan serve)
+After=network.target mysql.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/myapp/backend
+
+# Production environment
+Environment="APP_ENV=production"
+Environment="APP_DEBUG=false"
+
+# Use PHP-FPM's artisan serve (suitable for KVM1 single-server deployments)
+ExecStart=/usr/bin/php artisan serve --host=127.0.0.1 --port=8000 --no-ansi
+
+Restart=on-failure
+RestartSec=5s
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=laravel-backend
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

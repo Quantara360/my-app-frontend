@@ -1,0 +1,29 @@
+[Unit]
+Description=MyFirstProject Face Recognition Service (Python Flask)
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/myapp
+
+# Use the virtualenv Python
+ExecStart=/var/www/myapp/venv/bin/python face_service.py
+
+Environment="FACE_SERVICE_PORT=5050"
+
+Restart=on-failure
+RestartSec=10s
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=face-service
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
