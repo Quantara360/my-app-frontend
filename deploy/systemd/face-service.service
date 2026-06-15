@@ -8,6 +8,11 @@ User=www-data
 Group=www-data
 WorkingDirectory=/var/www/myapp
 
+# Ensure opencv-python-headless is used (no GUI/display available on servers)
+# This mirrors the Dockerfile fix and survives container/service restarts
+ExecStartPre=/var/www/myapp/venv/bin/pip uninstall opencv-python -y
+ExecStartPre=/var/www/myapp/venv/bin/pip install opencv-python-headless --quiet
+
 # Use the virtualenv Python
 ExecStart=/var/www/myapp/venv/bin/python face_service.py
 
