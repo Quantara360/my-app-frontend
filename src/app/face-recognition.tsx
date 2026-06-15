@@ -343,7 +343,9 @@ const styles = StyleSheet.create({
   },
   previewWrap: {
     width: "100%",
+    minHeight: 240,
     alignItems: "center",
+    justifyContent: "center",
     marginVertical: Spacing.two,
     position: "relative",
   },

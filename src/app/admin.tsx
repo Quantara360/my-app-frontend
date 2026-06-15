@@ -1010,6 +1010,7 @@ export default function AdminDashboard() {
               border: 'none',
               outline: 'none',
               fontSize: 14,
+              minWidth: 120,
               colorScheme: theme.dark ? 'dark' : 'light',
             }}
           />
@@ -1022,7 +1023,7 @@ export default function AdminDashboard() {
         nestedScrollEnabled={true}
       >
         <ScrollView horizontal showsHorizontalScrollIndicator={true}>
-          <View style={[styles.tableCard, { minWidth: 600, backgroundColor: theme.backgroundElement }]}>
+          <View style={[styles.tableCard, { minWidth: 600 }]}>
           <View style={[styles.tableRow, styles.tableHeaderRow, { borderBottomColor: theme.border }]}>
             <Text style={[styles.tableHeaderCell, { flex: 1, color: theme.text }]}>ID</Text>
             <Text style={[styles.tableHeaderCell, { flex: 2, color: theme.text }]}>Worker</Text>
@@ -1520,11 +1521,6 @@ export default function AdminDashboard() {
               placeholderTextColor={theme.textSecondary}
               style={[styles.formInput, { color: theme.text, backgroundColor: theme.backgroundElement }]}
             />
-            <Pressable onPress={handlePickSiteLogo} style={styles.logoUploadButton}>
-              <Text style={[styles.logoUploadText, { color: theme.text }]}>
-                {siteLogoName || "Upload"}
-              </Text>
-            </Pressable>
           </View>
 
           <Pressable onPress={handleAddSite} style={styles.addSiteButton}>
