@@ -5,18 +5,7 @@ import * as SecureStore from 'expo-secure-store';
 
 // Enforce HTTPS in production and support Expo web env values.
 function getDevApiBaseUrl() {
-  const isProduction = process.env.NODE_ENV === 'production';
-  const hostFromEnv = process.env.REACT_APP_API_HOST || Constants.expoConfig?.extra?.API_HOST;
-  const defaultHost = typeof window !== 'undefined' ? `${window.location.hostname}:8000` : 'localhost:8000';
-  const host = hostFromEnv || defaultHost;
-  const protocol = isProduction || host.startsWith('https://') ? 'https://' : 'http://';
-  const normalizedHost = host.replace(/https?:\/\//, '');
-
-  if (isProduction && !normalizedHost.startsWith('https')) {
-    console.warn('[authService] Warning: API host should use HTTPS in production');
-  }
-
-  return `${protocol}${normalizedHost}/api`;
+  return 'https://api.abeysone.cloud/api';
 }
 
 export const API_BASE_URL = getDevApiBaseUrl();
