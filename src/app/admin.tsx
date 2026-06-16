@@ -225,13 +225,13 @@ export default function AdminDashboard() {
   const [newNoteText, setNewNoteText] = useState("");
   const [selectedNoteId, setSelectedNoteId] = useState<string | number | null>(null);
   const [newFileName, setNewFileName] = useState("");
-  const [newFileType, setNewFileType] = useState<"PDF" | "WORD" | "IMG" | "TXT" | "">("");
+  const [newFileType, setNewFileType] = useState<"PDF" | "WORD" | "IMG" | "">("");
   const [selectedFileId, setSelectedFileId] = useState<string | number | null>(null);
   const [pickedFileUri, setPickedFileUri] = useState<string | null>(null);
   const [pickedFileMime, setPickedFileMime] = useState<string | null>(null);
   const [pickedFileActualName, setPickedFileActualName] = useState<string | null>(null);
 
-  const handlePickFile = async (type: "PDF" | "WORD" | "IMG" | "TXT") => {
+  const handlePickFile = async (type: "PDF" | "WORD" | "IMG") => {
     setNewFileType(type);
     setPickedFileUri(null);
     setPickedFileMime(null);
@@ -252,7 +252,6 @@ export default function AdminDashboard() {
         const mimeMap: Record<string, string> = {
           PDF: 'application/pdf',
           WORD: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          TXT: 'text/plain',
         };
         const result = await DocumentPicker.getDocumentAsync({ type: mimeMap[type] || '*/*', copyToCacheDirectory: true });
         if (!result.canceled && result.assets && result.assets.length > 0) {
@@ -303,7 +302,7 @@ export default function AdminDashboard() {
   const handleSaveFile = async () => {
     if (!newFileName.trim() || !newFileType) return;
     if (!pickedFileUri && !selectedFileId) {
-      Alert.alert("No file selected", "Please tap a type button (PDF / WORD / IMG / TXT) to pick a file first.");
+      Alert.alert("No file selected", "Please tap a type button (PDF / WORD / IMG) to pick a file first.");
       return;
     }
     try {
@@ -339,7 +338,7 @@ export default function AdminDashboard() {
   const handleEditFile = (file: any) => {
     setSelectedFileId(file.id);
     setNewFileName(file.name);
-    setNewFileType(file.type as "PDF" | "WORD" | "IMG" | "TXT");
+    setNewFileType(file.type as "PDF" | "WORD" | "IMG");
     setPickedFileUri(null);
   };
   const handleDeleteFile = async (id: string | number) => {
@@ -354,7 +353,6 @@ export default function AdminDashboard() {
   const getFileTypeIcon = (type: string) => {
     if (type === 'PDF') return <Text style={{fontSize: 20}}>📄</Text>;
     if (type === 'WORD') return <Text style={{fontSize: 20}}>📝</Text>;
-    if (type === 'TXT') return <Text style={{fontSize: 20}}>📃</Text>;
     return <Text style={{fontSize: 20}}>🖼️</Text>;
   };
   const handlePersonalAssetsTilePress = () => setSelectedView("personalAssets");
@@ -1872,7 +1870,7 @@ export default function AdminDashboard() {
               Tap a type to pick a file from your device:
             </Text>
             <View style={styles.fileTypeRow}>
-              {(["PDF", "WORD", "TXT", "IMG"] as const).map((type) => (
+              {(["PDF", "WORD", "IMG"] as const).map((type) => (
                 <Pressable
                   key={type}
                   onPress={() => handlePickFile(type)}
@@ -1882,7 +1880,7 @@ export default function AdminDashboard() {
                   ]}
                 >
                   <Text style={[styles.fileTypeText, newFileType === type && styles.fileTypeTextActive]}>
-                    {type === 'IMG' ? '🖼️' : type === 'PDF' ? '📄' : type === 'TXT' ? '📃' : '📝'}{' '}{type}
+                    {type === 'IMG' ? '🖼️' : type === 'PDF' ? '📄' : '📝'}{' '}{type}
                   </Text>
                 </Pressable>
               ))}
@@ -4181,6 +4179,17 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
   },
   personalCellValue: {
     minWidth: 100,
+    paddingHorizontal: 10,
+  },
+  personalCellExtra: {
+    minWidth: 100,
+    paddingHorizontal: 10,
+  },
+  personalCellActions: {
+    minWidth: 100,
+    flexDirection: "row",
+    gap: Spacing.one,
+    alignItems: "center",
     paddingHorizontal: 10,
   },
   personalSelectionContainer: {

@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { API_BASE_URL, getAuthHeaders } from './authService';
 
 export interface PersonalNote {
@@ -79,12 +80,18 @@ export const createFile = async (data: {
     if (data.uploaded_at) formData.append('uploaded_at', data.uploaded_at);
 
     if (data.fileUri) {
-        const fileBlob = {
-            uri: data.fileUri,
-            type: data.fileMimeType || 'application/octet-stream',
-            name: data.fileActualName || data.name,
-        } as any;
-        formData.append('file', fileBlob);
+        if (Platform.OS === 'web') {
+            const res = await fetch(data.fileUri);
+            const blob = await res.blob();
+            formData.append('file', blob, data.fileActualName || data.name);
+        } else {
+            const fileBlob = {
+                uri: data.fileUri,
+                type: data.fileMimeType || 'application/octet-stream',
+                name: data.fileActualName || data.name,
+            } as any;
+            formData.append('file', fileBlob);
+        }
     }
 
     // Remove Content-Type so browser/RN sets it with boundary
@@ -116,12 +123,18 @@ export const updateFile = async (id: string | number, data: {
     if (data.uploaded_at) formData.append('uploaded_at', data.uploaded_at);
 
     if (data.fileUri) {
-        const fileBlob = {
-            uri: data.fileUri,
-            type: data.fileMimeType || 'application/octet-stream',
-            name: data.fileActualName || data.name,
-        } as any;
-        formData.append('file', fileBlob);
+        if (Platform.OS === 'web') {
+            const res = await fetch(data.fileUri);
+            const blob = await res.blob();
+            formData.append('file', blob, data.fileActualName || data.name);
+        } else {
+            const fileBlob = {
+                uri: data.fileUri,
+                type: data.fileMimeType || 'application/octet-stream',
+                name: data.fileActualName || data.name,
+            } as any;
+            formData.append('file', fileBlob);
+        }
     }
 
     const { 'Content-Type': _, ...headersWithoutCT } = headers as any;
