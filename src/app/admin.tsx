@@ -2,6 +2,8 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { BottomTabInset, Spacing } from "@/constants/theme";
 import { useRouter } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
+import * as DocumentPicker from "expo-document-picker";
 import React, { useEffect, useRef, useState } from "react";
 import * as AssetsService from "@/services/adminAssetsService";
 import * as ChemicalsService from "@/services/adminChemicalsService";
@@ -223,8 +225,49 @@ export default function AdminDashboard() {
   const [newNoteText, setNewNoteText] = useState("");
   const [selectedNoteId, setSelectedNoteId] = useState<string | number | null>(null);
   const [newFileName, setNewFileName] = useState("");
-  const [newFileType, setNewFileType] = useState<"PDF" | "WORD" | "IMG" | "">("");
+  const [newFileType, setNewFileType] = useState<"PDF" | "WORD" | "IMG" | "TXT" | "">("");
   const [selectedFileId, setSelectedFileId] = useState<string | number | null>(null);
+  const [pickedFileUri, setPickedFileUri] = useState<string | null>(null);
+  const [pickedFileMime, setPickedFileMime] = useState<string | null>(null);
+  const [pickedFileActualName, setPickedFileActualName] = useState<string | null>(null);
+
+  const handlePickFile = async (type: "PDF" | "WORD" | "IMG" | "TXT") => {
+    setNewFileType(type);
+    setPickedFileUri(null);
+    setPickedFileMime(null);
+    setPickedFileActualName(null);
+    try {
+      if (type === "IMG") {
+        const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!perm.granted) { Alert.alert("Permission required", "Allow media access to pick images."); return; }
+        const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: false, quality: 0.85 });
+        if (!result.canceled && result.assets.length > 0) {
+          const asset = result.assets[0];
+          setPickedFileUri(asset.uri);
+          setPickedFileMime(asset.mimeType || 'image/jpeg');
+          setPickedFileActualName(asset.fileName || 'image.jpg');
+          if (!newFileName) setNewFileName(asset.fileName?.replace(/\.[^.]+$/, '') || 'image');
+        }
+      } else {
+        const mimeMap: Record<string, string> = {
+          PDF: 'application/pdf',
+          WORD: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          TXT: 'text/plain',
+        };
+        const result = await DocumentPicker.getDocumentAsync({ type: mimeMap[type] || '*/*', copyToCacheDirectory: true });
+        if (!result.canceled && result.assets && result.assets.length > 0) {
+          const asset = result.assets[0];
+          setPickedFileUri(asset.uri);
+          setPickedFileMime(asset.mimeType || 'application/octet-stream');
+          setPickedFileActualName(asset.name);
+          if (!newFileName) setNewFileName(asset.name.replace(/\.[^.]+$/, ''));
+        }
+      }
+    } catch (e) {
+      console.error(e);
+      Alert.alert("Error", "Failed to pick file");
+    }
+  };
 
   const handleSaveNote = async () => {
     if (!newNoteText.trim()) return;
@@ -259,17 +302,35 @@ export default function AdminDashboard() {
 
   const handleSaveFile = async () => {
     if (!newFileName.trim() || !newFileType) return;
+    if (!pickedFileUri && !selectedFileId) {
+      Alert.alert("No file selected", "Please tap a type button (PDF / WORD / IMG / TXT) to pick a file first.");
+      return;
+    }
     try {
       if (selectedFileId) {
-        const updated = await PersonalDocumentsService.updateFile(selectedFileId, { name: newFileName, type: newFileType });
+        const updated = await PersonalDocumentsService.updateFile(selectedFileId, {
+          name: newFileName,
+          type: newFileType,
+          ...(pickedFileUri ? { fileUri: pickedFileUri, fileMimeType: pickedFileMime || undefined, fileActualName: pickedFileActualName || undefined } : {}),
+        });
         setFiles(files.map(f => f.id === selectedFileId ? updated : f));
         setSelectedFileId(null);
       } else {
-        const created = await PersonalDocumentsService.createFile({ name: newFileName, type: newFileType, uploaded_at: new Date().toLocaleDateString('en-GB') });
+        const created = await PersonalDocumentsService.createFile({
+          name: newFileName,
+          type: newFileType,
+          uploaded_at: new Date().toLocaleDateString('en-GB'),
+          fileUri: pickedFileUri || undefined,
+          fileMimeType: pickedFileMime || undefined,
+          fileActualName: pickedFileActualName || undefined,
+        });
         setFiles([created, ...files]);
       }
       setNewFileName("");
       setNewFileType("");
+      setPickedFileUri(null);
+      setPickedFileMime(null);
+      setPickedFileActualName(null);
     } catch (e) {
       console.error(e);
       Alert.alert("Error", "Failed to save file");
@@ -278,7 +339,8 @@ export default function AdminDashboard() {
   const handleEditFile = (file: any) => {
     setSelectedFileId(file.id);
     setNewFileName(file.name);
-    setNewFileType(file.type as "PDF" | "WORD" | "IMG");
+    setNewFileType(file.type as "PDF" | "WORD" | "IMG" | "TXT");
+    setPickedFileUri(null);
   };
   const handleDeleteFile = async (id: string | number) => {
     try {
@@ -292,6 +354,7 @@ export default function AdminDashboard() {
   const getFileTypeIcon = (type: string) => {
     if (type === 'PDF') return <Text style={{fontSize: 20}}>📄</Text>;
     if (type === 'WORD') return <Text style={{fontSize: 20}}>📝</Text>;
+    if (type === 'TXT') return <Text style={{fontSize: 20}}>📃</Text>;
     return <Text style={{fontSize: 20}}>🖼️</Text>;
   };
   const handlePersonalAssetsTilePress = () => setSelectedView("personalAssets");
@@ -1740,12 +1803,16 @@ export default function AdminDashboard() {
           </Pressable>
         </View>
 
-        <View style={styles.personalDocumentsHeader}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 12 }}>
           <Pressable
             onPress={() => setSelectedView("personalSelection")}
-            style={styles.backButton}
+            style={{
+              width: 40, height: 40, borderRadius: 20,
+              backgroundColor: isDark ? '#333' : '#e0e0e0',
+              alignItems: 'center', justifyContent: 'center',
+            }}
           >
-            <Text style={styles.backButtonIcon}>‹</Text>
+            <Text style={{ fontSize: 22, color: isDark ? '#fff' : '#333', fontWeight: '600', includeFontPadding: false, textAlignVertical: 'center' }}>{'←'}</Text>
           </Pressable>
           <ThemedText type="subtitle" style={styles.personalDocumentsTitle}>
             Personal Details & Documents
@@ -1753,6 +1820,7 @@ export default function AdminDashboard() {
         </View>
 
         <View style={styles.personalDocumentsSection}>
+          {/* NOTES */}
           <View style={styles.sectionCard}>
             <Text style={styles.sectionTitle}>Notes</Text>
             <TextInput
@@ -1776,53 +1844,55 @@ export default function AdminDashboard() {
                   <Text style={styles.noteDate}>{note.date}</Text>
                 </View>
                 <View style={styles.noteActions}>
-                  <Pressable
-                    onPress={() => handleEditNote(note)}
-                    style={styles.noteActionButton}
-                  >
+                  <Pressable onPress={() => handleEditNote(note)} style={styles.noteActionButton}>
                     <Text style={styles.noteActionText}>Edit</Text>
                   </Pressable>
                   <Pressable
                     onPress={() => handleDeleteNote(note.id)}
-                    style={[styles.noteActionButton, styles.deleteActionButton]}
+                    style={styles.deleteBtn}
                   >
-                    <Text style={styles.noteActionText}>Delete</Text>
+                    <Text style={styles.deleteBtnText}>Delete</Text>
                   </Pressable>
                 </View>
               </View>
             ))}
           </View>
 
+          {/* FILES */}
           <View style={styles.sectionCard}>
             <Text style={styles.sectionTitle}>Files</Text>
             <TextInput
               value={newFileName}
               onChangeText={setNewFileName}
-              placeholder="File name"
+              placeholder="File name (auto-filled on pick)"
               placeholderTextColor="#8a8a8f"
               style={styles.textInput}
             />
+            <Text style={{ color: isDark ? '#a0a0a0' : '#6b7280', fontSize: 13, marginBottom: 6 }}>
+              Tap a type to pick a file from your device:
+            </Text>
             <View style={styles.fileTypeRow}>
-              {["PDF", "WORD", "IMG"].map((type) => (
+              {(["PDF", "WORD", "TXT", "IMG"] as const).map((type) => (
                 <Pressable
                   key={type}
-                  onPress={() => setNewFileType(type as "PDF" | "WORD" | "IMG")}
+                  onPress={() => handlePickFile(type)}
                   style={[
                     styles.fileTypeButton,
                     newFileType === type && styles.fileTypeButtonActive,
                   ]}
                 >
-                  <Text
-                    style={[
-                      styles.fileTypeText,
-                      newFileType === type && styles.fileTypeTextActive,
-                    ]}
-                  >
-                    {type}
+                  <Text style={[styles.fileTypeText, newFileType === type && styles.fileTypeTextActive]}>
+                    {type === 'IMG' ? '🖼️' : type === 'PDF' ? '📄' : type === 'TXT' ? '📃' : '📝'}{' '}{type}
                   </Text>
                 </Pressable>
               ))}
             </View>
+            {pickedFileActualName ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8, padding: 8, backgroundColor: isDark ? '#1a2a1a' : '#dcfce7', borderRadius: 8 }}>
+                <Text style={{ fontSize: 16 }}>✅</Text>
+                <Text style={{ color: isDark ? '#86efac' : '#166534', fontSize: 13, flex: 1 }} numberOfLines={1}>{pickedFileActualName}</Text>
+              </View>
+            ) : null}
             <Pressable onPress={handleSaveFile} style={styles.sectionButton}>
               <Text style={styles.sectionButtonText}>
                 {selectedFileId ? "Update File" : "Add File"}
@@ -1836,20 +1906,17 @@ export default function AdminDashboard() {
                 </View>
                 <View style={styles.fileInfo}>
                   <Text style={styles.fileName}>{file.name}</Text>
-                  <Text style={styles.fileDate}>{file.uploadedAt}</Text>
+                  <Text style={styles.fileDate}>{file.uploaded_at}</Text>
                 </View>
                 <View style={styles.fileActions}>
-                  <Pressable
-                    onPress={() => handleEditFile(file)}
-                    style={styles.fileActionButton}
-                  >
+                  <Pressable onPress={() => handleEditFile(file)} style={styles.noteActionButton}>
                     <Text style={styles.noteActionText}>Edit</Text>
                   </Pressable>
                   <Pressable
                     onPress={() => handleDeleteFile(file.id)}
-                    style={[styles.fileActionButton, styles.deleteActionButton]}
+                    style={styles.deleteBtn}
                   >
-                    <Text style={styles.noteActionText}>Delete</Text>
+                    <Text style={styles.deleteBtnText}>Delete</Text>
                   </Pressable>
                 </View>
               </View>
@@ -4316,6 +4383,17 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
     fontSize: 13,
   },
   deleteActionButton: {
-    backgroundColor: "#fee2e2",
+    backgroundColor: "#ef4444",
+  },
+  deleteBtn: {
+    borderRadius: 12,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    backgroundColor: "#ef4444",
+  },
+  deleteBtnText: {
+    color: "#ffffff",
+    fontWeight: "600",
+    fontSize: 13,
   },
 });
