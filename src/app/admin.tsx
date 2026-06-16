@@ -2,7 +2,7 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { BottomTabInset, Spacing } from "@/constants/theme";
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import * as AssetsService from "@/services/adminAssetsService";
 import * as ChemicalsService from "@/services/adminChemicalsService";
 import * as MachineriesService from "@/services/adminMachineriesService";
@@ -16,6 +16,7 @@ import { useTheme } from "@/hooks/use-theme";
 import {
   Alert,
   Animated,
+  Image,
   Modal,
   Pressable,
   ScrollView,
@@ -194,6 +195,8 @@ export default function AdminDashboard() {
   const [newPersonalExtra, setNewPersonalExtra] = useState("");
   const [newSiteName, setNewSiteName] = useState("");
   const [siteLogoName, setSiteLogoName] = useState("");
+  const [siteLogoUri, setSiteLogoUri] = useState<string | null>(null);
+  const siteLogoInputRef = useRef<HTMLInputElement | null>(null);
   const [deletedSiteName, setDeletedSiteName] = useState("");
   const [rejectReason, setRejectReason] = useState("");
   const [selectedApprovalForReject, setSelectedApprovalForReject] = useState<ApprovalRecord | null>(null);
@@ -581,11 +584,18 @@ export default function AdminDashboard() {
   };
 
   const handlePickSiteLogo = () => {
-    Alert.alert("Upload Image", "Choose image source", [
-      { text: "Gallery", onPress: () => setSiteLogoName("gallery-image.jpg") },
-      { text: "Files", onPress: () => setSiteLogoName("file-image.jpg") },
-      { text: "Cancel", style: "cancel" },
-    ], { cancelable: true });
+    siteLogoInputRef.current?.click();
+  };
+
+  const handleSiteLogoFileChange = (e: any) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setSiteLogoName(file.name);
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setSiteLogoUri(ev.target?.result as string);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleAddSite = async () => {
@@ -604,11 +614,13 @@ export default function AdminDashboard() {
       });
       if (!response.ok) throw new Error("Failed to add site");
       const addedSite = await response.json();
-      setManageSites((current: any) => [...current, addedSite]);
+      const siteWithLogo = { ...addedSite, logoUri: siteLogoUri };
+      setManageSites((current: any) => [...current, siteWithLogo]);
       setWorksites((current: any) => [...current, addedSite]);
       setShowAddSiteModal(false);
       setNewSiteName("");
       setSiteLogoName("");
+      setSiteLogoUri(null);
       setSuccessModalTitle("Site Added Successfully!");
       setSuccessButtonText("Ok");
       setShowSuccessModal(true);
@@ -1112,14 +1124,15 @@ export default function AdminDashboard() {
             <View style={styles.dropdownMenu}>
               {manageSites.map((site) => (
                 <Pressable
-                  key={site}
+                  key={site.id}
                   style={styles.dropdownItem}
                   onPress={() => {
-                    setSelectedSite(site);
+                    setSelectedSite(site.name);
+                    setSelectedSiteId(site.id);
                     setShowSiteDropdown(false);
                   }}
                 >
-                  <Text style={styles.dropdownItemText}>{site}</Text>
+                  <Text style={styles.dropdownItemText}>{site.name}</Text>
                 </Pressable>
               ))}
             </View>
@@ -1294,17 +1307,15 @@ export default function AdminDashboard() {
           >
             <View style={styles.manageSiteCardTopRow}>
               <View style={styles.manageSiteLogoWrapper}>
-                <Text style={styles.manageSiteLogoIcon}>{site.icon}</Text>
+                {site.logoUri ? (
+                  <Image source={{ uri: site.logoUri }} style={{ width: 70, height: 70, borderRadius: 12 }} resizeMode="cover" />
+                ) : (
+                  <Text style={styles.manageSiteLogoIcon}>🏗️</Text>
+                )}
               </View>
               <Pressable
                 style={styles.manageSiteDeleteButton}
-                onPress={() => {
-                  setDeletedSiteName(site.title);
-                  setManageSites((current) =>
-                    current.filter((item) => item.id !== site.id),
-                  );
-                  setShowSiteDeletedSuccessModal(true);
-                }}
+                onPress={() => handleDeleteSite(site)}
               >
                 <Text style={styles.manageSiteDeleteIcon}>🗑️</Text>
               </Pressable>
@@ -1362,10 +1373,20 @@ export default function AdminDashboard() {
               style={styles.logoUploadButton}
               onPress={handlePickSiteLogo}
             >
-              <Text style={styles.logoUploadText}>
-                {siteLogoName || "Upload"}
+              {siteLogoUri ? (
+                <Image source={{ uri: siteLogoUri }} style={{ width: 44, height: 44, borderRadius: 8, marginRight: 8 }} resizeMode="cover" />
+              ) : null}
+              <Text style={[styles.logoUploadText, siteLogoUri ? { fontSize: 12 } : {}]}>
+                {siteLogoName || "Tap to upload image"}
               </Text>
             </Pressable>
+            <input
+              ref={siteLogoInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleSiteLogoFileChange}
+              style={{ position: 'absolute', opacity: 0, width: 1, height: 1, zIndex: -1, pointerEvents: 'none' }}
+            />
           </View>
 
           <Pressable onPress={handleAddSite} style={styles.addSiteButton}>
@@ -3101,15 +3122,19 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
   logoUploadButton: {
     flex: 0.65,
     backgroundColor: isDark ? "#333333" : "#f2f2f6",
-    borderRadius: 999,
+    borderRadius: 16,
     paddingVertical: 10,
     paddingHorizontal: 16,
     alignItems: "center",
     justifyContent: "center",
+    flexDirection: "row",
+    gap: 8,
+    minHeight: 56,
   },
   logoUploadText: {
     color: isDark ? "#ffffff" : "#1f1d21",
     fontSize: 14,
+    flexShrink: 1,
   },
   successModalCard: {
     width: "100%",
