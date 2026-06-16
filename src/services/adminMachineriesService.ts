@@ -1,3 +1,10 @@
+function extractArray(result: any): any[] {
+  if (Array.isArray(result)) return result;
+  if (result && Array.isArray(result.data)) return result.data;
+  if (result && result.data && Array.isArray(result.data.data)) return result.data.data;
+  return [];
+}
+
 import { API_BASE_URL, getAuthHeaders } from './authService';
 
 export interface Machinery {
@@ -91,17 +98,17 @@ async function deleteJson<T>(path: string): Promise<T> {
 
 export async function getMachineries(): Promise<Machinery[]> {
   const result = await getJson<{ data: Machinery[] }>('machineries');
-  return result.data;
+  return extractArray(result);
 }
 
 export async function createMachinery(data: Omit<Machinery, 'id'>): Promise<Machinery> {
   const result = await postJson<{ data: Machinery }>('machineries', data);
-  return result.data;
+  return result.data ?? result;
 }
 
 export async function updateMachinery(id: string | number, data: Partial<Machinery>): Promise<Machinery> {
   const result = await putJson<{ data: Machinery }>(`machineries/${id}`, data);
-  return result.data;
+  return result.data ?? result;
 }
 
 export async function deleteMachinery(id: string | number): Promise<void> {

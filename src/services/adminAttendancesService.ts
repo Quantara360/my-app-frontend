@@ -1,3 +1,10 @@
+function extractArray(result: any): any[] {
+  if (Array.isArray(result)) return result;
+  if (result && Array.isArray(result.data)) return result.data;
+  if (result && result.data && Array.isArray(result.data.data)) return result.data.data;
+  return [];
+}
+
 import { API_BASE_URL, getAuthHeaders } from './authService';
 
 export interface AttendanceRecord {
@@ -42,5 +49,17 @@ async function getJson<T>(path: string): Promise<T> {
 
 export async function getAttendances(): Promise<AttendanceRecord[]> {
   const result = await getJson<{ data: AttendanceRecord[] }>('attendances');
-  return result.data;
+  return extractArray(result);
+}
+
+export async function deleteAttendance(id: string | number): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/attendances/${id}`, {
+    method: 'DELETE',
+    headers: await getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.message || 'Delete failed');
+  }
 }

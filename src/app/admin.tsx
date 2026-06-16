@@ -1,6 +1,5 @@
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-
 import { BottomTabInset, Spacing } from "@/constants/theme";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -24,6 +23,7 @@ import {
   Text,
   TextInput,
   View,
+  useColorScheme
 } from "react-native";
 
 interface AdminCard {
@@ -37,13 +37,18 @@ interface AdminCard {
 
 export default function AdminDashboard() {
   const theme = useTheme();
+  const { signOut, user, updateUser } = useAuth();
   const [selectedSite, setSelectedSite] = useState("Site Selection");
   const [selectedSiteId, setSelectedSiteId] = useState<number | null>(null);
   const [currentTime, setCurrentTime] = useState("");
   const [currentDate, setCurrentDate] = useState("");
   const [showSiteDropdown, setShowSiteDropdown] = useState(false);
   const router = useRouter();
-  const { signOut, user, updateUser } = useAuth();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const styles = React.useMemo(() => createStyles(isDark), [isDark]);
+
+  // Admin profile state
   const [adminName, setAdminName] = useState("");
   const [adminEmail, setAdminEmail] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
@@ -56,54 +61,6 @@ export default function AdminDashboard() {
     }
   }, [user]);
 
-  const handleUpdateAdminProfile = async () => {
-    try {
-      setProfileError("");
-      // API call to update profile
-      const headers = await getAuthHeaders();
-      console.log("[Profile] Saving with headers:", headers);
-      const response = await fetch(`${API_BASE_URL}/profile`, {
-        method: 'POST',
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          name: adminName,
-          email: adminEmail,
-          ...(adminPassword ? { password: adminPassword } : {})
-        })
-      });
-
-      const data = await response.json();
-      console.log("[Profile] Response:", response.status, data);
-
-      if (!response.ok) {
-        if (data.errors) {
-          const firstError = Object.values(data.errors)[0];
-          const errorMessage = Array.isArray(firstError) ? firstError[0] : firstError;
-          throw new Error(errorMessage as string);
-        }
-        throw new Error(data.message || "Failed to update profile");
-      }
-
-      // data.user comes from backend response
-      await updateUser(data.user);
-      // Also update local form state directly to reflect immediately
-      setAdminName(data.user.name || adminName);
-      setAdminEmail(data.user.email || adminEmail);
-      
-      setSuccessModalTitle("Profile Updated Successfully!");
-      setSuccessButtonText("Ok");
-      setShowSuccessModal(true);
-      setAdminPassword("");
-    } catch (error: any) {
-      console.error("[Profile] Save error:", error);
-      setProfileError(error.message || "Could not update profile.");
-    }
-  };
-
-
   // Create animated values for each card
   const cardScaleValues = React.useRef<{ [key: string]: Animated.Value }>(
     {},
@@ -114,6 +71,7 @@ export default function AdminDashboard() {
     machine: string;
     status: string;
     description: string;
+    worksite_id?: number | null;
   }
 
   interface AssetRecord {
@@ -170,21 +128,6 @@ export default function AdminDashboard() {
     name: string;
   }
 
-  const initialManageSites = [
-    {
-      id: "cleanit",
-      title: "CleanIt",
-      icon: "🧼",
-      route: "/dashboard/cleanit",
-    },
-    {
-      id: "amil",
-      title: "AMIL",
-      icon: "🏢",
-      route: "/dashboard/amil",
-    },
-  ];
-
   const [selectedView, setSelectedView] = useState<
     | "dashboard"
     | "machineries"
@@ -197,6 +140,21 @@ export default function AdminDashboard() {
     | "manageSite"
     | "attendance"
   >("dashboard");
+
+  // API data state
+  const [machineries, setMachineries] = useState<MachineryRecord[]>([]);
+  const [assets, setAssets] = useState<AssetRecord[]>([]);
+  const [chemicals, setChemicals] = useState<any[]>([]);
+  const [workers, setWorkers] = useState<WorkerRecord[]>([]);
+  const [approvals, setApprovals] = useState<ApprovalRecord[]>([]);
+  const [vehicles, setVehicles] = useState<VehicleRecord[]>([]);
+  const [jewelleries, setJewelleries] = useState<JewelleryRecord[]>([]);
+  const [properties, setProperties] = useState<PropertyRecord[]>([]);
+  const [attendances, setAttendances] = useState<AttendancesService.AttendanceRecord[]>([]);
+  const [worksites, setWorksites] = useState<Worksite[]>([]);
+  const [manageSites, setManageSites] = useState<any[]>([]);
+
+  // Search state
   const [machinerySearch, setMachinerySearch] = useState("");
   const [assetSearch, setAssetSearch] = useState("");
   const [chemicalSearch, setChemicalSearch] = useState("");
@@ -205,30 +163,31 @@ export default function AdminDashboard() {
   const [attendanceSearch, setAttendanceSearch] = useState("");
   const [attendanceShiftFilter, setAttendanceShiftFilter] = useState("All");
   const [attendanceDateFilter, setAttendanceDateFilter] = useState("");
-  const [attendances, setAttendances] = useState<AttendancesService.AttendanceRecord[]>([]);
+
+  // Modal state
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [showAddSiteModal, setShowAddSiteModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [showApprovalSuccessModal, setShowApprovalSuccessModal] =
-    useState(false);
+  const [showApprovalSuccessModal, setShowApprovalSuccessModal] = useState(false);
   const [showRejectReasonModal, setShowRejectReasonModal] = useState(false);
   const [showRejectSuccessModal, setShowRejectSuccessModal] = useState(false);
-  const [showTerminateConfirmModal, setShowTerminateConfirmModal] =
-    useState(false);
-  const [showTerminateSuccessModal, setShowTerminateSuccessModal] =
-    useState(false);
-  const [showWorkerDeleteSuccessModal, setShowWorkerDeleteSuccessModal] =
-    useState(false);
-  const [showSiteDeletedSuccessModal, setShowSiteDeletedSuccessModal] =
-    useState(false);
+  const [showTerminateConfirmModal, setShowTerminateConfirmModal] = useState(false);
+  const [showTerminateSuccessModal, setShowTerminateSuccessModal] = useState(false);
+  const [showWorkerDeleteSuccessModal, setShowWorkerDeleteSuccessModal] = useState(false);
+  const [showSiteDeletedSuccessModal, setShowSiteDeletedSuccessModal] = useState(false);
   const [showAddPersonalModal, setShowAddPersonalModal] = useState(false);
   const [showPersonalEditModal, setShowPersonalEditModal] = useState(false);
+  const [showAttendanceEditModal, setShowAttendanceEditModal] = useState(false);
+
+  // Personal assets tabs
   const [selectedPersonalTab, setSelectedPersonalTab] = useState<
     "vehicles" | "jewelleries" | "properties"
   >("vehicles");
   const [selectedPersonalItem, setSelectedPersonalItem] = useState<
     VehicleRecord | JewelleryRecord | PropertyRecord | null
   >(null);
+
+  // Form fields
   const [newPersonalName, setNewPersonalName] = useState("");
   const [newPersonalType, setNewPersonalType] = useState("");
   const [newPersonalValue, setNewPersonalValue] = useState("");
@@ -236,269 +195,36 @@ export default function AdminDashboard() {
   const [newSiteName, setNewSiteName] = useState("");
   const [siteLogoName, setSiteLogoName] = useState("");
   const [deletedSiteName, setDeletedSiteName] = useState("");
-  const [worksites, setWorksites] = useState<Worksite[]>([]);
-  const [manageSites, setManageSites] = useState<Worksite[]>([]);
   const [rejectReason, setRejectReason] = useState("");
-  const [selectedApprovalForReject, setSelectedApprovalForReject] =
-    useState<ApprovalRecord | null>(null);
-  const [selectedWorkerForTermination, setSelectedWorkerForTermination] =
-    useState<WorkerRecord | null>(null);
-  const [successModalTitle, setSuccessModalTitle] = useState(
-    "Assets Updated Successfully!",
-  );
+  const [selectedApprovalForReject, setSelectedApprovalForReject] = useState<ApprovalRecord | null>(null);
+  const [selectedWorkerForTermination, setSelectedWorkerForTermination] = useState<WorkerRecord | null>(null);
+  const [successModalTitle, setSuccessModalTitle] = useState("Assets Updated Successfully!");
   const [successButtonText, setSuccessButtonText] = useState("Ok");
   const [selectedAsset, setSelectedAsset] = useState<AssetRecord | null>(null);
   const [editName, setEditName] = useState("");
   const [editCount, setEditCount] = useState("");
   const [editValue, setEditValue] = useState("");
 
-  const [machineries, setMachineries] = useState<MachineryRecord[]>([]);
+  // Attendance edit
+  const [selectedAttendance, setSelectedAttendance] = useState<AttendancesService.AttendanceRecord | null>(null);
+  const [editAttendanceShift, setEditAttendanceShift] = useState("");
+  const [editAttendanceDate, setEditAttendanceDate] = useState("");
+  const [editAttendanceStatus, setEditAttendanceStatus] = useState("");
 
-  const initialAssetData: AssetRecord[] = [];
-  const [assets, setAssets] = useState<AssetRecord[]>(initialAssetData);
-  type ChemicalRecord = {
-    id: string | number;
-    name: string;
-    quantity: number;
-    status: string;
-    worksite_id?: number | null;
-  };
-
-  const initialChemicalData: ChemicalRecord[] = [
-    { id: "1", name: "Quaternary", quantity: 100, status: "Available" },
-    { id: "2", name: "Ammonium", quantity: 0, status: "Finished" },
-    { id: "3", name: "Harpic", quantity: 65, status: "Available" },
-    { id: "4", name: "Chlorine compounds", quantity: 77, status: "Available" },
-    { id: "5", name: "Lysol", quantity: 18, status: "Available" },
-    { id: "6", name: "Lab reagents", quantity: 65, status: "Available" },
-    { id: "7", name: "Alcohols", quantity: 0, status: "Finished" },
-    { id: "8", name: "Phenolics", quantity: 56, status: "Available" },
-    { id: "9", name: "Peracetic Acid", quantity: 8, status: "Available" },
-    { id: "10", name: "Hypochlorite", quantity: 11, status: "Available" },
-  ];
-  const [chemicals, setChemicals] = useState<ChemicalRecord[]>(initialChemicalData);
-
-  const initialApprovalData: ApprovalRecord[] = [
-    {
-      id: "1",
-      description: "Chemical",
-      amount: "Rs 18,520",
-      date: "02/06/26",
-      holder: "Udayanga",
-    },
-    {
-      id: "2",
-      description: "Travelling",
-      amount: "Rs 1,200",
-      date: "18/03/26",
-      holder: "Thisara",
-    },
-    {
-      id: "3",
-      description: "Foods",
-      amount: "Rs 950",
-      date: "31/04/26",
-      holder: "Munusinghe",
-    },
-    {
-      id: "4",
-      description: "Meals",
-      amount: "Rs 450,000",
-      date: "14/02/26",
-      holder: "HR",
-    },
-    {
-      id: "5",
-      description: "Water bill",
-      amount: "Rs 18,000",
-      date: "12/03/26",
-      holder: "HR",
-    },
-    {
-      id: "6",
-      description: "Electricity bill",
-      amount: "Rs 48,000",
-      date: "12/03/26",
-      holder: "HR",
-    },
-    {
-      id: "7",
-      description: "Telephone bill",
-      amount: "Rs 1598",
-      date: "12/03/26",
-      holder: "HR",
-    },
-    {
-      id: "8",
-      description: "A/C Repair",
-      amount: "Rs 28,000",
-      date: "19/11/25",
-      holder: "Amod",
-    },
-    {
-      id: "9",
-      description: "Fuel",
-      amount: "Rs 12,000",
-      date: "02/02/26",
-      holder: "Shehan",
-    },
-    {
-      id: "10",
-      description: "Repairs",
-      amount: "Rs 460",
-      date: "02/03/26",
-      holder: "Namod",
-    },
-  ];
-  const [workers, setWorkers] = useState<WorkerRecord[]>([
-    { id: "1", name: "Sarath", site: "Apeksha", type: "Generator" },
-    { id: "2", name: "Oveen", site: "Apeksha", type: "Generator" },
-    { id: "3", name: "Fernando", site: "Apeksha", type: "Generator" },
-    { id: "4", name: "Marc", site: "Apeksha", type: "Generator" },
-    { id: "5", name: "Maleesha", site: "Apeksha", type: "Generator" },
-    { id: "6", name: "Vinuja", site: "Apeksha", type: "Supervisor" },
-    { id: "7", name: "Damsith", site: "Apeksha", type: "Generator" },
-    { id: "8", name: "Hirushan", site: "Apeksha", type: "Supervisor" },
-    { id: "9", name: "Mahinda", site: "Apeksha", type: "Generator" },
-    { id: "10", name: "Namal", site: "Apeksha", type: "Generator" },
-  ]);
-
-  const [approvals, setApprovals] =
-    useState<ApprovalRecord[]>(initialApprovalData);
-
-  const initialVehicleData: VehicleRecord[] = [
-    {
-      id: "1",
-      name: "KDH",
-      type: "Van",
-      value: "Rs. 12.5Mn",
-      plateNo: "PL-2218",
-    },
-    {
-      id: "2",
-      name: "KDH",
-      type: "Lorry",
-      value: "Rs. 11.2Mn",
-      plateNo: "NB-8963",
-    },
-    {
-      id: "3",
-      name: "Cooper",
-      type: "Car",
-      value: "Rs. 18.5Mn",
-      plateNo: "CBB-3324",
-    },
-    {
-      id: "4",
-      name: "KDH",
-      type: "Van",
-      value: "Rs. 10.5Mn",
-      plateNo: "PB-5647",
-    },
-    {
-      id: "5",
-      name: "KDH",
-      type: "Van",
-      value: "Rs. 21.5Mn",
-      plateNo: "PL-8964",
-    },
-    {
-      id: "6",
-      name: "KDH",
-      type: "Lorry",
-      value: "Rs. 12.5Mn",
-      plateNo: "ND-5741",
-    },
-    {
-      id: "7",
-      name: "Vogue",
-      type: "SUV",
-      value: "Rs. 58.5Mn",
-      plateNo: "CBB-4589",
-    },
-    {
-      id: "8",
-      name: "KDH",
-      type: "Lorry",
-      value: "Rs. 11.3Mn",
-      plateNo: "301-2245",
-    },
-    {
-      id: "9",
-      name: "KDH",
-      type: "Canter",
-      value: "Rs. 10.8Mn",
-      plateNo: "NL-7854",
-    },
-    {
-      id: "10",
-      name: "KDH",
-      type: "Van",
-      value: "Rs. 16.3Mn",
-      plateNo: "PB-5748",
-    },
-  ];
-
-  const initialJewelleryData: JewelleryRecord[] = [
-    { id: "1", name: "Chain", value: "Rs. 1.5Mn", weight: "5 Pounds" },
-    { id: "2", name: "Bracelet", value: "Rs. 1.2Mn", weight: "4 Pounds" },
-    { id: "3", name: "Chain", value: "Rs. 1.6Mn", weight: "8 Pounds" },
-    { id: "4", name: "Rings", value: "Rs. 10.5Mn", weight: "30 Pounds" },
-    { id: "5", name: "Chain", value: "Rs. 2.5Mn", weight: "20 Pounds" },
-    { id: "6", name: "Bracelet", value: "Rs. 8.7Mn", weight: "5 Pounds" },
-    { id: "7", name: "Bracelet", value: "Rs. 6.5Mn", weight: "3 Pounds" },
-    { id: "8", name: "Earrings", value: "Rs. 8.9Mn", weight: "2 Pounds" },
-    { id: "9", name: "Bracelet", value: "Rs. 5.2Mn", weight: "2 Pounds" },
-    { id: "10", name: "Ring", value: "Rs. 0.3Mn", weight: "1 Pounds" },
-  ];
-
-  const initialPropertyData: PropertyRecord[] = [
-    { id: "1", location: "Colombo", value: "Rs. 16.0Mn", area: "12 Perches" },
-    { id: "2", location: "Kandy", value: "Rs. 14.2Mn", area: "10 Perches" },
-    { id: "3", location: "Negombo", value: "Rs. 12.5Mn", area: "15 Perches" },
-    { id: "4", location: "Matale", value: "Rs. 10.5Mn", area: "5 Perches" },
-    { id: "5", location: "Kahuwala", value: "Rs. 26.5Mn", area: "20 Perches" },
-    { id: "6", location: "Moratuwa", value: "Rs. 10.5Mn", area: "17 Perches" },
-    { id: "7", location: "Nawela", value: "Rs. 10.5Mn", area: "25 Perches" },
-    { id: "8", location: "Colombo", value: "Rs. 86.5Mn", area: "18 Perches" },
-    {
-      id: "9",
-      location: "Marine Drive",
-      value: "Rs. 78.9Mn",
-      area: "25 Perches",
-    },
-    { id: "10", location: "Negombo", value: "Rs. 25.3Mn", area: "16 Perches" },
-  ];
-
-  const [vehicles, setVehicles] = useState<VehicleRecord[]>(initialVehicleData);
-  const [jewelleries, setJewelleries] =
-    useState<JewelleryRecord[]>(initialJewelleryData);
-  const [properties, setProperties] =
-    useState<PropertyRecord[]>(initialPropertyData);
-
+  // Site-filtered data
   const filteredMachineries = selectedSiteId ? machineries.filter((m: any) => m.worksite_id === selectedSiteId) : machineries;
   const filteredAssets = selectedSiteId ? assets.filter((a: any) => a.worksite_id === selectedSiteId) : assets;
   const filteredChemicals = selectedSiteId ? chemicals.filter((c: any) => c.worksite_id === selectedSiteId) : chemicals;
   const filteredApprovals = selectedSiteId ? approvals.filter((a: any) => a.worksite_id === selectedSiteId) : approvals;
   const filteredWorkers = selectedSiteId ? workers.filter((w: any) => w.worksite_id === selectedSiteId) : workers;
-  const filteredAttendances = selectedSiteId ? attendances.filter((a: any) => a.worksite_id === selectedSiteId) : attendances;
 
-  const todayStr = new Date().toISOString().split('T')[0];
-  const todayAttendancesCount = filteredAttendances.filter(a => a.date && a.date.startsWith(todayStr)).length;
+  const todayAttendancesCount = attendances.filter((a: any) => {
+    if (!a.date) return false;
+    const today = new Date().toISOString().split('T')[0];
+    return a.date.startsWith(today);
+  }).length;
 
-  const filteredAttendanceData = filteredAttendances.filter((item) => {
-    const searchMatch = attendanceSearch.trim() === "" ||
-      item.worker?.name.toLowerCase().includes(attendanceSearch.toLowerCase()) ||
-      String(item.id).includes(attendanceSearch);
-      
-    const shiftMatch = attendanceShiftFilter === "All" || item.shift === attendanceShiftFilter;
-    
-    // Add date filter logic if a date is selected
-    const dateMatch = attendanceDateFilter === "" || (item.date && item.date.startsWith(attendanceDateFilter));
-
-    return searchMatch && shiftMatch && dateMatch;
-  });
-
+  // Search-filtered data
   const filteredWorkerData = filteredWorkers.filter((item) => {
     const query = workerSearch.trim().toLowerCase();
     if (!query) return true;
@@ -506,15 +232,13 @@ export default function AdminDashboard() {
       String(item.id).includes(query) ||
       item.name.toLowerCase().includes(query) ||
       item.site.toLowerCase().includes(query) ||
-      item.type.toLowerCase().includes(query)
+      (item.type || item.status || item.role || "").toLowerCase().includes(query)
     );
   });
 
   const filteredMachineryData = filteredMachineries.filter((item) => {
     const query = machinerySearch.trim().toLowerCase();
-    if (!query) {
-      return true;
-    }
+    if (!query) return true;
     return (
       String(item.id).includes(query) ||
       item.machine.toLowerCase().includes(query) ||
@@ -525,9 +249,7 @@ export default function AdminDashboard() {
 
   const filteredAssetData = filteredAssets.filter((item) => {
     const query = assetSearch.trim().toLowerCase();
-    if (!query) {
-      return true;
-    }
+    if (!query) return true;
     return (
       String(item.id).includes(query) ||
       item.name.toLowerCase().includes(query) ||
@@ -558,6 +280,56 @@ export default function AdminDashboard() {
       item.holder.toLowerCase().includes(query)
     );
   });
+
+  const filteredAttendances = selectedSiteId ? attendances.filter((a: any) => a.worksite_id === selectedSiteId) : attendances;
+  const filteredAttendanceData = filteredAttendances.filter((item) => {
+    const searchMatch = attendanceSearch.trim() === "" ||
+      (item.worker?.name || "").toLowerCase().includes(attendanceSearch.toLowerCase()) ||
+      String(item.id).includes(attendanceSearch);
+    const shiftMatch = attendanceShiftFilter === "All" || item.shift === attendanceShiftFilter;
+    const dateMatch = attendanceDateFilter === "" || (item.date && item.date.startsWith(attendanceDateFilter));
+    return searchMatch && shiftMatch && dateMatch;
+  });
+
+  // === API HANDLERS ===
+
+  const handleUpdateAdminProfile = async () => {
+    try {
+      setProfileError("");
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${API_BASE_URL}/profile`, {
+        method: 'POST',
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: adminName,
+          email: adminEmail,
+          ...(adminPassword ? { password: adminPassword } : {})
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        if (data.errors) {
+          const firstError = Object.values(data.errors)[0];
+          const errorMessage = Array.isArray(firstError) ? firstError[0] : firstError;
+          throw new Error(errorMessage as string);
+        }
+        throw new Error(data.message || "Failed to update profile");
+      }
+      await updateUser(data.user);
+      setAdminName(data.user.name || adminName);
+      setAdminEmail(data.user.email || adminEmail);
+      setSuccessModalTitle("Profile Updated Successfully!");
+      setSuccessButtonText("Ok");
+      setShowSuccessModal(true);
+      setAdminPassword("");
+    } catch (error: any) {
+      console.error("[Profile] Save error:", error);
+      setProfileError(error.message || "Could not update profile.");
+    }
+  };
 
   const handleApproveApproval = async (item: ApprovalRecord) => {
     try {
@@ -596,10 +368,7 @@ export default function AdminDashboard() {
   };
 
   const handleConfirmTerminate = async () => {
-    if (!selectedWorkerForTermination) {
-      return;
-    }
-
+    if (!selectedWorkerForTermination) return;
     try {
       await WorkersService.terminateWorker(selectedWorkerForTermination.id);
       setWorkers((current) =>
@@ -637,10 +406,7 @@ export default function AdminDashboard() {
   };
 
   const handleUpdateAsset = async () => {
-    if (!selectedAsset) {
-      return;
-    }
-
+    if (!selectedAsset) return;
     try {
       await AssetsService.updateAsset(selectedAsset.id, {
         name: editName,
@@ -648,16 +414,10 @@ export default function AdminDashboard() {
         value: editValue,
         status: selectedAsset.status || "available",
       });
-      
       setAssets((current) =>
         current.map((asset) =>
           asset.id === selectedAsset.id
-            ? {
-                ...asset,
-                name: editName,
-                count: Number(editCount) || 0,
-                value: editValue,
-              }
+            ? { ...asset, name: editName, count: Number(editCount) || 0, value: editValue }
             : asset,
         ),
       );
@@ -686,73 +446,202 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleDeleteChemical = async (item: any) => {
+    try {
+      await ChemicalsService.deleteChemical(item.id);
+      setChemicals((current: any[]) => current.filter((c: any) => c.id !== item.id));
+    } catch (error) {
+      console.error('Failed to delete chemical:', error);
+      Alert.alert('Error', 'Failed to delete chemical');
+    }
+  };
 
+  const handleDeleteMachinery = async (item: MachineryRecord) => {
+    try {
+      await MachineriesService.deleteMachinery(item.id);
+      setMachineries((current) => current.filter((m) => m.id !== item.id));
+    } catch (error) {
+      console.error('Failed to delete machinery:', error);
+      Alert.alert('Error', 'Failed to delete machinery');
+    }
+  };
+
+  const handleDeleteAttendance = async (item: AttendancesService.AttendanceRecord) => {
+    try {
+      await AttendancesService.deleteAttendance(item.id);
+      setAttendances((current) => current.filter((a) => a.id !== item.id));
+    } catch (error) {
+      console.error('Failed to delete attendance:', error);
+      Alert.alert('Error', 'Failed to delete attendance');
+    }
+  };
+
+  const openAttendanceEditModal = (item: AttendancesService.AttendanceRecord) => {
+    setSelectedAttendance(item);
+    setEditAttendanceShift(item.shift);
+    setEditAttendanceDate(item.date ? item.date.split('T')[0] : '');
+    setEditAttendanceStatus(item.status);
+    setShowAttendanceEditModal(true);
+  };
+
+  const handleSaveAttendanceEdit = () => {
+    if (!selectedAttendance) return;
+    setAttendances((current) =>
+      current.map((a) =>
+        a.id === selectedAttendance.id
+          ? { ...a, shift: editAttendanceShift, date: editAttendanceDate, status: editAttendanceStatus }
+          : a
+      )
+    );
+    setShowAttendanceEditModal(false);
+    setSelectedAttendance(null);
+  };
+
+  const handleDeletePersonalItem = async (
+    item: VehicleRecord | JewelleryRecord | PropertyRecord,
+  ) => {
+    try {
+      if (selectedPersonalTab === "vehicles") {
+        await PersonalAssetsService.deleteVehicle(item.id);
+        setVehicles((current) => current.filter((record) => record.id !== item.id));
+      } else if (selectedPersonalTab === "jewelleries") {
+        await PersonalAssetsService.deleteJewellery(item.id);
+        setJewelleries((current) => current.filter((record) => record.id !== item.id));
+      } else {
+        await PersonalAssetsService.deleteProperty(item.id);
+        setProperties((current) => current.filter((record) => record.id !== item.id));
+      }
+      setSuccessModalTitle("Record Deleted Successfully!");
+      setSuccessButtonText("Close");
+      setShowSuccessModal(true);
+    } catch (error) {
+      Alert.alert("Error", "Failed to delete record.");
+    }
+  };
+
+  const handleAddPersonalItem = async () => {
+    if (!newPersonalValue.trim() || !newPersonalName.trim()) {
+      Alert.alert("Missing fields", "Please complete the required fields.");
+      return;
+    }
+    try {
+      if (selectedPersonalTab === "vehicles") {
+        const created = await PersonalAssetsService.createVehicle({
+          name: newPersonalName, type: newPersonalType, value: newPersonalValue, plateNo: newPersonalExtra,
+        });
+        setVehicles((current) => [...current, created]);
+      } else if (selectedPersonalTab === "jewelleries") {
+        const created = await PersonalAssetsService.createJewellery({
+          name: newPersonalName, value: newPersonalValue, weight: newPersonalExtra,
+        });
+        setJewelleries((current) => [...current, created]);
+      } else {
+        const created = await PersonalAssetsService.createProperty({
+          location: newPersonalName, value: newPersonalValue, area: newPersonalExtra,
+        });
+        setProperties((current) => [...current, created]);
+      }
+      resetPersonalForm();
+      setShowAddPersonalModal(false);
+      setSuccessModalTitle("Record Added Successfully!");
+      setSuccessButtonText("Ok");
+      setShowSuccessModal(true);
+    } catch (error) {
+      Alert.alert("Error", "Failed to add record.");
+    }
+  };
+
+  const handleSavePersonalEdit = async () => {
+    if (!selectedPersonalItem) return;
+    try {
+      if (selectedPersonalTab === "vehicles") {
+        const updated = await PersonalAssetsService.updateVehicle(selectedPersonalItem.id, {
+          name: newPersonalName, type: newPersonalType, value: newPersonalValue, plateNo: newPersonalExtra,
+        });
+        setVehicles((current) => current.map((item) => item.id === selectedPersonalItem.id ? updated : item));
+      } else if (selectedPersonalTab === "jewelleries") {
+        const updated = await PersonalAssetsService.updateJewellery(selectedPersonalItem.id, {
+          name: newPersonalName, value: newPersonalValue, weight: newPersonalExtra,
+        });
+        setJewelleries((current) => current.map((item) => item.id === selectedPersonalItem.id ? updated : item));
+      } else {
+        const updated = await PersonalAssetsService.updateProperty(selectedPersonalItem.id, {
+          location: newPersonalName, value: newPersonalValue, area: newPersonalExtra,
+        });
+        setProperties((current) => current.map((item) => item.id === selectedPersonalItem.id ? updated : item));
+      }
+      resetPersonalForm();
+      setShowPersonalEditModal(false);
+      setSuccessModalTitle("Record Updated Successfully!");
+      setSuccessButtonText("Ok");
+      setShowSuccessModal(true);
+    } catch (error) {
+      Alert.alert("Error", "Failed to update record.");
+    }
+  };
+
+  const handlePickSiteLogo = () => {
+    Alert.alert("Upload Image", "Choose image source", [
+      { text: "Gallery", onPress: () => setSiteLogoName("gallery-image.jpg") },
+      { text: "Files", onPress: () => setSiteLogoName("file-image.jpg") },
+      { text: "Cancel", style: "cancel" },
+    ], { cancelable: true });
+  };
+
+  const handleAddSite = async () => {
+    if (!newSiteName.trim()) {
+      Alert.alert("Missing Site Name", "Please enter a site name.");
+      return;
+    }
+    try {
+      const response = await fetch(`${API_BASE_URL}/worksites`, {
+        method: 'POST',
+        headers: {
+          ...(await getAuthHeaders()),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name: newSiteName.trim() })
+      });
+      if (!response.ok) throw new Error("Failed to add site");
+      const addedSite = await response.json();
+      setManageSites((current: any) => [...current, addedSite]);
+      setWorksites((current: any) => [...current, addedSite]);
+      setShowAddSiteModal(false);
+      setNewSiteName("");
+      setSiteLogoName("");
+      setSuccessModalTitle("Site Added Successfully!");
+      setSuccessButtonText("Ok");
+      setShowSuccessModal(true);
+    } catch (error) {
+      Alert.alert("Error", "Could not add the site.");
+    }
+  };
+
+  const handleDeleteSite = async (site: any) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/worksites/${site.id}`, {
+        method: 'DELETE',
+        headers: await getAuthHeaders(),
+      });
+      if (!response.ok) throw new Error("Failed to delete");
+      setDeletedSiteName(site.title || site.name);
+      setManageSites((current: any) => current.filter((item: any) => item.id !== site.id));
+      setWorksites((current: any) => current.filter((item: any) => item.id !== site.id));
+      setShowSiteDeletedSuccessModal(true);
+    } catch (error) {
+      Alert.alert("Error", "Could not delete the site.");
+    }
+  };
 
   const adminCards: AdminCard[] = [
-    {
-      id: "1",
-      title: "Attendance",
-      value: todayAttendancesCount,
-      icon: "👥",
-      backgroundColor: "#e0e0e0",
-      textColor: "#1f1d21",
-    },
-    {
-      id: "2",
-      title: "Machineries",
-      value: filteredMachineries.length,
-      icon: "⚙️",
-      backgroundColor: "#f5c6c6",
-      textColor: "#1f1d21",
-    },
-    {
-      id: "3",
-      title: "Assets",
-      value: filteredAssets.length,
-      icon: "📦",
-      backgroundColor: "#a8d5a8",
-      textColor: "#1f1d21",
-    },
-    {
-      id: "4",
-      title: "Chemicals",
-      value: filteredChemicals.length,
-      icon: "🧪",
-      backgroundColor: "#a8c1f5",
-      textColor: "#1f1d21",
-    },
-    {
-      id: "5",
-      title: "Approvals",
-      value: filteredApprovals.length,
-      icon: "✅",
-      backgroundColor: "#f5f5b8",
-      textColor: "#1f1d21",
-    },
-    {
-      id: "6",
-      title: "Workers",
-      value: filteredWorkers.length,
-      icon: "👷",
-      backgroundColor: "#c0c0c0",
-      textColor: "#1f1d21",
-    },
-    {
-      id: "7",
-      title: "Personal",
-      value: vehicles.length + jewelleries.length + properties.length,
-      icon: "👤",
-      backgroundColor: "#a8d5a8",
-      textColor: "#1f1d21",
-    },
-    {
-      id: "8",
-      title: "Manage Site",
-      value: worksites.length,
-      icon: "🏢",
-      backgroundColor: "#f5d7b3",
-      textColor: "#1f1d21",
-    },
+    { id: "1", title: "Attendance", value: todayAttendancesCount, icon: "\u{1F465}", backgroundColor: "#e0e0e0", textColor: "#1f1d21" },
+    { id: "2", title: "Machineries", value: filteredMachineries.length, icon: "\u2699\uFE0F", backgroundColor: "#f5c6c6", textColor: "#1f1d21" },
+    { id: "3", title: "Assets", value: filteredAssets.length, icon: "\u{1F4E6}", backgroundColor: "#a8d5a8", textColor: "#1f1d21" },
+    { id: "4", title: "Chemicals", value: filteredChemicals.length, icon: "\u{1F9EA}", backgroundColor: "#a8c1f5", textColor: "#1f1d21" },
+    { id: "5", title: "Approvals", value: filteredApprovals.length, icon: "\u2705", backgroundColor: "#f5f5b8", textColor: "#1f1d21" },
+    { id: "6", title: "Workers", value: filteredWorkers.length, icon: "\u{1F477}", backgroundColor: "#c0c0c0", textColor: "#1f1d21" },
+    { id: "7", title: "Personal", value: vehicles.length + jewelleries.length + properties.length, icon: "\u{1F464}", backgroundColor: "#a8d5a8", textColor: "#1f1d21" },
+    { id: "8", title: "Manage Site", value: worksites.length, icon: "\u{1F3E2}", backgroundColor: "#f5d7b3", textColor: "#1f1d21" },
   ];
 
   const getCardScaleValue = (cardId: string) => {
@@ -763,24 +652,16 @@ export default function AdminDashboard() {
   };
 
   const onCardHoverEnter = (cardId: string) => {
-    Animated.spring(getCardScaleValue(cardId), {
-      toValue: 1.08,
-      useNativeDriver: true,
-    }).start();
+    Animated.spring(getCardScaleValue(cardId), { toValue: 1.08, useNativeDriver: true }).start();
   };
 
   const onCardHoverExit = (cardId: string) => {
-    Animated.spring(getCardScaleValue(cardId), {
-      toValue: 1,
-      useNativeDriver: true,
-    }).start();
+    Animated.spring(getCardScaleValue(cardId), { toValue: 1, useNativeDriver: true }).start();
   };
 
   useEffect(() => {
     updateDateTime();
     const timer = setInterval(updateDateTime, 1000);
-    
-    // Load data from APIs
     loadAssetsData();
     loadChemicalsData();
     loadMachineriesData();
@@ -789,7 +670,6 @@ export default function AdminDashboard() {
     loadPersonalAssetsData();
     loadWorksitesData();
     loadAttendancesData();
-    
     return () => clearInterval(timer);
   }, []);
 
@@ -797,41 +677,31 @@ export default function AdminDashboard() {
     try {
       const data = await AttendancesService.getAttendances();
       setAttendances(data);
-    } catch (error) {
-      console.error('Failed to load attendances:', error);
-    }
+    } catch (error) { console.error('Failed to load attendances:', error); }
   };
 
   const loadWorksitesData = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/worksites`, {
-        headers: await getAuthHeaders(),
-      });
+      const response = await fetch(`${API_BASE_URL}/worksites`, { headers: await getAuthHeaders() });
       const data = await response.json();
       const loadedWorksites = Array.isArray(data) ? data : data.data || [];
       setWorksites(loadedWorksites);
       setManageSites(loadedWorksites);
-    } catch (error) {
-      console.error('Failed to load worksites:', error);
-    }
+    } catch (error) { console.error('Failed to load worksites:', error); }
   };
 
   const loadAssetsData = async () => {
     try {
       const data = await AssetsService.getAssets();
       setAssets(data);
-    } catch (error) {
-      console.error('Failed to load assets:', error);
-    }
+    } catch (error) { console.error('Failed to load assets:', error); }
   };
 
   const loadChemicalsData = async () => {
     try {
       const data = await ChemicalsService.getChemicals();
       setChemicals(data);
-    } catch (error) {
-      console.error('Failed to load chemicals:', error);
-    }
+    } catch (error) { console.error('Failed to load chemicals:', error); }
   };
 
   const loadMachineriesData = async () => {
@@ -845,61 +715,46 @@ export default function AdminDashboard() {
         worksite_id: item.worksite_id || null,
       }));
       setMachineries(mappedData);
-    } catch (error) {
-      console.error('Failed to load machineries:', error);
-    }
+    } catch (error) { console.error('Failed to load machineries:', error); }
   };
 
   const loadWorkersData = async () => {
     try {
       const data = await WorkersService.getWorkers();
       setWorkers(data);
-    } catch (error) {
-      console.error('Failed to load workers:', error);
-    }
+    } catch (error) { console.error('Failed to load workers:', error); }
   };
 
   const loadApprovalsData = async () => {
     try {
       const data = await ApprovalsService.getApprovals();
       setApprovals(data);
-    } catch (error) {
-      console.error('Failed to load approvals:', error);
-    }
+    } catch (error) { console.error('Failed to load approvals:', error); }
   };
 
   const loadPersonalAssetsData = async () => {
     try {
       const vehiclesData = await PersonalAssetsService.getVehicles();
       setVehicles(vehiclesData);
-      
       const jewelleriesData = await PersonalAssetsService.getJewelleries();
       setJewelleries(jewelleriesData);
-      
       const propertiesData = await PersonalAssetsService.getProperties();
       setProperties(propertiesData);
-    } catch (error) {
-      console.error('Failed to load personal assets:', error);
-    }
+    } catch (error) { console.error('Failed to load personal assets:', error); }
   };
 
   const updateDateTime = () => {
     const now = new Date();
-
-    // Format time
     let hours = now.getHours();
     const minutes = now.getMinutes().toString().padStart(2, "0");
     const ampm = hours >= 12 ? "pm" : "am";
     hours = hours % 12;
     hours = hours ? hours : 12;
     const timeStr = `${hours.toString().padStart(2, "0")}.${minutes} ${ampm}`;
-
-    // Format date
     const day = now.getDate().toString().padStart(2, "0");
     const month = (now.getMonth() + 1).toString().padStart(2, "0");
     const year = now.getFullYear();
     const dateStr = `${day}.${month}.${year}`;
-
     setCurrentTime(timeStr);
     setCurrentDate(dateStr);
   };
@@ -928,13 +783,82 @@ export default function AdminDashboard() {
 
   const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
+  const getPersonalExtraLabel = () => {
+    if (selectedPersonalTab === "vehicles") return "Plate No";
+    if (selectedPersonalTab === "jewelleries") return "Weight";
+    return "Area";
+  };
+
+  const getPersonalSectionTitleSingular = () => {
+    if (selectedPersonalTab === "vehicles") return "Vehicle";
+    if (selectedPersonalTab === "jewelleries") return "Jewellery";
+    return "Property";
+  };
+
+  const getPersonalSectionTitle = () => {
+    if (selectedPersonalTab === "vehicles") return "Vehicles";
+    if (selectedPersonalTab === "jewelleries") return "Jewelleries";
+    return "Properties";
+  };
+
+  const getPersonalItemList = () => {
+    if (selectedPersonalTab === "vehicles") return vehicles;
+    if (selectedPersonalTab === "jewelleries") return jewelleries;
+    return properties;
+  };
+
+  const openPersonalEditModal = (
+    item: VehicleRecord | JewelleryRecord | PropertyRecord,
+  ) => {
+    setSelectedPersonalItem(item);
+    setNewPersonalValue(
+      selectedPersonalTab === "vehicles"
+        ? (item as VehicleRecord).value
+        : selectedPersonalTab === "jewelleries"
+          ? (item as JewelleryRecord).value
+          : (item as PropertyRecord).value,
+    );
+    setNewPersonalExtra(
+      selectedPersonalTab === "vehicles"
+        ? (item as VehicleRecord).plateNo
+        : selectedPersonalTab === "jewelleries"
+          ? (item as JewelleryRecord).weight
+          : (item as PropertyRecord).area,
+    );
+    if (selectedPersonalTab === "vehicles") {
+      const vehicle = item as VehicleRecord;
+      setNewPersonalName(vehicle.name);
+      setNewPersonalType(vehicle.type);
+    } else if (selectedPersonalTab === "jewelleries") {
+      const jewellery = item as JewelleryRecord;
+      setNewPersonalName(jewellery.name);
+      setNewPersonalType("");
+    } else {
+      const property = item as PropertyRecord;
+      setNewPersonalName(property.location);
+      setNewPersonalType("");
+    }
+    setShowPersonalEditModal(true);
+  };
+
+  const resetPersonalForm = () => {
+    setNewPersonalName("");
+    setNewPersonalType("");
+    setNewPersonalValue("");
+    setNewPersonalExtra("");
+    setSelectedPersonalItem(null);
+  };
+
   const renderAttendancesView = () => (
     <View style={styles.machineriesContainer}>
-      <View style={[styles.headerSection, styles.greetingContainer]}>
-        <ThemedText type="subtitle" style={styles.greeting}>
-          Hii {user?.name || "Admin"}, Welcome!
-        </ThemedText>
-      </View>
+      <View style={[styles.headerSection, styles.greetingContainer, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
+          <ThemedText type="subtitle" style={styles.greeting}>
+            Hii {user?.name || "Malith"}, Welcome!
+          </ThemedText>
+          <Pressable onPress={async () => { await signOut(); router.replace('/'); }} style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: isDark ? '#333' : '#e0e0e0', borderRadius: 8 }}>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: isDark ? '#fff' : '#000' }}>Sign Out</Text>
+          </Pressable>
+        </View>
       <View style={styles.machineriesHeader}>
         <Pressable
           onPress={() => {
@@ -943,9 +867,9 @@ export default function AdminDashboard() {
             setAttendanceShiftFilter("All");
             setAttendanceDateFilter("");
           }}
-          style={[styles.backButton, { backgroundColor: theme.backgroundElement }]}
+          style={styles.backButton}
         >
-          <Text style={[styles.backButtonIcon, { color: theme.text }]}>‹</Text>
+          <Text style={styles.backButtonIcon}>‹</Text>
         </Pressable>
         <ThemedText type="subtitle" style={styles.machineriesTitle}>
           Attendances
@@ -953,161 +877,146 @@ export default function AdminDashboard() {
       </View>
 
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 15, zIndex: 1 }}>
-        <View style={[styles.searchContainer, { backgroundColor: theme.backgroundElement, flexGrow: 1, minWidth: 200, marginBottom: 0 }]}>
+        <View style={styles.searchContainer}>
           <Text style={styles.searchIcon}>🔍</Text>
           <TextInput
             value={attendanceSearch}
             onChangeText={setAttendanceSearch}
             placeholder="Search by worker or ID"
-            placeholderTextColor={theme.textSecondary}
-            style={[styles.searchInput, { color: theme.text }]}
+            placeholderTextColor={isDark ? "#b0b0b0" : "#8a8a8f"}
+            style={styles.searchInput}
           />
         </View>
-
-        <View style={{
-          backgroundColor: theme.backgroundElement,
-          borderRadius: 16,
-          borderWidth: 1,
-          borderColor: theme.border,
-          justifyContent: 'center',
-          paddingHorizontal: 14,
-          paddingVertical: 12,
-        }}>
-          <select
-            value={attendanceShiftFilter}
-            onChange={(e) => setAttendanceShiftFilter(e.target.value)}
-            style={{
-              backgroundColor: 'transparent',
-              color: theme.text,
-              border: 'none',
-              outline: 'none',
-              fontSize: 14,
-              colorScheme: theme.dark ? 'dark' : 'light',
-            }}
-          >
-            <option value="All" style={{ color: theme.text, backgroundColor: theme.backgroundElement }}>All Shifts</option>
-            <option value="Morning" style={{ color: theme.text, backgroundColor: theme.backgroundElement }}>Morning</option>
-            <option value="Evening" style={{ color: theme.text, backgroundColor: theme.backgroundElement }}>Evening</option>
-          </select>
-        </View>
-
-        <View style={{
-          backgroundColor: theme.backgroundElement,
-          borderRadius: 16,
-          borderWidth: 1,
-          borderColor: theme.border,
-          justifyContent: 'center',
-          paddingHorizontal: 14,
-          paddingVertical: 12,
-        }}>
-          <input
-            type="date"
-            value={attendanceDateFilter}
-            onChange={(e) => setAttendanceDateFilter(e.target.value)}
-            style={{
-              backgroundColor: 'transparent',
-              color: theme.text,
-              border: 'none',
-              outline: 'none',
-              fontSize: 14,
-              minWidth: 120,
-              colorScheme: theme.dark ? 'dark' : 'light',
-            }}
-          />
-        </View>
+        <select
+          value={attendanceShiftFilter}
+          onChange={(e: any) => setAttendanceShiftFilter(e.target.value)}
+          style={{ backgroundColor: 'transparent', color: isDark ? '#ffffff' : '#333', border: `1px solid ${isDark ? '#333' : '#ccc'}`, borderRadius: 8, padding: '8px 12px', fontSize: 14 }}
+        >
+          <option value="All">All Shifts</option>
+          <option value="Morning">Morning</option>
+          <option value="Evening">Evening</option>
+        </select>
+        <input
+          type="date"
+          value={attendanceDateFilter}
+          onChange={(e: any) => setAttendanceDateFilter(e.target.value)}
+          style={{ backgroundColor: 'transparent', color: isDark ? '#ffffff' : '#333', border: `1px solid ${isDark ? '#333' : '#ccc'}`, borderRadius: 8, padding: '8px 12px', fontSize: 14, colorScheme: isDark ? 'dark' : 'light' }}
+        />
       </View>
 
-      <ScrollView
-        style={styles.tableScrollContainer}
-        showsVerticalScrollIndicator={true}
-        nestedScrollEnabled={true}
-      >
+      <ScrollView style={styles.tableScrollContainer} showsVerticalScrollIndicator={true} nestedScrollEnabled={true}>
         <ScrollView horizontal showsHorizontalScrollIndicator={true}>
-          <View style={[styles.tableCard, { minWidth: 600 }]}>
-          <View style={[styles.tableRow, styles.tableHeaderRow, { borderBottomColor: theme.border }]}>
-            <Text style={[styles.tableHeaderCell, { flex: 1, color: theme.text }]}>ID</Text>
-            <Text style={[styles.tableHeaderCell, { flex: 2, color: theme.text }]}>Worker</Text>
-            <Text style={[styles.tableHeaderCell, { flex: 2, color: theme.text }]}>Date</Text>
-            <Text style={[styles.tableHeaderCell, { flex: 2, color: theme.text }]}>Shift</Text>
-            <Text style={[styles.tableHeaderCell, { flex: 2, color: theme.text }]}>Marked At</Text>
-            <Text style={[styles.tableHeaderCell, { flex: 2, color: theme.text }]}>Status</Text>
-          </View>
+          <View style={[styles.tableCard, { minWidth: 700 }]}>
+            <View style={[styles.tableRow, styles.tableHeaderRow]}>
+              <Text style={[styles.tableHeaderCell, { flex: 1 }]}>ID</Text>
+              <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Worker</Text>
+              <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Date</Text>
+              <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Shift</Text>
+              <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Marked At</Text>
+              <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Status</Text>
+              <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Actions</Text>
+            </View>
 
-          {filteredAttendanceData.map((item, index) => (
-            <View
-              key={item.id}
-              style={[
-                styles.tableRow,
-                index !== filteredAttendanceData.length - 1 && { borderBottomWidth: 1, borderBottomColor: theme.border },
-              ]}
-            >
-              <Text style={[styles.tableCell, { flex: 1, color: theme.textSecondary }]}>
-                {item.id}
-              </Text>
-              <Text style={[styles.tableCell, { flex: 2, color: theme.textSecondary }]}>
-                {item.worker?.name || `Worker #${item.worker_id}`}
-              </Text>
-              <Text style={[styles.tableCell, { flex: 2, color: theme.textSecondary }]}>
-                {item.date ? item.date.split('T')[0] : ''}
-              </Text>
-              <Text style={[styles.tableCell, { flex: 2, color: theme.textSecondary }]}>
-                {item.shift}
-              </Text>
-              <Text style={[styles.tableCell, { flex: 2, color: theme.textSecondary }]}>
-                {new Date(item.marked_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </Text>
-              <Text
+            {filteredAttendanceData.map((item, index) => (
+              <View
+                key={item.id}
                 style={[
-                  styles.tableCell,
-                  { flex: 2 },
-                  item.status === "present" ? styles.statusAvailable : styles.statusFinished,
+                  styles.tableRow,
+                  index !== filteredAttendanceData.length - 1 && { borderBottomWidth: 1, borderBottomColor: '#e5e7eb' },
                 ]}
               >
-                {item.status === "present" ? "Present" : "Absent"}
-              </Text>
-            </View>
-          ))}
-          {filteredAttendanceData.length === 0 && (
-            <View style={styles.emptyRow}>
-              <Text style={styles.emptyText}>No matching attendances found.</Text>
-            </View>
-          )}
-        </View>
+                <Text style={[styles.tableCell, { flex: 1 }]}>{item.id}</Text>
+                <Text style={[styles.tableCell, { flex: 2 }]}>{item.worker?.name || `Worker #${item.worker_id}`}</Text>
+                <Text style={[styles.tableCell, { flex: 2 }]}>{item.date ? item.date.split('T')[0] : ''}</Text>
+                <Text style={[styles.tableCell, { flex: 2 }]}>{item.shift}</Text>
+                <Text style={[styles.tableCell, { flex: 2 }]}>{new Date(item.marked_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                <Text style={[styles.tableCell, { flex: 2 }, item.status === "present" ? styles.statusAvailable : styles.statusFinished]}>
+                  {item.status === "present" ? "Present" : "Absent"}
+                </Text>
+                <View style={[styles.tableCell, { flex: 2, flexDirection: 'row', gap: 6 }]}>
+                  <Pressable onPress={() => openAttendanceEditModal(item)} style={[styles.assetActionButtonEdit, { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }]}>
+                    <Text style={styles.assetActionIcon}>✏️</Text>
+                  </Pressable>
+                  <Pressable onPress={() => handleDeleteAttendance(item)} style={[styles.assetActionButtonDelete, { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }]}>
+                    <Text style={styles.assetActionIcon}>🗑️</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ))}
+            {filteredAttendanceData.length === 0 && (
+              <View style={styles.emptyRow}>
+                <Text style={styles.emptyText}>No matching attendances found.</Text>
+              </View>
+            )}
+          </View>
         </ScrollView>
       </ScrollView>
     </View>
   );
 
+  const renderAttendanceEditModal = () => (
+    <Modal visible={showAttendanceEditModal} transparent animationType="fade" onRequestClose={() => setShowAttendanceEditModal(false)}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Edit Attendance</Text>
+            <Pressable onPress={() => setShowAttendanceEditModal(false)} style={styles.modalClose}>
+              <Text style={styles.modalCloseText}>✕</Text>
+            </Pressable>
+          </View>
+          <View style={styles.formRow}>
+            <Text style={styles.formLabel}>Date</Text>
+            <TextInput value={editAttendanceDate} onChangeText={setEditAttendanceDate} style={styles.formInput} placeholder="YYYY-MM-DD" />
+          </View>
+          <View style={styles.formRow}>
+            <Text style={styles.formLabel}>Shift</Text>
+            <TextInput value={editAttendanceShift} onChangeText={setEditAttendanceShift} style={styles.formInput} placeholder="Morning / Evening" />
+          </View>
+          <View style={styles.formRow}>
+            <Text style={styles.formLabel}>Status</Text>
+            <TextInput value={editAttendanceStatus} onChangeText={setEditAttendanceStatus} style={styles.formInput} placeholder="present / absent" />
+          </View>
+          <Pressable onPress={handleSaveAttendanceEdit} style={styles.updateButton}>
+            <Text style={styles.updateButtonText}>Save</Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+  );
+
   const renderMachineriesView = () => (
     <View style={styles.machineriesContainer}>
-      <View style={[styles.headerSection, styles.greetingContainer]}>
-        <ThemedText type="subtitle" style={styles.greeting}>
-          Hii {user?.name || "Admin"}, Welcome!
-        </ThemedText>
-      </View>
+      <View style={[styles.headerSection, styles.greetingContainer, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
+          <ThemedText type="subtitle" style={styles.greeting}>
+            Hii {user?.name || "Malith"}, Welcome!
+          </ThemedText>
+          <Pressable onPress={async () => { await signOut(); router.replace('/'); }} style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: isDark ? '#333' : '#e0e0e0', borderRadius: 8 }}>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: isDark ? '#fff' : '#000' }}>Sign Out</Text>
+          </Pressable>
+        </View>
       <View style={styles.machineriesHeader}>
         <Pressable
           onPress={() => {
             setSelectedView("dashboard");
             setMachinerySearch("");
           }}
-          style={[styles.backButton, { backgroundColor: theme.backgroundElement }]}
+          style={styles.backButton}
         >
-          <Text style={[styles.backButtonIcon, { color: theme.text }]}>‹</Text>
+          <Text style={styles.backButtonIcon}>‹</Text>
         </Pressable>
         <ThemedText type="subtitle" style={styles.machineriesTitle}>
           Machineries
         </ThemedText>
       </View>
 
-      <View style={[styles.searchContainer, { backgroundColor: theme.backgroundElement }]}>
+      <View style={styles.searchContainer}>
         <Text style={styles.searchIcon}>🔍</Text>
         <TextInput
           value={machinerySearch}
           onChangeText={setMachinerySearch}
           placeholder="Search"
-          placeholderTextColor={theme.textSecondary}
-          style={[styles.searchInput, { color: theme.text }]}
+          placeholderTextColor={isDark ? "#b0b0b0" : "#8a8a8f"}
+          style={styles.searchInput}
         />
       </View>
 
@@ -1180,54 +1089,37 @@ export default function AdminDashboard() {
   const renderDashboardView = () => (
     <>
       {/* Header with greeting */}
-      <View style={[styles.headerSection, styles.greetingContainer]}>
-        <ThemedText type="subtitle" style={styles.greeting}>
-          Hii {user?.name || "Admin"}, Welcome!
-        </ThemedText>
-        <Pressable 
-          style={styles.signOutButton}
-          onPress={async () => {
-            await signOut();
-            router.replace('/login');
-          }}
-        >
-          <Text style={styles.signOutText}>Sign Out</Text>
-        </Pressable>
-      </View>
+      <View style={[styles.headerSection, styles.greetingContainer, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
+          <ThemedText type="subtitle" style={styles.greeting}>
+            Hii {user?.name || "Malith"}, Welcome!
+          </ThemedText>
+          <Pressable onPress={async () => { await signOut(); router.replace('/'); }} style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: isDark ? '#333' : '#e0e0e0', borderRadius: 8 }}>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: isDark ? '#fff' : '#000' }}>Sign Out</Text>
+          </Pressable>
+        </View>
 
       {/* Site Selection and Time/Date Row */}
       <View style={styles.siteTimeRow}>
         <View style={styles.siteSelectionContainer}>
           <Pressable
-            style={[styles.siteDropdown, { backgroundColor: theme.backgroundElement }]}
+            style={styles.siteDropdown}
             onPress={() => setShowSiteDropdown(!showSiteDropdown)}
           >
-            <Text style={[styles.siteDropdownText, { color: theme.text }]}>{selectedSite}</Text>
-            <Text style={[styles.dropdownIcon, { color: theme.text }]}>▼</Text>
+            <Text style={styles.siteDropdownText}>{selectedSite}</Text>
+            <Text style={styles.dropdownIcon}>▼</Text>
           </Pressable>
           {showSiteDropdown && (
-            <View style={[styles.dropdownMenu, { backgroundColor: theme.backgroundElement }]}>
-              <Pressable
-                style={styles.siteOption}
-                onPress={() => {
-                  setSelectedSite("All Sites");
-                  setSelectedSiteId(null);
-                  setShowSiteDropdown(false);
-                }}
-              >
-                <Text style={[styles.siteOptionText, { color: theme.text }]}>All Sites</Text>
-              </Pressable>
-              {worksites.map((site) => (
+            <View style={styles.dropdownMenu}>
+              {manageSites.map((site) => (
                 <Pressable
-                  key={site.id}
-                  style={styles.siteOption}
+                  key={site}
+                  style={styles.dropdownItem}
                   onPress={() => {
-                    setSelectedSite(site.name);
-                    setSelectedSiteId(site.id);
+                    setSelectedSite(site);
                     setShowSiteDropdown(false);
                   }}
                 >
-                  <Text style={[styles.siteOptionText, { color: theme.text }]}>{site.name}</Text>
+                  <Text style={styles.dropdownItemText}>{site}</Text>
                 </Pressable>
               ))}
             </View>
@@ -1235,13 +1127,13 @@ export default function AdminDashboard() {
         </View>
 
         <View style={styles.timeSection}>
-          <Text style={[styles.timeText, { color: theme.text }]}>{currentTime}</Text>
-          <Text style={[styles.dateText, { color: theme.textSecondary }]}>{currentDate}</Text>
+          <Text style={styles.timeText}>{currentTime}</Text>
+          <Text style={styles.dateText}>{currentDate}</Text>
         </View>
       </View>
 
       {/* Cards Grid */}
-      <View style={[styles.cardsContainer, { backgroundColor: theme.background }]}> 
+      <View style={styles.cardsContainer}>
         <View style={styles.cardsRow}>
           {adminCards.slice(0, 2).map((card) => {
             const scaleValue = getCardScaleValue(card.id);
@@ -1250,17 +1142,17 @@ export default function AdminDashboard() {
                 key={card.id}
                 style={[
                   styles.card,
-                  { backgroundColor: theme.backgroundElement },
+                  { backgroundColor: card.backgroundColor },
                   { transform: [{ scale: scaleValue }] },
                 ]}
                 onPress={() => handleCardPress(card)}
               >
                 <Text style={styles.cardIcon}>{card.icon}</Text>
-                <ThemedText type="smallBold" style={styles.cardTitle}>
-                  {card.title}
-                </ThemedText>
-                {card.value !== "" && (
-                  <Text style={[styles.cardValue, { color: theme.text }]}>{card.value}</Text>
+                <ThemedText type="smallBold" style={[styles.cardTitle, { color: card.textColor }]}>
+                    {card.title}
+                  </ThemedText>
+                {card.value && (
+                  <Text style={[styles.cardValue, { color: card.textColor }]}>{card.value}</Text>
                 )}
               </AnimatedPressable>
             );
@@ -1275,17 +1167,17 @@ export default function AdminDashboard() {
                 key={card.id}
                 style={[
                   styles.card,
-                  { backgroundColor: theme.backgroundElement },
+                  { backgroundColor: card.backgroundColor },
                   { transform: [{ scale: scaleValue }] },
                 ]}
                 onPress={() => handleCardPress(card)}
               >
                 <Text style={styles.cardIcon}>{card.icon}</Text>
-                <ThemedText type="smallBold" style={styles.cardTitle}>
-                  {card.title}
-                </ThemedText>
-                {card.value !== "" && (
-                  <Text style={[styles.cardValue, { color: theme.text }]}>{card.value}</Text>
+                <ThemedText type="smallBold" style={[styles.cardTitle, { color: card.textColor }]}>
+                    {card.title}
+                  </ThemedText>
+                {card.value && (
+                  <Text style={[styles.cardValue, { color: card.textColor }]}>{card.value}</Text>
                 )}
               </AnimatedPressable>
             );
@@ -1300,17 +1192,17 @@ export default function AdminDashboard() {
                 key={card.id}
                 style={[
                   styles.card,
-                  { backgroundColor: theme.backgroundElement },
+                  { backgroundColor: card.backgroundColor },
                   { transform: [{ scale: scaleValue }] },
                 ]}
                 onPress={() => handleCardPress(card)}
               >
                 <Text style={styles.cardIcon}>{card.icon}</Text>
-                <ThemedText type="smallBold" style={styles.cardTitle}>
-                  {card.title}
-                </ThemedText>
-                {card.value !== "" && (
-                  <Text style={[styles.cardValue, { color: theme.text }]}>{card.value}</Text>
+                <ThemedText type="smallBold" style={[styles.cardTitle, { color: card.textColor }]}>
+                    {card.title}
+                  </ThemedText>
+                {card.value && (
+                  <Text style={[styles.cardValue, { color: card.textColor }]}>{card.value}</Text>
                 )}
               </AnimatedPressable>
             );
@@ -1325,17 +1217,17 @@ export default function AdminDashboard() {
                 key={card.id}
                 style={[
                   styles.card,
-                  { backgroundColor: theme.backgroundElement },
+                  { backgroundColor: card.backgroundColor },
                   { transform: [{ scale: scaleValue }] },
                 ]}
                 onPress={() => handleCardPress(card)}
               >
                 <Text style={styles.cardIcon}>{card.icon}</Text>
-                <ThemedText type="smallBold" style={styles.cardTitle}>
-                  {card.title}
-                </ThemedText>
-                {card.value !== "" && (
-                  <Text style={[styles.cardValue, { color: theme.text }]}>{card.value}</Text>
+                <ThemedText type="smallBold" style={[styles.cardTitle, { color: card.textColor }]}>
+                    {card.title}
+                  </ThemedText>
+                {card.value && (
+                  <Text style={[styles.cardValue, { color: card.textColor }]}>{card.value}</Text>
                 )}
               </AnimatedPressable>
             );
@@ -1350,7 +1242,7 @@ export default function AdminDashboard() {
               key="petacash"
               style={[
                 styles.fullWidthCard,
-                { backgroundColor: theme.backgroundElement, transform: [{ scale: scaleValue }] },
+                { transform: [{ scale: scaleValue }] },
               ]}
               onPress={() =>
                 Alert.alert(
@@ -1360,9 +1252,9 @@ export default function AdminDashboard() {
               }
             >
               <Text style={styles.cardIcon}>💰</Text>
-              <ThemedText type="smallBold" style={[styles.fullWidthCardTitle, { color: theme.text }] }>
-                Peticash & Accounts
-              </ThemedText>
+              <ThemedText type="smallBold" style={[styles.fullWidthCardTitle, { color: "#1f1d21" }]}>
+                  Peticash & Accounts
+                </ThemedText>
             </AnimatedPressable>
           );
         })()}
@@ -1372,18 +1264,21 @@ export default function AdminDashboard() {
 
   const renderManageSiteView = () => (
     <View style={styles.manageSiteContainer}>
-      <View style={[styles.headerSection, styles.greetingContainer]}>
-        <ThemedText type="subtitle" style={styles.greeting}>
-          Hii {user?.name || "Admin"}, Welcome!
-        </ThemedText>
-      </View>
+      <View style={[styles.headerSection, styles.greetingContainer, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
+          <ThemedText type="subtitle" style={styles.greeting}>
+            Hii {user?.name || "Malith"}, Welcome!
+          </ThemedText>
+          <Pressable onPress={async () => { await signOut(); router.replace('/'); }} style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: isDark ? '#333' : '#e0e0e0', borderRadius: 8 }}>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: isDark ? '#fff' : '#000' }}>Sign Out</Text>
+          </Pressable>
+        </View>
 
       <View style={styles.manageSiteHeader}>
         <Pressable
-          style={[styles.backButton, { backgroundColor: theme.backgroundElement }]}
+          style={styles.backButton}
           onPress={() => setSelectedView("dashboard")}
         >
-          <Text style={[styles.backButtonIcon, { color: theme.text }]}>‹</Text>
+          <Text style={styles.backButtonIcon}>‹</Text>
         </Pressable>
         <ThemedText type="subtitle" style={styles.manageSiteTitle}>
           Manage Site
@@ -1391,107 +1286,45 @@ export default function AdminDashboard() {
       </View>
 
       <View style={styles.manageSiteCardsContainer}>
-        {manageSites.map((site: any) => (
+        {manageSites.map((site) => (
           <Pressable
             key={site.id}
-            style={[styles.manageSiteCard, { backgroundColor: theme.backgroundElement }]}
+            style={styles.manageSiteCard}
             onPress={() => router.push(`/dashboard/${site.id}` as any)}
           >
             <View style={styles.manageSiteCardTopRow}>
               <View style={styles.manageSiteLogoWrapper}>
-                <Text style={styles.manageSiteLogoIcon}>🏢</Text>
+                <Text style={styles.manageSiteLogoIcon}>{site.icon}</Text>
               </View>
               <Pressable
                 style={styles.manageSiteDeleteButton}
-                onPress={async () => {
-                  try {
-                    const response = await fetch(`${API_BASE_URL}/worksites/${site.id}`, {
-                      method: 'DELETE',
-                      headers: await getAuthHeaders(),
-                    });
-                    if (!response.ok) throw new Error("Failed to delete");
-                    setDeletedSiteName(site.name);
-                    setManageSites((current) =>
-                      current.filter((item) => item.id !== site.id),
-                    );
-                    setWorksites((current) =>
-                      current.filter((item) => item.id !== site.id),
-                    );
-                    setShowSiteDeletedSuccessModal(true);
-                  } catch (error) {
-                    Alert.alert("Error", "Could not delete the site.");
-                  }
+                onPress={() => {
+                  setDeletedSiteName(site.title);
+                  setManageSites((current) =>
+                    current.filter((item) => item.id !== site.id),
+                  );
+                  setShowSiteDeletedSuccessModal(true);
                 }}
               >
                 <Text style={styles.manageSiteDeleteIcon}>🗑️</Text>
               </Pressable>
             </View>
-            <Text style={[styles.manageSiteCardLabel, { color: theme.text }]}>{site.name}</Text>
+            <Text style={styles.manageSiteCardLabel}>{site.title || site.name}</Text>
           </Pressable>
         ))}
 
         <Pressable
-          style={[styles.manageSiteCard, styles.manageSiteAddCard, { backgroundColor: theme.backgroundElement }]}
+          style={[styles.manageSiteCard, styles.manageSiteAddCard]}
           onPress={() => setShowAddSiteModal(true)}
         >
-          <Text style={[styles.manageSiteAddIcon, { color: theme.text }]}>+</Text>
+          <Text style={styles.manageSiteAddIcon}>+</Text>
         </Pressable>
       </View>
     </View>
   );
 
-  const handlePickSiteLogo = () => {
-    Alert.alert(
-      "Upload Image",
-      "Choose image source",
-      [
-        {
-          text: "Gallery",
-          onPress: () => setSiteLogoName("gallery-image.jpg"),
-        },
-        {
-          text: "Files",
-          onPress: () => setSiteLogoName("file-image.jpg"),
-        },
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-      ],
-      { cancelable: true },
-    );
-  };
+  
 
-  const handleAddSite = async () => {
-    if (!newSiteName.trim()) {
-      Alert.alert("Missing Site Name", "Please enter a site name.");
-      return;
-    }
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/worksites`, {
-        method: 'POST',
-        headers: {
-          ...(await getAuthHeaders()),
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ name: newSiteName.trim() })
-      });
-      if (!response.ok) throw new Error("Failed to add site");
-      const addedSite = await response.json();
-      
-      setManageSites((current) => [...current, addedSite]);
-      setWorksites((current) => [...current, addedSite]);
-      setShowAddSiteModal(false);
-      setNewSiteName("");
-      setSiteLogoName("");
-      setSuccessModalTitle("Site Added Successfully!");
-      setSuccessButtonText("Ok");
-      setShowSuccessModal(true);
-    } catch (error) {
-      Alert.alert("Error", "Could not add the site.");
-    }
-  };
 
   const renderAddSiteModal = () => (
     <Modal
@@ -1518,9 +1351,21 @@ export default function AdminDashboard() {
               value={newSiteName}
               onChangeText={setNewSiteName}
               placeholder="Enter site name"
-              placeholderTextColor={theme.textSecondary}
-              style={[styles.formInput, { color: theme.text, backgroundColor: theme.backgroundElement }]}
+              placeholderTextColor={isDark ? "#b0b0b0" : "#8a8a8f"}
+              style={styles.formInput}
             />
+          </View>
+
+          <View style={styles.formRow}>
+            <Text style={styles.formLabel}>Site Logo</Text>
+            <Pressable
+              style={styles.logoUploadButton}
+              onPress={handlePickSiteLogo}
+            >
+              <Text style={styles.logoUploadText}>
+                {siteLogoName || "Upload"}
+              </Text>
+            </Pressable>
           </View>
 
           <Pressable onPress={handleAddSite} style={styles.addSiteButton}>
@@ -1557,20 +1402,23 @@ export default function AdminDashboard() {
 
   const renderAssetsView = () => (
     <View style={styles.assetsContainer}>
-      <View style={[styles.headerSection, styles.greetingContainer]}>
-        <ThemedText type="subtitle" style={styles.greeting}>
-          Hii {user?.name || "Admin"}, Welcome!
-        </ThemedText>
-      </View>
+      <View style={[styles.headerSection, styles.greetingContainer, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
+          <ThemedText type="subtitle" style={styles.greeting}>
+            Hii {user?.name || "Malith"}, Welcome!
+          </ThemedText>
+          <Pressable onPress={async () => { await signOut(); router.replace('/'); }} style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: isDark ? '#333' : '#e0e0e0', borderRadius: 8 }}>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: isDark ? '#fff' : '#000' }}>Sign Out</Text>
+          </Pressable>
+        </View>
       <View style={styles.assetsHeader}>
         <Pressable
           onPress={() => {
             setSelectedView("dashboard");
             setAssetSearch("");
           }}
-          style={[styles.backButton, { backgroundColor: theme.backgroundElement }]}
+          style={styles.backButton}
         >
-          <Text style={[styles.backButtonIcon, { color: theme.text }]}>‹</Text>
+          <Text style={styles.backButtonIcon}>‹</Text>
         </Pressable>
         <ThemedText type="subtitle" style={styles.assetsTitle}>
           Assets
@@ -1583,8 +1431,8 @@ export default function AdminDashboard() {
           value={assetSearch}
           onChangeText={setAssetSearch}
           placeholder="Search"
-          placeholderTextColor={theme.textSecondary}
-          style={[styles.searchInput, { color: theme.text }]}
+          placeholderTextColor={isDark ? "#b0b0b0" : "#8a8a8f"}
+          style={styles.searchInput}
         />
       </View>
 
@@ -1694,281 +1542,300 @@ export default function AdminDashboard() {
     </View>
   );
 
-  const getPersonalExtraLabel = () => {
-    if (selectedPersonalTab === "vehicles") return "Plate No";
-    if (selectedPersonalTab === "jewelleries") return "Weight";
-    return "Area";
-  };
+  
 
-  const getPersonalSectionTitleSingular = () => {
-    if (selectedPersonalTab === "vehicles") return "Vehicle";
-    if (selectedPersonalTab === "jewelleries") return "Jewellery";
-    return "Property";
-  };
+  
 
-  const getPersonalSectionTitle = () => {
-    if (selectedPersonalTab === "vehicles") return "Vehicles";
-    if (selectedPersonalTab === "jewelleries") return "Jewelleries";
-    return "Properties";
-  };
+  
 
-  const getPersonalItemList = () => {
-    if (selectedPersonalTab === "vehicles") return vehicles;
-    if (selectedPersonalTab === "jewelleries") return jewelleries;
-    return properties;
-  };
+  
 
-  const openPersonalEditModal = (
-    item: VehicleRecord | JewelleryRecord | PropertyRecord,
-  ) => {
-    setSelectedPersonalItem(item);
-    setNewPersonalValue(
-      selectedPersonalTab === "vehicles"
-        ? (item as VehicleRecord).value
-        : selectedPersonalTab === "jewelleries"
-          ? (item as JewelleryRecord).value
-          : (item as PropertyRecord).value,
-    );
-    setNewPersonalExtra(
-      selectedPersonalTab === "vehicles"
-        ? (item as VehicleRecord).plateNo
-        : selectedPersonalTab === "jewelleries"
-          ? (item as JewelleryRecord).weight
-          : (item as PropertyRecord).area,
-    );
-    if (selectedPersonalTab === "vehicles") {
-      const vehicle = item as VehicleRecord;
-      setNewPersonalName(vehicle.name);
-      setNewPersonalType(vehicle.type);
-    } else if (selectedPersonalTab === "jewelleries") {
-      const jewellery = item as JewelleryRecord;
-      setNewPersonalName(jewellery.name);
-      setNewPersonalType("");
-    } else {
-      const property = item as PropertyRecord;
-      setNewPersonalName(property.location);
-      setNewPersonalType("");
-    }
-    setShowPersonalEditModal(true);
-  };
+  
 
-  const resetPersonalForm = () => {
-    setNewPersonalName("");
-    setNewPersonalType("");
-    setNewPersonalValue("");
-    setNewPersonalExtra("");
-    setSelectedPersonalItem(null);
-  };
+  
 
-  const handleSavePersonalEdit = async () => {
-    if (!selectedPersonalItem) return;
 
-    try {
-      if (selectedPersonalTab === "vehicles") {
-        await PersonalAssetsService.updateVehicle(selectedPersonalItem.id, {
-          name: newPersonalName,
-          type: newPersonalType,
-          value: newPersonalValue,
-          plateNo: newPersonalExtra,
-        });
-        setVehicles((current) =>
-          current.map((item) =>
-            item.id === selectedPersonalItem.id
-              ? {
-                  id: item.id,
-                  name: newPersonalName || item.name,
-                  type: newPersonalType || item.type,
-                  value: newPersonalValue || item.value,
-                  plateNo: newPersonalExtra || item.plateNo,
-                }
-              : item,
-          ),
-        );
-      } else if (selectedPersonalTab === "jewelleries") {
-        await PersonalAssetsService.updateJewellery(selectedPersonalItem.id, {
-          name: newPersonalName,
-          value: newPersonalValue,
-          weight: newPersonalExtra,
-        });
-        setJewelleries((current) =>
-          current.map((item) =>
-            item.id === selectedPersonalItem.id
-              ? {
-                  id: item.id,
-                  name: newPersonalName || item.name,
-                  value: newPersonalValue || item.value,
-                  weight: newPersonalExtra || item.weight,
-                }
-              : item,
-          ),
-        );
-      } else {
-        await PersonalAssetsService.updateProperty(selectedPersonalItem.id, {
-          location: newPersonalName,
-          value: newPersonalValue,
-          area: newPersonalExtra,
-        });
-        setProperties((current) =>
-          current.map((item) =>
-            item.id === selectedPersonalItem.id
-              ? {
-                  id: item.id,
-                  location: newPersonalName || item.location,
-                  value: newPersonalValue || item.value,
-                  area: newPersonalExtra || item.area,
-                }
-              : item,
-          ),
-        );
-      }
 
-      resetPersonalForm();
-      setShowPersonalEditModal(false);
-      setSuccessModalTitle("Record Updated Successfully!");
-      setSuccessButtonText("Ok");
-      setShowSuccessModal(true);
-    } catch (error) {
-      console.error('Failed to update record:', error);
-      Alert.alert('Error', 'Failed to update record');
-    }
-  };
-
-  const handleDeletePersonalItem = async (
-    item: VehicleRecord | JewelleryRecord | PropertyRecord,
-  ) => {
-    try {
-      if (selectedPersonalTab === "vehicles") {
-        await PersonalAssetsService.deleteVehicle(item.id);
-        setVehicles((current) =>
-          current.filter((record) => record.id !== item.id),
-        );
-      } else if (selectedPersonalTab === "jewelleries") {
-        await PersonalAssetsService.deleteJewellery(item.id);
-        setJewelleries((current) =>
-          current.filter((record) => record.id !== item.id),
-        );
-      } else {
-        await PersonalAssetsService.deleteProperty(item.id);
-        setProperties((current) =>
-          current.filter((record) => record.id !== item.id),
-        );
-      }
-
-      setSuccessModalTitle("Record Deleted Successfully!");
-      setSuccessButtonText("Close");
-      setShowSuccessModal(true);
-    } catch (error) {
-      console.error('Failed to delete record:', error);
-      Alert.alert('Error', 'Failed to delete record');
-    }
-  };
-
-  const handleAddPersonalItem = async () => {
-    if (!newPersonalValue.trim() || !newPersonalName.trim()) {
-      Alert.alert("Missing fields", "Please complete the required fields.");
-      return;
-    }
-
-    try {
-      if (selectedPersonalTab === "vehicles") {
-        const vehicle = await PersonalAssetsService.createVehicle({
-          name: newPersonalName,
-          type: newPersonalType,
-          value: newPersonalValue,
-          plateNo: newPersonalExtra,
-        });
-        setVehicles((current) => [...current, vehicle]);
-      } else if (selectedPersonalTab === "jewelleries") {
-        const jewellery = await PersonalAssetsService.createJewellery({
-          name: newPersonalName,
-          value: newPersonalValue,
-          weight: newPersonalExtra,
-        });
-        setJewelleries((current) => [...current, jewellery]);
-      } else {
-        const property = await PersonalAssetsService.createProperty({
-          location: newPersonalName,
-          value: newPersonalValue,
-          area: newPersonalExtra,
-        });
-        setProperties((current) => [...current, property]);
-      }
-
-      resetPersonalForm();
-      setShowAddPersonalModal(false);
-      setSuccessModalTitle("Record Added Successfully!");
-      setSuccessButtonText("Ok");
-      setShowSuccessModal(true);
-    } catch (error) {
-      console.error('Failed to add record:', error);
-      Alert.alert('Error', 'Failed to add record');
-    }
-  };
 
   const renderPersonalView = () => {
     return (
       <View style={styles.personalContainer}>
-        <View style={[styles.headerSection, styles.greetingContainer]}>
+        <View style={[styles.headerSection, styles.greetingContainer, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
           <ThemedText type="subtitle" style={styles.greeting}>
-            Hii {user?.name || "Admin"}, Welcome!
+            Hii {user?.name || "Malith"}, Welcome!
           </ThemedText>
+          <Pressable onPress={async () => { await signOut(); router.replace('/'); }} style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: isDark ? '#333' : '#e0e0e0', borderRadius: 8 }}>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: isDark ? '#fff' : '#000' }}>Sign Out</Text>
+          </Pressable>
         </View>
 
         <View style={styles.personalHeader}>
           <Pressable
-            onPress={() => setSelectedView("dashboard")}
-            style={[styles.backButton, { backgroundColor: theme.backgroundElement }]}
+            onPress={() => {
+              setSelectedView("dashboard");
+            }}
+            style={styles.backButton}
           >
-            <Text style={[styles.backButtonIcon, { color: theme.text }]}>‹</Text>
+            <Text style={styles.backButtonIcon}>‹</Text>
           </Pressable>
           <ThemedText type="subtitle" style={styles.personalTitle}>
-            Admin Profile
+            Personal Assets
           </ThemedText>
         </View>
 
-        <View style={[styles.tableCard, { marginTop: 16, backgroundColor: theme.backgroundElement }]}>
-          <View style={[styles.formRow, { marginBottom: 16 }]}>
-            <Text style={[styles.formLabel, { color: theme.text }]}>Name</Text>
-            <TextInput
-              value={adminName}
-              onChangeText={(text) => { setAdminName(text); setProfileError(""); }}
-              placeholder="Enter name"
-              placeholderTextColor={theme.textSecondary}
-              style={[styles.formInput, { color: theme.text, backgroundColor: theme.backgroundElement }]}
-            />
-          </View>
-          <View style={[styles.formRow, { marginBottom: 16 }]}>
-            <Text style={[styles.formLabel, { color: theme.text }]}>Email</Text>
-            <TextInput
-              value={adminEmail}
-              onChangeText={(text) => { setAdminEmail(text); setProfileError(""); }}
-              placeholder="Enter email"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              placeholderTextColor={theme.textSecondary}
-              style={[styles.formInput, { color: theme.text, backgroundColor: theme.backgroundElement }]}
-            />
-          </View>
-          <View style={[styles.formRow, { marginBottom: 16 }]}>
-            <Text style={[styles.formLabel, { color: theme.text }]}>New Password (Optional)</Text>
-            <TextInput
-              value={adminPassword}
-              onChangeText={(text) => { setAdminPassword(text); setProfileError(""); }}
-              placeholder="Enter new password"
-              secureTextEntry
-              placeholderTextColor={theme.textSecondary}
-              style={[styles.formInput, { color: theme.text, backgroundColor: theme.backgroundElement }]}
-            />
-          </View>
-          {profileError ? (
-            <Text style={{ color: '#ef4444', fontSize: 13, marginBottom: 8, marginTop: -8 }}>
-              {profileError}
+        <View style={styles.personalTabRow}>
+          {[
+            { key: "vehicles", label: "Vehicles" },
+            { key: "jewelleries", label: "Jewelleries" },
+            { key: "properties", label: "Properties" },
+          ].map((tab) => {
+            const active = selectedPersonalTab === tab.key;
+            const backgroundColors: Record<string, string> = {
+              vehicles: active ? "#16a34a" : "#dcfce7",
+              jewelleries: active ? "#fb923c" : "#fed7aa",
+              properties: active ? "#2563eb" : "#dbeafe",
+            };
+            const textColors: Record<string, string> = {
+              vehicles: active ? "#ffffff" : "#166534",
+              jewelleries: active ? "#ffffff" : "#92400e",
+              properties: active ? "#ffffff" : "#1d4ed8",
+            };
+
+            return (
+              <Pressable
+                key={tab.key}
+                onPress={() => setSelectedPersonalTab(tab.key as any)}
+                style={[
+                  styles.personalTabButton,
+                  { backgroundColor: backgroundColors[tab.key] },
+                ]}
+              >
+                {active && <View style={styles.personalTabDot} />}
+                <Text
+                  style={[
+                    styles.personalTabText,
+                    { color: textColors[tab.key] },
+                    active && styles.personalTabTextActive,
+                  ]}
+                >
+                  {tab.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+          <Pressable
+            onPress={() => setShowAddPersonalModal(true)}
+            style={styles.personalAddButton}
+          >
+            <Text style={styles.personalAddButtonText}>
+              {`Add ${getPersonalSectionTitleSingular()}`}
             </Text>
-          ) : null}
-          <Pressable onPress={handleUpdateAdminProfile} style={[styles.addSiteButton, { marginTop: 16 }]}>
-            <Text style={styles.addSiteButtonText}>Save Changes</Text>
           </Pressable>
         </View>
+
+        <ScrollView
+          style={styles.personalTableScroll}
+          showsVerticalScrollIndicator={false}
+          nestedScrollEnabled={true}
+        >
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.personalTableHorizontalScroll}
+            nestedScrollEnabled={true}
+          >
+            <View style={styles.personalTableCard}>
+              {selectedPersonalTab === "vehicles" ? (
+                <>
+                  <View style={[styles.tableRow, styles.tableHeaderRow]}>
+                    <Text style={[styles.tableCell, styles.personalCellId]}>
+                      ID
+                    </Text>
+                    <Text style={[styles.tableCell, styles.personalCellMain]}>
+                      Name
+                    </Text>
+                    <Text style={[styles.tableCell, styles.personalCellType]}>
+                      Type
+                    </Text>
+                    <Text style={[styles.tableCell, styles.personalCellValue]}>
+                      Value
+                    </Text>
+                    <Text style={[styles.tableCell, styles.personalCellExtra]}>
+                      Plate No
+                    </Text>
+                    <Text
+                      style={[styles.tableCell, styles.personalCellActions]}
+                    >
+                      Actions
+                    </Text>
+                  </View>
+                  {vehicles.map((item) => (
+                    <View key={item.id} style={styles.tableRow}>
+                      <Text style={[styles.tableCell, styles.personalCellId]}>
+                        {item.id}
+                      </Text>
+                      <Text style={[styles.tableCell, styles.personalCellMain]}>
+                        {item.name}
+                      </Text>
+                      <Text style={[styles.tableCell, styles.personalCellType]}>
+                        {item.type}
+                      </Text>
+                      <Text
+                        style={[styles.tableCell, styles.personalCellValue]}
+                      >
+                        {item.value}
+                      </Text>
+                      <Text
+                        style={[styles.tableCell, styles.personalCellExtra]}
+                      >
+                        {item.plateNo}
+                      </Text>
+                      <View
+                        style={[styles.tableCell, styles.personalCellActions]}
+                      >
+                        <Pressable
+                          onPress={() => openPersonalEditModal(item)}
+                          style={styles.assetActionButtonEdit}
+                        >
+                          <Text style={styles.assetActionIcon}>✏️</Text>
+                        </Pressable>
+                        <Pressable
+                          onPress={() => handleDeletePersonalItem(item)}
+                          style={styles.assetActionButtonDelete}
+                        >
+                          <Text style={styles.assetActionIcon}>🗑️</Text>
+                        </Pressable>
+                      </View>
+                    </View>
+                  ))}
+                </>
+              ) : selectedPersonalTab === "jewelleries" ? (
+                <>
+                  <View style={[styles.tableRow, styles.tableHeaderRow]}>
+                    <Text style={[styles.tableCell, styles.personalCellId]}>
+                      ID
+                    </Text>
+                    <Text style={[styles.tableCell, styles.personalCellMain]}>
+                      Name
+                    </Text>
+                    <Text style={[styles.tableCell, styles.personalCellValue]}>
+                      Value
+                    </Text>
+                    <Text style={[styles.tableCell, styles.personalCellExtra]}>
+                      Weight
+                    </Text>
+                    <Text
+                      style={[styles.tableCell, styles.personalCellActions]}
+                    >
+                      Actions
+                    </Text>
+                  </View>
+                  {jewelleries.map((item) => (
+                    <View key={item.id} style={styles.tableRow}>
+                      <Text style={[styles.tableCell, styles.personalCellId]}>
+                        {item.id}
+                      </Text>
+                      <Text style={[styles.tableCell, styles.personalCellMain]}>
+                        {item.name}
+                      </Text>
+                      <Text
+                        style={[styles.tableCell, styles.personalCellValue]}
+                      >
+                        {item.value}
+                      </Text>
+                      <Text
+                        style={[styles.tableCell, styles.personalCellExtra]}
+                      >
+                        {item.weight}
+                      </Text>
+                      <View
+                        style={[styles.tableCell, styles.personalCellActions]}
+                      >
+                        <Pressable
+                          onPress={() => openPersonalEditModal(item)}
+                          style={styles.assetActionButtonEdit}
+                        >
+                          <Text style={styles.assetActionIcon}>✏️</Text>
+                        </Pressable>
+                        <Pressable
+                          onPress={() => handleDeletePersonalItem(item)}
+                          style={styles.assetActionButtonDelete}
+                        >
+                          <Text style={styles.assetActionIcon}>🗑️</Text>
+                        </Pressable>
+                      </View>
+                    </View>
+                  ))}
+                </>
+              ) : (
+                <>
+                  <View style={[styles.tableRow, styles.tableHeaderRow]}>
+                    <Text style={[styles.tableCell, styles.personalCellId]}>
+                      ID
+                    </Text>
+                    <Text style={[styles.tableCell, styles.personalCellMain]}>
+                      Location
+                    </Text>
+                    <Text style={[styles.tableCell, styles.personalCellValue]}>
+                      Value
+                    </Text>
+                    <Text style={[styles.tableCell, styles.personalCellExtra]}>
+                      Area
+                    </Text>
+                    <Text
+                      style={[styles.tableCell, styles.personalCellActions]}
+                    >
+                      Actions
+                    </Text>
+                  </View>
+                  {properties.map((item) => (
+                    <View key={item.id} style={styles.tableRow}>
+                      <Text style={[styles.tableCell, styles.personalCellId]}>
+                        {item.id}
+                      </Text>
+                      <Text style={[styles.tableCell, styles.personalCellMain]}>
+                        {item.location}
+                      </Text>
+                      <Text
+                        style={[styles.tableCell, styles.personalCellValue]}
+                      >
+                        {item.value}
+                      </Text>
+                      <Text
+                        style={[styles.tableCell, styles.personalCellExtra]}
+                      >
+                        {item.area}
+                      </Text>
+                      <View
+                        style={[styles.tableCell, styles.personalCellActions]}
+                      >
+                        <Pressable
+                          onPress={() => openPersonalEditModal(item)}
+                          style={styles.assetActionButtonEdit}
+                        >
+                          <Text style={styles.assetActionIcon}>✏️</Text>
+                        </Pressable>
+                        <Pressable
+                          onPress={() => handleDeletePersonalItem(item)}
+                          style={styles.assetActionButtonDelete}
+                        >
+                          <Text style={styles.assetActionIcon}>🗑️</Text>
+                        </Pressable>
+                      </View>
+                    </View>
+                  ))}
+                </>
+              )}
+              {getPersonalItemList().length === 0 && (
+                <View style={styles.emptyRow}>
+                  <Text style={styles.emptyText}>
+                    No records available for {getPersonalSectionTitle()}.
+                  </Text>
+                </View>
+              )}
+            </View>
+          </ScrollView>
+        </ScrollView>
       </View>
     );
   };
@@ -2006,8 +1873,8 @@ export default function AdminDashboard() {
                   ? "Enter location"
                   : "Enter name"
               }
-              placeholderTextColor={theme.textSecondary}
-              style={[styles.formInput, { color: theme.text, backgroundColor: theme.backgroundElement }]}
+              placeholderTextColor={isDark ? "#b0b0b0" : "#8a8a8f"}
+              style={styles.formInput}
             />
           </View>
 
@@ -2018,8 +1885,8 @@ export default function AdminDashboard() {
                 value={newPersonalType}
                 onChangeText={setNewPersonalType}
                 placeholder="Enter type"
-                placeholderTextColor={theme.textSecondary}
-                style={[styles.formInput, { color: theme.text, backgroundColor: theme.backgroundElement }]}
+                placeholderTextColor={isDark ? "#b0b0b0" : "#8a8a8f"}
+                style={styles.formInput}
               />
             </View>
           ) : null}
@@ -2036,8 +1903,8 @@ export default function AdminDashboard() {
                   ? "Enter volume"
                   : "Enter value"
               }
-              placeholderTextColor={theme.textSecondary}
-              style={[styles.formInput, { color: theme.text, backgroundColor: theme.backgroundElement }]}
+              placeholderTextColor={isDark ? "#b0b0b0" : "#8a8a8f"}
+              style={styles.formInput}
             />
           </View>
 
@@ -2047,8 +1914,8 @@ export default function AdminDashboard() {
               value={newPersonalExtra}
               onChangeText={setNewPersonalExtra}
               placeholder={`Enter ${getPersonalExtraLabel().toLowerCase()}`}
-              placeholderTextColor={theme.textSecondary}
-              style={[styles.formInput, { color: theme.text, backgroundColor: theme.backgroundElement }]}
+              placeholderTextColor={isDark ? "#b0b0b0" : "#8a8a8f"}
+              style={styles.formInput}
             />
           </View>
 
@@ -2154,7 +2021,7 @@ export default function AdminDashboard() {
           </View>
 
           <View style={styles.formRow}>
-            <Text style={[styles.formLabel, { color: theme.text }]}>Name</Text>
+            <Text style={styles.formLabel}>Name</Text>
             <TextInput
               value={editName}
               onChangeText={setEditName}
@@ -2251,9 +2118,9 @@ export default function AdminDashboard() {
           </View>
           <Text style={styles.rejectTitle}>Why you want to reject?</Text>
           <TextInput
-            style={[styles.rejectInput, { color: theme.text, backgroundColor: theme.backgroundElement }]}
+            style={styles.rejectInput}
             placeholder="Enter reason..."
-            placeholderTextColor={theme.textSecondary}
+            placeholderTextColor={isDark ? "#b0b0b0" : "#999"}
             value={rejectReason}
             onChangeText={setRejectReason}
           />
@@ -2384,34 +2251,37 @@ export default function AdminDashboard() {
 
   const renderChemicalsView = () => (
     <View style={styles.chemicalsContainer}>
-      <View style={[styles.headerSection, styles.greetingContainer]}>
-        <ThemedText type="subtitle" style={styles.greeting}>
-          Hii {user?.name || "Admin"}, Welcome!
-        </ThemedText>
-      </View>
+      <View style={[styles.headerSection, styles.greetingContainer, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
+          <ThemedText type="subtitle" style={styles.greeting}>
+            Hii {user?.name || "Malith"}, Welcome!
+          </ThemedText>
+          <Pressable onPress={async () => { await signOut(); router.replace('/'); }} style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: isDark ? '#333' : '#e0e0e0', borderRadius: 8 }}>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: isDark ? '#fff' : '#000' }}>Sign Out</Text>
+          </Pressable>
+        </View>
       <View style={styles.chemicalsHeader}>
         <Pressable
           onPress={() => {
             setSelectedView("dashboard");
             setChemicalSearch("");
           }}
-          style={[styles.backButton, { backgroundColor: theme.backgroundElement }]}
+          style={styles.backButton}
         >
-          <Text style={[styles.backButtonIcon, { color: theme.text }]}>‹</Text>
+          <Text style={styles.backButtonIcon}>‹</Text>
         </Pressable>
         <ThemedText type="subtitle" style={styles.chemicalsTitle}>
           Chemicals
         </ThemedText>
       </View>
 
-      <View style={[styles.searchContainer, { backgroundColor: theme.backgroundElement }]}>
+      <View style={styles.searchContainer}>
         <Text style={styles.searchIcon}>🔍</Text>
         <TextInput
           value={chemicalSearch}
           onChangeText={setChemicalSearch}
           placeholder="Search Here"
-          placeholderTextColor={theme.textSecondary}
-          style={[styles.searchInput, { color: theme.text }]}
+          placeholderTextColor={isDark ? "#b0b0b0" : "#8a8a8f"}
+          style={styles.searchInput}
         />
       </View>
 
@@ -2477,34 +2347,37 @@ export default function AdminDashboard() {
 
   const renderApprovalsView = () => (
     <View style={styles.approvalsContainer}>
-      <View style={[styles.headerSection, styles.greetingContainer]}>
-        <ThemedText type="subtitle" style={styles.greeting}>
-          Hii {user?.name || "Admin"}, Welcome!
-        </ThemedText>
-      </View>
+      <View style={[styles.headerSection, styles.greetingContainer, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
+          <ThemedText type="subtitle" style={styles.greeting}>
+            Hii {user?.name || "Malith"}, Welcome!
+          </ThemedText>
+          <Pressable onPress={async () => { await signOut(); router.replace('/'); }} style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: isDark ? '#333' : '#e0e0e0', borderRadius: 8 }}>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: isDark ? '#fff' : '#000' }}>Sign Out</Text>
+          </Pressable>
+        </View>
       <View style={styles.approvalsHeader}>
         <Pressable
           onPress={() => {
             setSelectedView("dashboard");
             setApprovalSearch("");
           }}
-          style={[styles.backButton, { backgroundColor: theme.backgroundElement }]}
+          style={styles.backButton}
         >
-          <Text style={[styles.backButtonIcon, { color: theme.text }]}>‹</Text>
+          <Text style={styles.backButtonIcon}>‹</Text>
         </Pressable>
         <ThemedText type="subtitle" style={styles.approvalsTitle}>
           Approvals
         </ThemedText>
       </View>
 
-      <View style={[styles.searchContainer, { backgroundColor: theme.backgroundElement }]}>
+      <View style={styles.searchContainer}>
         <Text style={styles.searchIcon}>🔍</Text>
         <TextInput
           value={approvalSearch}
           onChangeText={setApprovalSearch}
           placeholder="Search Here"
-          placeholderTextColor={theme.textSecondary}
-          style={[styles.searchInput, { color: theme.text }]}
+          placeholderTextColor={isDark ? "#b0b0b0" : "#8a8a8f"}
+          style={styles.searchInput}
         />
       </View>
 
@@ -2596,14 +2469,12 @@ export default function AdminDashboard() {
                   {item.holder}
                 </Text>
                 <View style={styles.approvalActionsContainer}>
-                  {item.status?.toLowerCase() !== 'approved' && (
                   <Pressable
                     onPress={() => handleApproveApproval(item)}
                     style={[styles.actionButton, styles.approveButton]}
                   >
                     <Text style={styles.approveButtonText}>✓</Text>
                   </Pressable>
-                  )}
                   <Pressable
                     onPress={() => handleOpenRejectModal(item)}
                     style={[styles.actionButton, styles.rejectButton]}
@@ -2629,34 +2500,37 @@ export default function AdminDashboard() {
 
   const renderWorkersView = () => (
     <View style={styles.workersContainer}>
-      <View style={[styles.headerSection, styles.greetingContainer]}>
-        <ThemedText type="subtitle" style={styles.greeting}>
-          Hii {user?.name || "Admin"}, Welcome!
-        </ThemedText>
-      </View>
+      <View style={[styles.headerSection, styles.greetingContainer, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
+          <ThemedText type="subtitle" style={styles.greeting}>
+            Hii {user?.name || "Malith"}, Welcome!
+          </ThemedText>
+          <Pressable onPress={async () => { await signOut(); router.replace('/'); }} style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: isDark ? '#333' : '#e0e0e0', borderRadius: 8 }}>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: isDark ? '#fff' : '#000' }}>Sign Out</Text>
+          </Pressable>
+        </View>
       <View style={styles.workersHeader}>
         <Pressable
           onPress={() => {
             setSelectedView("dashboard");
             setWorkerSearch("");
           }}
-          style={[styles.backButton, { backgroundColor: theme.backgroundElement }]}
+          style={styles.backButton}
         >
-          <Text style={[styles.backButtonIcon, { color: theme.text }]}>‹</Text>
+          <Text style={styles.backButtonIcon}>‹</Text>
         </Pressable>
         <ThemedText type="subtitle" style={styles.workersTitle}>
           Workers
         </ThemedText>
       </View>
 
-      <View style={[styles.searchContainer, { backgroundColor: theme.backgroundElement }]}>
+      <View style={styles.searchContainer}>
         <Text style={styles.searchIcon}>🔍</Text>
         <TextInput
           value={workerSearch}
           onChangeText={setWorkerSearch}
           placeholder="Search Here"
-          placeholderTextColor={theme.textSecondary}
-          style={[styles.searchInput, { color: theme.text }]}
+          placeholderTextColor={isDark ? "#b0b0b0" : "#8a8a8f"}
+          style={styles.searchInput}
         />
       </View>
 
@@ -2707,7 +2581,7 @@ export default function AdminDashboard() {
                   styles.workerCellType,
                 ]}
               >
-                Status
+                Type
               </Text>
               <Text
                 style={[
@@ -2732,7 +2606,7 @@ export default function AdminDashboard() {
                   {item.site}
                 </Text>
                 <Text style={[styles.tableCell, styles.workerCellType]}>
-                  {item.status || item.type || item.role}
+                  {item.type}
                 </Text>
                 <View style={styles.workerActionsContainer}>
                   <Pressable
@@ -2762,10 +2636,50 @@ export default function AdminDashboard() {
     </View>
   );
 
+
+  const renderAdminProfileModal = () => (
+    <View style={styles.personalContainer}>
+      <View style={[styles.headerSection, styles.greetingContainer, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
+          <ThemedText type="subtitle" style={styles.greeting}>
+            Hii {user?.name || "Malith"}, Welcome!
+          </ThemedText>
+          <Pressable onPress={async () => { await signOut(); router.replace('/'); }} style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: isDark ? '#333' : '#e0e0e0', borderRadius: 8 }}>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: isDark ? '#fff' : '#000' }}>Sign Out</Text>
+          </Pressable>
+        </View>
+      <View style={styles.personalHeader}>
+        <Pressable onPress={() => setSelectedView("dashboard")} style={styles.backButton}>
+          <Text style={styles.backButtonIcon}>‹</Text>
+        </Pressable>
+        <ThemedText type="subtitle" style={styles.personalTitle}>Admin Profile</ThemedText>
+      </View>
+      <View style={styles.formRow}>
+        <Text style={styles.formLabel}>Name</Text>
+        <TextInput value={adminName} onChangeText={(text) => { setAdminName(text); setProfileError(""); }} style={styles.formInput} placeholder="Admin name" />
+      </View>
+      <View style={styles.formRow}>
+        <Text style={styles.formLabel}>Email</Text>
+        <TextInput value={adminEmail} onChangeText={(text) => { setAdminEmail(text); setProfileError(""); }} style={styles.formInput} placeholder="Email" keyboardType="email-address" />
+      </View>
+      <View style={styles.formRow}>
+        <Text style={styles.formLabel}>Password</Text>
+        <TextInput value={adminPassword} onChangeText={(text) => { setAdminPassword(text); setProfileError(""); }} style={styles.formInput} placeholder="New password (leave blank to keep)" secureTextEntry />
+      </View>
+      {profileError ? (
+        <Text style={{ color: 'red', marginBottom: 8, paddingHorizontal: 16 }}>{profileError}</Text>
+      ) : null}
+      <Pressable onPress={handleUpdateAdminProfile} style={[styles.addSiteButton, { marginTop: 16, marginHorizontal: 16 }]}>
+        <Text style={styles.addSiteButtonText}>Save Profile</Text>
+      </Pressable>
+    </View>
+  );
+
   return (
     <ThemedView style={styles.container}>
       {selectedView === "dashboard" ? (
-        renderDashboardView()
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {renderDashboardView()}
+        </ScrollView>
       ) : (
         <ScrollView showsVerticalScrollIndicator={false}>
           {selectedView === "attendance"
@@ -2773,18 +2687,18 @@ export default function AdminDashboard() {
             : selectedView === "machineries"
             ? renderMachineriesView()
             : selectedView === "assets"
-              ? renderAssetsView()
-              : selectedView === "chemicals"
-                ? renderChemicalsView()
-                : selectedView === "approvals"
-                  ? renderApprovalsView()
-                  : selectedView === "workers"
-                    ? renderWorkersView()
-                    : selectedView === "personalAssets"
-                      ? renderPersonalView()
-                      : selectedView === "manageSite"
-                        ? renderManageSiteView()
-                        : null}
+            ? renderAssetsView()
+            : selectedView === "chemicals"
+            ? renderChemicalsView()
+            : selectedView === "approvals"
+            ? renderApprovalsView()
+            : selectedView === "workers"
+            ? renderWorkersView()
+            : selectedView === "personalAssets"
+            ? renderPersonalView()
+            : selectedView === "manageSite"
+            ? renderManageSiteView()
+            : null}
         </ScrollView>
       )}
       {renderUpdateModal()}
@@ -2799,19 +2713,23 @@ export default function AdminDashboard() {
       {renderTerminateConfirmModal()}
       {renderTerminateSuccessModal()}
       {renderWorkerDeleteSuccessModal()}
+      {renderAttendanceEditModal()}
     </ThemedView>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (isDark: boolean) => StyleSheet.create({
+  statusAvailable: { color: 'green' },
+  statusFinished: { color: 'red' },
+
   container: {
     flex: 1,
     padding: Spacing.four,
     paddingBottom: BottomTabInset,
+    backgroundColor: isDark ? "#121212" : "#f5f5f5",
   },
   headerSection: {
     marginBottom: Spacing.three,
-    marginTop: 40,
   },
   greeting: {
     fontSize: 24,
@@ -2819,20 +2737,7 @@ const styles = StyleSheet.create({
   },
   greetingContainer: {
     height: 64,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  signOutButton: {
-    backgroundColor: '#ef4444',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-  },
-  signOutText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 14,
+    justifyContent: "center",
   },
   siteTimeRow: {
     flexDirection: "row",
@@ -2840,13 +2745,13 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     marginBottom: Spacing.three,
     gap: Spacing.two,
-    zIndex: 100,
   },
   siteSelectionContainer: {
     flex: 1,
     position: "relative",
   },
   siteDropdown: {
+    backgroundColor: isDark ? "#333333" : "#e0e0e0",
     borderRadius: 8,
     paddingVertical: 10,
     paddingHorizontal: 12,
@@ -2856,32 +2761,26 @@ const styles = StyleSheet.create({
   },
   siteDropdownText: {
     fontSize: 13,
+    color: isDark ? "#e0e0e0" : "#666",
     fontWeight: "500",
   },
   dropdownIcon: {
     fontSize: 10,
+    color: isDark ? "#ffffff" : "#333",
   },
   dropdownMenu: {
     position: "absolute",
     top: 44,
     left: 0,
     right: 0,
+    backgroundColor: isDark ? "#1e1e1e" : "#fff",
     borderRadius: 8,
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
-    elevation: 200,
-    zIndex: 9999,
-  },
-  siteOption: {
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0,0,0,0.05)",
-  },
-  siteOptionText: {
-    fontSize: 13,
+    elevation: 5,
+    zIndex: 10,
   },
   machineriesContainer: {
     gap: Spacing.three,
@@ -2918,6 +2817,7 @@ const styles = StyleSheet.create({
   workersTitle: {
     fontSize: 22,
     fontWeight: "700",
+    color: isDark ? "#ffffff" : "#1f1d21",
   },
   tableScrollContainer: {
     flex: 1,
@@ -2950,24 +2850,29 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
+    backgroundColor: isDark ? "#333333" : "#e0e0e0",
     alignItems: "center",
     justifyContent: "center",
   },
   backButtonIcon: {
     fontSize: 24,
+    color: isDark ? "#ffffff" : "#333",
     fontWeight: "600",
   },
   machineriesTitle: {
     fontSize: 22,
     fontWeight: "700",
+    color: isDark ? "#ffffff" : "#1f1d21",
   },
   assetsTitle: {
     fontSize: 22,
     fontWeight: "700",
+    color: isDark ? "#ffffff" : "#1f1d21",
   },
   chemicalsTitle: {
     fontSize: 22,
     fontWeight: "700",
+    color: isDark ? "#ffffff" : "#1f1d21",
   },
   personalHeader: {
     flexDirection: "row",
@@ -2979,15 +2884,17 @@ const styles = StyleSheet.create({
   personalTitle: {
     fontSize: 22,
     fontWeight: "700",
+    color: isDark ? "#ffffff" : "#1f1d21",
   },
   machineriesSubtitle: {
     fontSize: 13,
-    color: "#666",
+    color: isDark ? "#e0e0e0" : "#666",
     lineHeight: 20,
   },
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
+    backgroundColor: isDark ? "#1e1e1e" : "#ffffff",
     borderRadius: 16,
     paddingVertical: 12,
     paddingHorizontal: 14,
@@ -3001,17 +2908,17 @@ const styles = StyleSheet.create({
   },
   searchIcon: {
     fontSize: 18,
-    color: "#8a8a8f",
+    color: isDark ? "#aaaaaa" : "#8a8a8f",
   },
   searchInput: {
     flex: 1,
     fontSize: 15,
-    color: "#1f1d21",
+    color: isDark ? "#ffffff" : "#1f1d21",
     padding: 0,
     minHeight: 22,
   },
   tableCard: {
-    backgroundColor: "#ffffff",
+    backgroundColor: isDark ? "#1e1e1e" : "#ffffff",
     borderRadius: 24,
     paddingVertical: Spacing.three,
     paddingHorizontal: Spacing.four,
@@ -3039,7 +2946,7 @@ const styles = StyleSheet.create({
   },
   tableCell: {
     fontSize: 13,
-    color: "#1f1d21",
+    color: isDark ? "#ffffff" : "#1f1d21",
     paddingHorizontal: 8,
   },
   tableHeaderCell: {
@@ -3109,7 +3016,7 @@ const styles = StyleSheet.create({
   modalContent: {
     width: "100%",
     maxWidth: 400,
-    backgroundColor: "#fff",
+    backgroundColor: isDark ? "#1e1e1e" : "#fff",
     borderRadius: 24,
     padding: Spacing.four,
     alignItems: "stretch",
@@ -3144,7 +3051,7 @@ const styles = StyleSheet.create({
   },
   modalCloseText: {
     fontSize: 16,
-    color: "#333",
+    color: isDark ? "#ffffff" : "#333",
   },
   formRow: {
     flexDirection: "row",
@@ -3154,17 +3061,17 @@ const styles = StyleSheet.create({
   },
   formLabel: {
     fontSize: 14,
-    color: "#1f1d21",
+    color: isDark ? "#ffffff" : "#1f1d21",
     fontWeight: "600",
     flex: 0.35,
   },
   formInput: {
     flex: 0.65,
-    backgroundColor: "#f2f2f6",
+    backgroundColor: isDark ? "#333333" : "#f2f2f6",
     borderRadius: 999,
     paddingVertical: 10,
     paddingHorizontal: 16,
-    color: "#1f1d21",
+    color: isDark ? "#ffffff" : "#1f1d21",
     fontSize: 14,
   },
   updateButton: {
@@ -3193,7 +3100,7 @@ const styles = StyleSheet.create({
   },
   logoUploadButton: {
     flex: 0.65,
-    backgroundColor: "#f2f2f6",
+    backgroundColor: isDark ? "#333333" : "#f2f2f6",
     borderRadius: 999,
     paddingVertical: 10,
     paddingHorizontal: 16,
@@ -3201,13 +3108,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   logoUploadText: {
-    color: "#1f1d21",
+    color: isDark ? "#ffffff" : "#1f1d21",
     fontSize: 14,
   },
   successModalCard: {
     width: "100%",
     maxWidth: 340,
-    backgroundColor: "#fff",
+    backgroundColor: isDark ? "#1e1e1e" : "#fff",
     borderRadius: 24,
     padding: Spacing.four,
     alignItems: "center",
@@ -3234,7 +3141,7 @@ const styles = StyleSheet.create({
   successTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#1f1d21",
+    color: isDark ? "#ffffff" : "#1f1d21",
     textAlign: "center",
     marginBottom: Spacing.four,
   },
@@ -3263,7 +3170,7 @@ const styles = StyleSheet.create({
     flex: 1.0,
   },
   emptyText: {
-    color: "#8a8a8f",
+    color: isDark ? "#aaaaaa" : "#8a8a8f",
     fontSize: 14,
   },
   dropdownItem: {
@@ -3274,7 +3181,7 @@ const styles = StyleSheet.create({
   },
   dropdownItemText: {
     fontSize: 13,
-    color: "#333",
+    color: isDark ? "#ffffff" : "#333",
   },
   timeSection: {
     alignItems: "flex-end",
@@ -3282,11 +3189,11 @@ const styles = StyleSheet.create({
   timeText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#1f1d21",
+    color: isDark ? "#ffffff" : "#1f1d21",
   },
   dateText: {
     fontSize: 13,
-    color: "#666",
+    color: isDark ? "#e0e0e0" : "#666",
     marginTop: 4,
   },
   cardsContainer: {
@@ -3309,6 +3216,7 @@ const styles = StyleSheet.create({
   manageSiteTitle: {
     fontSize: 22,
     fontWeight: "700",
+    color: isDark ? "#ffffff" : "#1f1d21",
   },
   manageSiteCardsContainer: {
     gap: Spacing.four,
@@ -3318,7 +3226,7 @@ const styles = StyleSheet.create({
   manageSiteCard: {
     width: "100%",
     maxWidth: 320,
-    backgroundColor: "#ffffff",
+    backgroundColor: isDark ? "#1e1e1e" : "#ffffff",
     borderRadius: 24,
     paddingVertical: 28,
     paddingHorizontal: 20,
@@ -3351,7 +3259,7 @@ const styles = StyleSheet.create({
   manageSiteCardLabel: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#1f1d21",
+    color: isDark ? "#ffffff" : "#1f1d21",
     marginTop: 4,
   },
   manageSiteDeleteIcon: {
@@ -3362,7 +3270,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: "#ffffff",
+    backgroundColor: isDark ? "#1e1e1e" : "#ffffff",
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",
@@ -3386,7 +3294,7 @@ const styles = StyleSheet.create({
   },
   manageSiteAddIcon: {
     fontSize: 42,
-    color: "#1f1d21",
+    color: isDark ? "#ffffff" : "#1f1d21",
   },
   cardsRow: {
     flexDirection: "row",
@@ -3416,10 +3324,12 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textAlign: "center",
     marginBottom: 2,
+    color: isDark ? "#ffffff" : "#1f1d21",
   },
   cardValue: {
     fontSize: 18,
     fontWeight: "700",
+    color: isDark ? "#ffffff" : "#1f1d21",
   },
   fullWidthCard: {
     backgroundColor: "#b3e5d8",
@@ -3440,7 +3350,7 @@ const styles = StyleSheet.create({
   fullWidthCardTitle: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#1f1d21",
+    color: isDark ? "#ffffff" : "#1f1d21",
   },
   approvalsContainer: {
     gap: Spacing.three,
@@ -3457,6 +3367,7 @@ const styles = StyleSheet.create({
   approvalsTitle: {
     fontSize: 22,
     fontWeight: "700",
+    color: isDark ? "#ffffff" : "#1f1d21",
   },
   approvalCellID: {
     minWidth: 50,
@@ -3563,7 +3474,7 @@ const styles = StyleSheet.create({
   rejectModalCard: {
     width: "100%",
     maxWidth: 320,
-    backgroundColor: "#fff",
+    backgroundColor: isDark ? "#1e1e1e" : "#fff",
     borderRadius: 24,
     paddingVertical: 30,
     paddingHorizontal: 22,
@@ -3602,13 +3513,13 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     marginBottom: 20,
-    color: "#1f1d21",
+    color: isDark ? "#ffffff" : "#1f1d21",
     fontSize: 14,
   },
   confirmModalCard: {
     width: "100%",
     maxWidth: 320,
-    backgroundColor: "#fff",
+    backgroundColor: isDark ? "#1e1e1e" : "#fff",
     borderRadius: 24,
     paddingVertical: 30,
     paddingHorizontal: 22,
@@ -3671,7 +3582,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   assetsTableWrapper: {
-    backgroundColor: "#ffffff",
+    backgroundColor: isDark ? "#1e1e1e" : "#ffffff",
     borderRadius: 12,
     marginHorizontal: -Spacing.four,
     paddingHorizontal: Spacing.four,
@@ -3689,7 +3600,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   assetsTableHeaderRow: {
-    backgroundColor: "#f5f5f5",
+    backgroundColor: isDark ? "#121212" : "#f5f5f5",
     borderTopLeftRadius: 12,
     borderTopRightRadius: 12,
     borderBottomWidth: 2,
@@ -3698,14 +3609,14 @@ const styles = StyleSheet.create({
   },
   assetsTableCell: {
     fontSize: 13,
-    color: "#1f1d21",
+    color: isDark ? "#ffffff" : "#1f1d21",
     paddingHorizontal: Spacing.two,
     paddingVertical: Spacing.two,
   },
   assetsTableHeaderCell: {
     fontWeight: "700",
     color: "#4f4f53",
-    backgroundColor: "#f5f5f5",
+    backgroundColor: isDark ? "#121212" : "#f5f5f5",
   },
   assetColId: {
     minWidth: 45,
@@ -3863,7 +3774,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.two,
   },
   personalTableCard: {
-    backgroundColor: "#ffffff",
+    backgroundColor: isDark ? "#1e1e1e" : "#ffffff",
     borderRadius: 24,
     paddingVertical: Spacing.three,
     paddingHorizontal: Spacing.four,

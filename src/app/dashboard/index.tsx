@@ -142,13 +142,15 @@ export default function DashboardScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView style={{ flex: 1, width: "100%" }} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-          <View style={styles.header}>
-            <ThemedText type="title" style={[styles.title, { flexShrink: 1 }]}>
-              Select Worksite
-            </ThemedText>
+          <View style={styles.topRightControls}>
             <Pressable style={[styles.menuButton, { backgroundColor: theme.backgroundElement, borderColor: theme.backgroundSelected }]} onPress={signOut}>
               <Text style={[styles.menuText, { color: theme.text }]}>Sign Out</Text>
             </Pressable>
+          </View>
+          <View style={styles.headerCentered}>
+            <ThemedText type="title" style={styles.titleCentered}>
+              Select Worksite
+            </ThemedText>
           </View>
 
         <View style={styles.tileGrid}>
@@ -198,18 +200,15 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
-    width: "100%",
     paddingHorizontal: Spacing.four,
     paddingTop: 60,
-    alignItems: "center",
     gap: Spacing.three,
     paddingBottom: BottomTabInset + Spacing.three,
     maxWidth: MaxContentWidth,
   },
   scrollContent: {
     flexGrow: 1,
-    width: "100%",
-    alignItems: "center",
+    alignItems: "stretch",
     paddingBottom: BottomTabInset + Spacing.four,
     gap: Spacing.three,
   },
@@ -219,16 +218,20 @@ const styles = StyleSheet.create({
     paddingBottom: BottomTabInset + Spacing.four,
     gap: Spacing.three,
   },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  topRightControls: {
     width: "100%",
+    flexDirection: "row",
+    justifyContent: "flex-end",
     paddingHorizontal: Spacing.two,
-    marginBottom: Spacing.four,
   },
-  title: {
-    textAlign: "left",
+  headerCentered: {
+    width: "100%",
+    alignItems: "center",
+    marginBottom: Spacing.four,
+    marginTop: Spacing.two,
+  },
+  titleCentered: {
+    textAlign: "center",
   },
   menuButton: {
     paddingVertical: Spacing.two,
@@ -244,7 +247,6 @@ const styles = StyleSheet.create({
     marginTop: Spacing.two,
   },
   tileGrid: {
-    width: "100%",
     gap: Spacing.three,
     flexDirection: "column",
     paddingBottom: Spacing.four,

@@ -1,3 +1,10 @@
+function extractArray(result: any): any[] {
+  if (Array.isArray(result)) return result;
+  if (result && Array.isArray(result.data)) return result.data;
+  if (result && result.data && Array.isArray(result.data.data)) return result.data.data;
+  return [];
+}
+
 import { API_BASE_URL, getAuthHeaders } from './authService';
 
 export interface Approval {
@@ -107,12 +114,12 @@ export async function getApprovals(): Promise<Approval[]> {
 
 export async function createApproval(data: Omit<Approval, 'id'>): Promise<Approval> {
   const result = await postJson<{ data: Approval }>('approvals', data);
-  return result.data;
+  return result.data ?? result;
 }
 
 export async function approveApproval(id: string | number, reason?: string): Promise<Approval> {
   const result = await patchJson<{ data: Approval }>(`approvals/${id}/approve`, { reason });
-  return result.data;
+  return result.data ?? result;
 }
 
 export async function rejectApproval(id: string | number, reason: string): Promise<void> {

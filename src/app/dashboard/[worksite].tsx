@@ -112,7 +112,6 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
-    width: "100%",
     paddingHorizontal: Spacing.four,
     paddingTop: 60,
     gap: Spacing.three,
@@ -150,7 +149,6 @@ const styles = StyleSheet.create({
     color: "#6b7280",
   },
   tileGrid: {
-    width: "100%",
     gap: Spacing.three,
     marginTop: Spacing.two,
   },
