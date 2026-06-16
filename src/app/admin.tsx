@@ -2766,10 +2766,12 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
     alignItems: "flex-start",
     marginBottom: Spacing.three,
     gap: Spacing.two,
+    zIndex: 100,
   },
   siteSelectionContainer: {
     flex: 1,
     position: "relative",
+    zIndex: 100,
   },
   siteDropdown: {
     backgroundColor: isDark ? "#333333" : "#e0e0e0",
