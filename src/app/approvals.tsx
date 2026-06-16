@@ -255,7 +255,7 @@ export default function ApprovalsPage() {
               You must be logged in to load, create, or save approvals.
             </Text>
           )}
-          <View style={styles.topControls}>
+          <View style={[styles.topControls, { zIndex: 10 }]}>
             <TextInput
               style={[styles.searchInput, { flex: 1, minWidth: 160 }]}
               placeholder="Search Here"
@@ -349,7 +349,7 @@ export default function ApprovalsPage() {
                 <View style={[styles.fieldRow, { zIndex: sitePickerOpen ? 100 : 1 }]}>
                   <Text style={styles.fieldLabel}>Site Selection</Text>
                   <Pressable style={styles.selectInput} onPress={() => setSitePickerOpen((prev) => !prev)}>
-                    <Text style={styles.selectText}>
+                    <Text style={styles.selectText} numberOfLines={1}>
                       {formValues.worksite_id
                         ? worksites.find((site) => site.id === formValues.worksite_id)?.name
                         : 'Site Selection'}
@@ -357,6 +357,7 @@ export default function ApprovalsPage() {
                   </Pressable>
                   {sitePickerOpen && (
                     <View style={[styles.statusOptions, { position: 'absolute', top: 75, left: 0, right: 0, zIndex: 100 }]}>
+                    <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled={true}>
                       {worksites.map((site) => (
                         <Pressable
                           key={site.id}
@@ -366,10 +367,12 @@ export default function ApprovalsPage() {
                             setSitePickerOpen(false);
                           }}
                         >
-                          <Text style={styles.statusOptionText}>{site.name}</Text>
+                          <Text style={styles.statusOptionText} numberOfLines={1}>{site.name}</Text>
                         </Pressable>
                       ))}
-                    </View>
+                    
+                    </ScrollView>
+                  </View>
                   )}
                 </View>
                 {!isEditing && (

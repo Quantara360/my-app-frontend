@@ -216,38 +216,35 @@ export default function ChemicalsPage() {
         </View>
 
         <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}> 
-          <View style={styles.topControls}>
+          <View style={[styles.topControls, { zIndex: 10 }]}>
             <Pressable style={[styles.addButton, { backgroundColor: theme.backgroundSelected }]} onPress={openAddChemical}>
               <ThemedText type="smallBold">+ Add Chemicals</ThemedText>
             </Pressable>
             
             <View style={{ position: 'relative', zIndex: 10, flex: 1, minWidth: 140 }}>
               <Pressable style={[styles.searchInput, { flex: 0, minHeight: 44, justifyContent: 'center' }]} onPress={() => setFilterPickerOpen((prev) => !prev)}>
-                <Text style={{ color: theme.text }}>
+                <Text style={{ color: theme.text }} numberOfLines={1}>
                   {siteFilter ? worksites.find((site) => site.id === siteFilter)?.name : 'Site Selection'}
                 </Text>
               </Pressable>
               {filterPickerOpen && (
-                <View style={[styles.statusOptions, { position: 'absolute', top: 40, left: 0, right: 0, zIndex: 20 }]}> 
+                <View style={[styles.statusOptions, { position: 'absolute', top: 40, left: 0, right: 0, zIndex: 20 }]}>
+                    <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled={true}> 
                   <Pressable style={styles.statusOption} onPress={() => { setSiteFilter(null); setFilterPickerOpen(false); }}>
-                    <Text style={styles.statusOptionText}>All Sites</Text>
+                    <Text style={styles.statusOptionText} numberOfLines={1}>All Sites</Text>
                   </Pressable>
                   {worksites.map((site) => (
                     <Pressable key={site.id} style={styles.statusOption} onPress={() => { setSiteFilter(site.id); setFilterPickerOpen(false); }}>
-                      <Text style={styles.statusOptionText}>{site.name}</Text>
+                      <Text style={styles.statusOptionText} numberOfLines={1}>{site.name}</Text>
                     </Pressable>
                   ))}
-                </View>
+                
+                    </ScrollView>
+                  </View>
               )}
             </View>
 
-            <TextInput
-              style={[styles.searchInput, { flex: 1, minWidth: 160 }]}
-              placeholder="Search"
-              placeholderTextColor={theme.textSecondary}
-              value={search}
-              onChangeText={setSearch}
-            />
+            
           </View>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -309,7 +306,7 @@ export default function ChemicalsPage() {
                 <View style={[styles.fieldRow, { zIndex: sitePickerOpen ? 100 : 1 }]}>
                   <Text style={styles.fieldLabel}>Site Selection</Text>
                   <Pressable style={styles.selectInput} onPress={() => setSitePickerOpen((prev) => !prev)}>
-                    <Text style={styles.selectText}>
+                    <Text style={styles.selectText} numberOfLines={1}>
                       {formValues.worksite_id
                         ? worksites.find((site) => site.id === formValues.worksite_id)?.name
                         : 'Site Selection'}
@@ -317,6 +314,7 @@ export default function ChemicalsPage() {
                   </Pressable>
                   {sitePickerOpen && (
                     <View style={[styles.statusOptions, { position: 'absolute', top: 75, left: 0, right: 0, zIndex: 100 }]}>
+                    <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled={true}>
                       {worksites.map((site) => (
                         <Pressable
                           key={site.id}
@@ -326,10 +324,12 @@ export default function ChemicalsPage() {
                             setSitePickerOpen(false);
                           }}
                         >
-                          <Text style={styles.statusOptionText}>{site.name}</Text>
+                          <Text style={styles.statusOptionText} numberOfLines={1}>{site.name}</Text>
                         </Pressable>
                       ))}
-                    </View>
+                    
+                    </ScrollView>
+                  </View>
                   )}
                 </View>
                 <TextInput

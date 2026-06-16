@@ -321,11 +321,11 @@ export default function WorkersPage() {
         </View>
 
         <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}> 
-          <View style={styles.topControls}>
+          <View style={[styles.topControls, { zIndex: 10 }]}>
             <Pressable style={[styles.addButton, { backgroundColor: theme.backgroundSelected }]} onPress={openAddWorker}>
               <ThemedText type="smallBold">+ Add Workers</ThemedText>
             </Pressable>
-            <View style={styles.filtersRow}>
+            <View style={[styles.filtersRow, { zIndex: 10 }]}>
               <View style={styles.inputGroup}>
                 <TextInput
                   style={styles.searchInput}
@@ -337,12 +337,13 @@ export default function WorkersPage() {
               </View>
               <View style={[styles.inputGroup, { zIndex: 10 }]}>
                 <Pressable style={styles.dropdownButton} onPress={() => setFilterSitePickerOpen((prev) => !prev)}>
-                  <Text style={styles.dropdownText}>
+                  <Text style={styles.dropdownText} numberOfLines={1}>
                     {siteFilter ? worksites.find((site) => site.id === siteFilter)?.name : 'Site Selection'}
                   </Text>
                 </Pressable>
                 {filterSitePickerOpen && (
                   <View style={[styles.siteOptions, { position: 'absolute', top: 40, left: 0, right: 0, zIndex: 20 }]}>
+                    <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled={true}>
                     <Pressable
                       style={styles.siteOption}
                       onPress={() => {
@@ -364,6 +365,8 @@ export default function WorkersPage() {
                         <Text style={styles.siteOptionText}>{site.name}</Text>
                       </Pressable>
                     ))}
+                  
+                    </ScrollView>
                   </View>
                 )}
               </View>
@@ -419,7 +422,7 @@ export default function WorkersPage() {
                 <View style={[styles.fieldRow, { zIndex: sitePickerOpen ? 100 : 1 }]}>
                   <Text style={styles.fieldLabel}>Site Selection</Text>
                   <Pressable style={styles.selectInput} onPress={() => setSitePickerOpen((prev) => !prev)}>
-                    <Text style={styles.selectText}>
+                    <Text style={styles.selectText} numberOfLines={1}>
                       {formValues.assigned_worksite_id
                         ? worksites.find((site) => site.id === formValues.assigned_worksite_id)?.name
                         : 'Site Selection'}
@@ -427,6 +430,7 @@ export default function WorkersPage() {
                   </Pressable>
                   {sitePickerOpen && (
                     <View style={[styles.siteOptions, { position: 'absolute', top: 75, left: 0, right: 0, zIndex: 100 }]}>
+                    <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled={true}>
                       {worksites.map((site) => (
                         <Pressable
                           key={site.id}
@@ -442,7 +446,9 @@ export default function WorkersPage() {
                           <Text style={styles.siteOptionText}>{site.name}</Text>
                         </Pressable>
                       ))}
-                    </View>
+                    
+                    </ScrollView>
+                  </View>
                   )}
                 </View>
                 <TextInput
@@ -781,8 +787,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   dropdownText: {
     color: theme.text,
     fontSize: 13,
-    maxWidth: 100,
-  },
+    },
   tableHeader: {
     flexDirection: 'row',
     paddingVertical: Spacing.three,

@@ -241,33 +241,30 @@ export default function WorkerSalariesPage() {
         </View>
 
         <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}>
-          <View style={styles.topControls}>
+          <View style={[styles.topControls, { zIndex: 10 }]}>
             <View style={{ position: 'relative', zIndex: 10, flex: 1, minWidth: 140 }}>
               <Pressable style={[styles.searchInput, { flex: 0, minHeight: 44, justifyContent: 'center' }]} onPress={() => setFilterPickerOpen((prev) => !prev)}>
-                <Text style={{ color: theme.text }}>
+                <Text style={{ color: theme.text }} numberOfLines={1}>
                   {siteFilter ? worksites.find((site) => site.id === siteFilter)?.name : 'Site Selection'}
                 </Text>
               </Pressable>
               {filterPickerOpen && (
-                <View style={[styles.statusOptions, { position: 'absolute', top: 40, left: 0, right: 0, zIndex: 20 }]}> 
+                <View style={[styles.statusOptions, { position: 'absolute', top: 40, left: 0, right: 0, zIndex: 20 }]}>
+                    <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled={true}> 
                   <Pressable style={styles.statusOption} onPress={() => { setSiteFilter(null); setFilterPickerOpen(false); }}>
-                    <Text style={styles.statusOptionText}>All Sites</Text>
+                    <Text style={styles.statusOptionText} numberOfLines={1}>All Sites</Text>
                   </Pressable>
                   {worksites.map((site) => (
                     <Pressable key={site.id} style={styles.statusOption} onPress={() => { setSiteFilter(site.id); setFilterPickerOpen(false); }}>
-                      <Text style={styles.statusOptionText}>{site.name}</Text>
+                      <Text style={styles.statusOptionText} numberOfLines={1}>{site.name}</Text>
                     </Pressable>
                   ))}
-                </View>
+                
+                    </ScrollView>
+                  </View>
               )}
             </View>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search by worker name"
-              placeholderTextColor={theme.textSecondary}
-              value={search}
-              onChangeText={setSearch}
-            />
+            
             <Pressable style={[styles.addButton, { backgroundColor: theme.backgroundSelected }]} onPress={openAddSalary}>
               <ThemedText type="smallBold">+ Add</ThemedText>
             </Pressable>
@@ -338,7 +335,7 @@ export default function WorkerSalariesPage() {
                 <View style={[styles.fieldRow, { zIndex: workerPickerOpen ? 100 : 1 }]}>
                   <Text style={styles.fieldLabel}>Select Worker</Text>
                   <Pressable style={styles.selectInput} onPress={() => setWorkerPickerOpen((prev) => !prev)}>
-                    <Text style={styles.selectText}>
+                    <Text style={styles.selectText} numberOfLines={1}>
                       {formValues.worker_id ? workers.find((w) => w.id === formValues.worker_id)?.name : 'Select Worker'}
                     </Text>
                   </Pressable>
@@ -366,7 +363,7 @@ export default function WorkerSalariesPage() {
                 <View style={[styles.fieldRow, { zIndex: sitePickerOpen ? 100 : 1 }]}>
                   <Text style={styles.fieldLabel}>Site Selection</Text>
                   <Pressable style={styles.selectInput} onPress={() => setSitePickerOpen((prev) => !prev)}>
-                    <Text style={styles.selectText}>
+                    <Text style={styles.selectText} numberOfLines={1}>
                       {formValues.worksite_id
                         ? worksites.find((site) => site.id === formValues.worksite_id)?.name
                         : 'Site Selection'}
@@ -374,6 +371,7 @@ export default function WorkerSalariesPage() {
                   </Pressable>
                   {sitePickerOpen && (
                     <View style={[styles.statusOptions, { position: 'absolute', top: 75, left: 0, right: 0, zIndex: 100 }]}>
+                    <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled={true}>
                       {worksites.map((site) => (
                         <Pressable
                           key={site.id}
@@ -383,10 +381,12 @@ export default function WorkerSalariesPage() {
                             setSitePickerOpen(false);
                           }}
                         >
-                          <Text style={styles.statusOptionText}>{site.name}</Text>
+                          <Text style={styles.statusOptionText} numberOfLines={1}>{site.name}</Text>
                         </Pressable>
                       ))}
-                    </View>
+                    
+                    </ScrollView>
+                  </View>
                   )}
                 </View>
 
@@ -601,10 +601,10 @@ const createStyles = (theme: ReturnType<typeof useTheme>) =>
     },
     topControls: {
       flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: Spacing.three,
-      flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.three,
+    flexWrap: 'wrap',
     },
     addButton: {
       paddingVertical: Spacing.two,
