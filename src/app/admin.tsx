@@ -9,6 +9,7 @@ import * as MachineriesService from "@/services/adminMachineriesService";
 import * as WorkersService from "@/services/adminWorkersService";
 import * as ApprovalsService from "@/services/adminApprovalsService";
 import * as PersonalAssetsService from "@/services/adminPersonalAssetsService";
+import * as PersonalDocumentsService from "@/services/adminPersonalDocumentsService";
 import * as AttendancesService from "@/services/adminAttendancesService";
 import { useAuth } from "@/contexts/AuthContext";
 import { API_BASE_URL, getAuthHeaders } from "@/services/authService";
@@ -217,53 +218,76 @@ export default function AdminDashboard() {
   const [editAttendanceStatus, setEditAttendanceStatus] = useState("");
 
   // Notes and Files state for Personal Documents
-  const [notes, setNotes] = useState<any[]>([
-    { id: "1", text: "Commercial card details and notes.", date: "16/06/2026" },
-    { id: "2", text: "H\nUpdated 16/06/2026", date: "16/06/2026" }
-  ]);
-  const [files, setFiles] = useState<any[]>([]);
+  const [notes, setNotes] = useState<PersonalDocumentsService.PersonalNote[]>([]);
+  const [files, setFiles] = useState<PersonalDocumentsService.PersonalFile[]>([]);
   const [newNoteText, setNewNoteText] = useState("");
-  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
+  const [selectedNoteId, setSelectedNoteId] = useState<string | number | null>(null);
   const [newFileName, setNewFileName] = useState("");
   const [newFileType, setNewFileType] = useState<"PDF" | "WORD" | "IMG" | "">("");
-  const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
+  const [selectedFileId, setSelectedFileId] = useState<string | number | null>(null);
 
-  const handleSaveNote = () => {
+  const handleSaveNote = async () => {
     if (!newNoteText.trim()) return;
-    if (selectedNoteId) {
-      setNotes(notes.map(n => n.id === selectedNoteId ? { ...n, text: newNoteText } : n));
-      setSelectedNoteId(null);
-    } else {
-      setNotes([{ id: Date.now().toString(), text: newNoteText, date: new Date().toLocaleDateString('en-GB') }, ...notes]);
+    try {
+      if (selectedNoteId) {
+        const updated = await PersonalDocumentsService.updateNote(selectedNoteId, { text: newNoteText });
+        setNotes(notes.map(n => n.id === selectedNoteId ? updated : n));
+        setSelectedNoteId(null);
+      } else {
+        const created = await PersonalDocumentsService.createNote({ text: newNoteText, date: new Date().toLocaleDateString('en-GB') });
+        setNotes([created, ...notes]);
+      }
+      setNewNoteText("");
+    } catch (e) {
+      console.error(e);
+      Alert.alert("Error", "Failed to save note");
     }
-    setNewNoteText("");
   };
   const handleEditNote = (note: any) => {
     setSelectedNoteId(note.id);
     setNewNoteText(note.text);
   };
-  const handleDeleteNote = (id: string) => {
-    setNotes(notes.filter(n => n.id !== id));
+  const handleDeleteNote = async (id: string | number) => {
+    try {
+      await PersonalDocumentsService.deleteNote(id);
+      setNotes(notes.filter(n => n.id !== id));
+    } catch (e) {
+      console.error(e);
+      Alert.alert("Error", "Failed to delete note");
+    }
   };
 
-  const handleSaveFile = () => {
+  const handleSaveFile = async () => {
     if (!newFileName.trim() || !newFileType) return;
-    if (selectedFileId) {
-      setFiles(files.map(f => f.id === selectedFileId ? { ...f, name: newFileName, type: newFileType } : f));
-      setSelectedFileId(null);
-    } else {
-      setFiles([{ id: Date.now().toString(), name: newFileName, type: newFileType, uploadedAt: new Date().toLocaleDateString('en-GB') }, ...files]);
+    try {
+      if (selectedFileId) {
+        const updated = await PersonalDocumentsService.updateFile(selectedFileId, { name: newFileName, type: newFileType });
+        setFiles(files.map(f => f.id === selectedFileId ? updated : f));
+        setSelectedFileId(null);
+      } else {
+        const created = await PersonalDocumentsService.createFile({ name: newFileName, type: newFileType, uploaded_at: new Date().toLocaleDateString('en-GB') });
+        setFiles([created, ...files]);
+      }
+      setNewFileName("");
+      setNewFileType("");
+    } catch (e) {
+      console.error(e);
+      Alert.alert("Error", "Failed to save file");
     }
-    setNewFileName("");
-    setNewFileType("");
   };
   const handleEditFile = (file: any) => {
     setSelectedFileId(file.id);
     setNewFileName(file.name);
     setNewFileType(file.type as "PDF" | "WORD" | "IMG");
   };
-  const handleDeleteFile = (id: string) => {
-    setFiles(files.filter(f => f.id !== id));
+  const handleDeleteFile = async (id: string | number) => {
+    try {
+      await PersonalDocumentsService.deleteFile(id);
+      setFiles(files.filter(f => f.id !== id));
+    } catch (e) {
+      console.error(e);
+      Alert.alert("Error", "Failed to delete file");
+    }
   };
   const getFileTypeIcon = (type: string) => {
     if (type === 'PDF') return <Text style={{fontSize: 20}}>📄</Text>;
@@ -739,10 +763,20 @@ export default function AdminDashboard() {
     loadWorkersData();
     loadApprovalsData();
     loadPersonalAssetsData();
+    loadPersonalDocumentsData();
     loadWorksitesData();
     loadAttendancesData();
     return () => clearInterval(timer);
   }, []);
+
+  const loadPersonalDocumentsData = async () => {
+    try {
+      const notesData = await PersonalDocumentsService.getNotes();
+      setNotes(notesData);
+      const filesData = await PersonalDocumentsService.getFiles();
+      setFiles(filesData);
+    } catch (error) { console.error('Failed to load personal documents:', error); }
+  };
 
   const loadAttendancesData = async () => {
     try {
@@ -3133,6 +3167,8 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
     fontSize: 24,
     color: isDark ? "#ffffff" : "#333",
     fontWeight: "600",
+    lineHeight: 28,
+    marginTop: -4,
   },
   machineriesTitle: {
     fontSize: 22,

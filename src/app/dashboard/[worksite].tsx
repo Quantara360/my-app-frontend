@@ -78,7 +78,10 @@ export default function WorksitePage() {
                     router.push({ pathname: "/mark-attendance", params: { worksiteId } } as any);
                     return;
                   }
-                  // Action behavior can be added later.
+                  if (action.id === "add-image") {
+                    router.push({ pathname: "/add-image", params: { worksiteId } } as any);
+                    return;
+                  }
                 }}
               >
                 <View style={styles.imagePlaceholder}>
