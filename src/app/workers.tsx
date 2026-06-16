@@ -241,11 +241,19 @@ export default function WorkersPage() {
           const formData = new FormData();
           const fileName = pendingPhotoUri.split('/').pop() || 'photo.jpg';
           const ext = fileName.split('.').pop() || 'jpg';
-          formData.append('photo', {
-            uri: pendingPhotoUri,
-            name: fileName,
-            type: `image/${ext}`,
-          } as any);
+          const mimeType = `image/${ext}`;
+
+          if (Platform.OS === 'web') {
+            const res = await fetch(pendingPhotoUri);
+            const blob = await res.blob();
+            formData.append('photo', blob, fileName);
+          } else {
+            formData.append('photo', {
+              uri: pendingPhotoUri,
+              name: fileName,
+              type: mimeType,
+            } as any);
+          }
 
           await fetch(`${API_BASE_URL}/workers/${savedId}/upload-face`, {
             method: 'POST',
