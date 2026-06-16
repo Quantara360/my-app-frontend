@@ -212,6 +212,11 @@ export default function FaceRecognition() {
   return (
     <ThemedView style={styles.container}>
       <View style={styles.headerRow}>
+        <Pressable style={[styles.backButton, { backgroundColor: theme.backgroundElement }]} onPress={() => router.back()}>
+          <ThemedText style={styles.backText}>Back</ThemedText>
+        </Pressable>
+      </View>
+      <View style={styles.titleRow}>
         <View style={styles.headerText}>
           <ThemedText type="subtitle">Face Recognition</ThemedText>
           <ThemedText type="small">
@@ -314,6 +319,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: Spacing.four,
+    paddingTop: 60,
     alignItems: "center",
     justifyContent: "flex-start",
     paddingBottom: BottomTabInset,
@@ -321,9 +327,25 @@ const styles = StyleSheet.create({
   headerRow: {
     width: "100%",
     flexDirection: "row",
+    justifyContent: "flex-start",
+    marginBottom: Spacing.two,
+  },
+  titleRow: {
+    width: "100%",
+    flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: Spacing.two,
+  },
+  backButton: {
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  backText: {
+    fontWeight: "700",
   },
   headerText: {
     flex: 1,
