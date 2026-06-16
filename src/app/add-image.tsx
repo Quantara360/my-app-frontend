@@ -4,6 +4,7 @@ import {
   Modal,
   Pressable,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -103,6 +104,12 @@ export default function AddImagePage() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
         <View style={styles.header}>
           <Pressable style={styles.backButton} onPress={() => router.back()}>
             <ThemedText style={styles.backText}>Back</ThemedText>
@@ -195,6 +202,7 @@ export default function AddImagePage() {
             </View>
           </View>
         </Modal>
+        </ScrollView>
       </SafeAreaView>
     </ThemedView>
   );
@@ -205,10 +213,15 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     paddingHorizontal: Spacing.four,
-    alignItems: "center",
-    paddingBottom: BottomTabInset + Spacing.three,
     maxWidth: MaxContentWidth,
-    justifyContent: "flex-start",
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    alignItems: "stretch",
+    paddingBottom: BottomTabInset + Spacing.five,
+    flexGrow: 1,
   },
   header: { 
     width: "100%", 
