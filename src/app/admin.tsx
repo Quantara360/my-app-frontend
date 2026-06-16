@@ -138,6 +138,8 @@ export default function AdminDashboard() {
     | "workers"
     | "personal"
     | "personalAssets"
+    | "personalSelection"
+    | "personalDocuments"
     | "manageSite"
     | "attendance"
   >("dashboard");
@@ -213,6 +215,63 @@ export default function AdminDashboard() {
   const [editAttendanceShift, setEditAttendanceShift] = useState("");
   const [editAttendanceDate, setEditAttendanceDate] = useState("");
   const [editAttendanceStatus, setEditAttendanceStatus] = useState("");
+
+  // Notes and Files state for Personal Documents
+  const [notes, setNotes] = useState<any[]>([
+    { id: "1", text: "Commercial card details and notes.", date: "16/06/2026" },
+    { id: "2", text: "H\nUpdated 16/06/2026", date: "16/06/2026" }
+  ]);
+  const [files, setFiles] = useState<any[]>([]);
+  const [newNoteText, setNewNoteText] = useState("");
+  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
+  const [newFileName, setNewFileName] = useState("");
+  const [newFileType, setNewFileType] = useState<"PDF" | "WORD" | "IMG" | "">("");
+  const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
+
+  const handleSaveNote = () => {
+    if (!newNoteText.trim()) return;
+    if (selectedNoteId) {
+      setNotes(notes.map(n => n.id === selectedNoteId ? { ...n, text: newNoteText } : n));
+      setSelectedNoteId(null);
+    } else {
+      setNotes([{ id: Date.now().toString(), text: newNoteText, date: new Date().toLocaleDateString('en-GB') }, ...notes]);
+    }
+    setNewNoteText("");
+  };
+  const handleEditNote = (note: any) => {
+    setSelectedNoteId(note.id);
+    setNewNoteText(note.text);
+  };
+  const handleDeleteNote = (id: string) => {
+    setNotes(notes.filter(n => n.id !== id));
+  };
+
+  const handleSaveFile = () => {
+    if (!newFileName.trim() || !newFileType) return;
+    if (selectedFileId) {
+      setFiles(files.map(f => f.id === selectedFileId ? { ...f, name: newFileName, type: newFileType } : f));
+      setSelectedFileId(null);
+    } else {
+      setFiles([{ id: Date.now().toString(), name: newFileName, type: newFileType, uploadedAt: new Date().toLocaleDateString('en-GB') }, ...files]);
+    }
+    setNewFileName("");
+    setNewFileType("");
+  };
+  const handleEditFile = (file: any) => {
+    setSelectedFileId(file.id);
+    setNewFileName(file.name);
+    setNewFileType(file.type as "PDF" | "WORD" | "IMG");
+  };
+  const handleDeleteFile = (id: string) => {
+    setFiles(files.filter(f => f.id !== id));
+  };
+  const getFileTypeIcon = (type: string) => {
+    if (type === 'PDF') return <Text style={{fontSize: 20}}>📄</Text>;
+    if (type === 'WORD') return <Text style={{fontSize: 20}}>📝</Text>;
+    return <Text style={{fontSize: 20}}>🖼️</Text>;
+  };
+  const handlePersonalAssetsTilePress = () => setSelectedView("personalAssets");
+  const handlePersonalDocumentsTilePress = () => setSelectedView("personalDocuments");
 
   // Site-filtered data
   const filteredMachineries = selectedSiteId ? machineries.filter((m: any) => m.worksite_id === selectedSiteId) : machineries;
@@ -785,7 +844,7 @@ export default function AdminDashboard() {
     } else if (card.title === "Workers") {
       setSelectedView("workers");
     } else if (card.title === "Personal") {
-      setSelectedView("personalAssets");
+      setSelectedView("personalSelection");
     } else if (card.title === "Manage Site") {
       setSelectedView("manageSite");
     } else {
@@ -1578,7 +1637,196 @@ export default function AdminDashboard() {
 
 
 
-  const renderPersonalView = () => {
+  const renderPersonalSelectionView = () => {
+    return (
+      <View style={styles.personalSelectionContainer}>
+        <View style={[styles.headerSection, styles.greetingContainer, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
+          <ThemedText type="subtitle" style={styles.greeting}>
+            Hii {user?.name || "Malith"}, Welcome!
+          </ThemedText>
+          <Pressable onPress={async () => { await signOut(); router.replace('/'); }} style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: isDark ? '#333' : '#e0e0e0', borderRadius: 8 }}>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: isDark ? '#fff' : '#000' }}>Sign Out</Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.personalSelectionHeader}>
+          <Pressable
+            onPress={() => {
+              setSelectedView("dashboard");
+            }}
+            style={styles.backButton}
+          >
+            <Text style={styles.backButtonIcon}>‹</Text>
+          </Pressable>
+          <ThemedText type="subtitle" style={styles.personalSelectionTitle}>
+            Personal
+          </ThemedText>
+        </View>
+
+        <View style={styles.personalSelectionContent}>
+          <Pressable
+            onPress={handlePersonalAssetsTilePress}
+            style={styles.personalTile}
+          >
+            <View
+              style={[styles.personalTileInner, { backgroundColor: "#e74c3c" }]}
+            >
+              <ThemedText style={styles.personalTileText}>
+                Personal Assets
+              </ThemedText>
+            </View>
+          </Pressable>
+
+          <Pressable
+            onPress={handlePersonalDocumentsTilePress}
+            style={styles.personalTile}
+          >
+            <View
+              style={[styles.personalTileInner, { backgroundColor: "#9b8b7e" }]}
+            >
+              <ThemedText style={styles.personalTileText}>
+                Personal Details{"\n"}& Documents
+              </ThemedText>
+            </View>
+          </Pressable>
+        </View>
+      </View>
+    );
+  };
+
+  const renderPersonalDocumentsView = () => {
+    return (
+      <View style={styles.personalDocumentsContainer}>
+        <View style={[styles.headerSection, styles.greetingContainer, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
+          <ThemedText type="subtitle" style={styles.greeting}>
+            Hii {user?.name || "Malith"}, Welcome!
+          </ThemedText>
+          <Pressable onPress={async () => { await signOut(); router.replace('/'); }} style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: isDark ? '#333' : '#e0e0e0', borderRadius: 8 }}>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: isDark ? '#fff' : '#000' }}>Sign Out</Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.personalDocumentsHeader}>
+          <Pressable
+            onPress={() => setSelectedView("personalSelection")}
+            style={styles.backButton}
+          >
+            <Text style={styles.backButtonIcon}>‹</Text>
+          </Pressable>
+          <ThemedText type="subtitle" style={styles.personalDocumentsTitle}>
+            Personal Details & Documents
+          </ThemedText>
+        </View>
+
+        <View style={styles.personalDocumentsSection}>
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>Notes</Text>
+            <TextInput
+              value={newNoteText}
+              onChangeText={setNewNoteText}
+              placeholder="Add a new note"
+              placeholderTextColor="#8a8a8f"
+              style={styles.notesInput}
+              multiline
+            />
+            <Pressable onPress={handleSaveNote} style={styles.sectionButton}>
+              <Text style={styles.sectionButtonText}>
+                {selectedNoteId ? "Update Note" : "Save Note"}
+              </Text>
+            </Pressable>
+
+            {notes.map((note) => (
+              <View key={note.id} style={styles.noteItem}>
+                <View style={styles.noteTextSection}>
+                  <Text style={styles.noteText}>{note.text}</Text>
+                  <Text style={styles.noteDate}>{note.date}</Text>
+                </View>
+                <View style={styles.noteActions}>
+                  <Pressable
+                    onPress={() => handleEditNote(note)}
+                    style={styles.noteActionButton}
+                  >
+                    <Text style={styles.noteActionText}>Edit</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => handleDeleteNote(note.id)}
+                    style={[styles.noteActionButton, styles.deleteActionButton]}
+                  >
+                    <Text style={styles.noteActionText}>Delete</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ))}
+          </View>
+
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>Files</Text>
+            <TextInput
+              value={newFileName}
+              onChangeText={setNewFileName}
+              placeholder="File name"
+              placeholderTextColor="#8a8a8f"
+              style={styles.textInput}
+            />
+            <View style={styles.fileTypeRow}>
+              {["PDF", "WORD", "IMG"].map((type) => (
+                <Pressable
+                  key={type}
+                  onPress={() => setNewFileType(type as "PDF" | "WORD" | "IMG")}
+                  style={[
+                    styles.fileTypeButton,
+                    newFileType === type && styles.fileTypeButtonActive,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.fileTypeText,
+                      newFileType === type && styles.fileTypeTextActive,
+                    ]}
+                  >
+                    {type}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+            <Pressable onPress={handleSaveFile} style={styles.sectionButton}>
+              <Text style={styles.sectionButtonText}>
+                {selectedFileId ? "Update File" : "Add File"}
+              </Text>
+            </Pressable>
+
+            {files.map((file) => (
+              <View key={file.id} style={styles.fileItem}>
+                <View style={styles.fileIcon}>
+                  {getFileTypeIcon(file.type)}
+                </View>
+                <View style={styles.fileInfo}>
+                  <Text style={styles.fileName}>{file.name}</Text>
+                  <Text style={styles.fileDate}>{file.uploadedAt}</Text>
+                </View>
+                <View style={styles.fileActions}>
+                  <Pressable
+                    onPress={() => handleEditFile(file)}
+                    style={styles.fileActionButton}
+                  >
+                    <Text style={styles.noteActionText}>Edit</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => handleDeleteFile(file.id)}
+                    style={[styles.fileActionButton, styles.deleteActionButton]}
+                  >
+                    <Text style={styles.noteActionText}>Delete</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+      </View>
+    );
+  };
+
+  const renderPersonalAssetsView = () => {
     return (
       <View style={styles.personalContainer}>
         <View style={[styles.headerSection, styles.greetingContainer, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
@@ -1593,7 +1841,7 @@ export default function AdminDashboard() {
         <View style={styles.personalHeader}>
           <Pressable
             onPress={() => {
-              setSelectedView("dashboard");
+              setSelectedView("personalSelection");
             }}
             style={styles.backButton}
           >
@@ -2716,7 +2964,11 @@ export default function AdminDashboard() {
             : selectedView === "workers"
             ? renderWorkersView()
             : selectedView === "personalAssets"
-            ? renderPersonalView()
+            ? renderPersonalAssetsView()
+            : selectedView === "personalSelection"
+            ? renderPersonalSelectionView()
+            : selectedView === "personalDocuments"
+            ? renderPersonalDocumentsView()
             : selectedView === "manageSite"
             ? renderManageSiteView()
             : null}
@@ -3828,17 +4080,206 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
     minWidth: 100,
     paddingHorizontal: 10,
   },
-  personalCellExtra: {
-    minWidth: 120,
-    paddingHorizontal: 8,
+  personalSelectionContainer: {
+    gap: Spacing.three,
+    paddingBottom: Spacing.three,
+    flex: 1,
   },
-  personalCellActions: {
-    minWidth: 80,
-    maxWidth: 90,
-    paddingHorizontal: 6,
+  personalSelectionHeader: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: Spacing.two,
+    position: "relative",
+  },
+  personalSelectionTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+  },
+  personalSelectionContent: {
+    gap: Spacing.four,
+    marginTop: Spacing.four,
+    paddingHorizontal: Spacing.two,
+  },
+  personalTile: {
+    height: 120,
+    borderRadius: 20,
+    overflow: "hidden",
+  },
+  personalTileInner: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: Spacing.three,
+  },
+  personalTileText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#ffffff",
+    textAlign: "center",
+    lineHeight: 26,
+  },
+
+  personalDocumentsContainer: {
+    gap: Spacing.three,
+    paddingBottom: Spacing.three,
+    flex: 1,
+  },
+  personalDocumentsHeader: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: Spacing.two,
+    position: "relative",
+  },
+  personalDocumentsTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+  },
+  personalDocumentsSection: {
+    gap: Spacing.three,
+  },
+  sectionCard: {
+    backgroundColor: isDark ? "#1e1e1e" : "#ffffff",
+    borderRadius: 20,
+    padding: Spacing.four,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+    gap: Spacing.three,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: isDark ? "#ffffff" : "#1f1d21",
+  },
+  notesInput: {
+    backgroundColor: isDark ? "#2a2a2a" : "#f2f2f7",
+    borderRadius: 16,
+    padding: Spacing.three,
+    minHeight: 100,
+    textAlignVertical: "top",
+    color: isDark ? "#ffffff" : "#1f1d21",
+  },
+  textInput: {
+    backgroundColor: isDark ? "#2a2a2a" : "#f2f2f7",
+    borderRadius: 16,
+    padding: Spacing.three,
+    color: isDark ? "#ffffff" : "#1f1d21",
+  },
+  sectionButton: {
+    backgroundColor: "#f97316",
+    borderRadius: 16,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  sectionButtonText: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  fileTypeRow: {
+    flexDirection: "row",
+    gap: Spacing.two,
+  },
+  fileTypeButton: {
+    flex: 1,
+    borderRadius: 12,
+    paddingVertical: Spacing.three,
+    alignItems: "center",
+    backgroundColor: isDark ? "#2a2a2a" : "#f2f2f7",
+  },
+  fileTypeButtonActive: {
+    backgroundColor: "#fb923c",
+  },
+  fileTypeText: {
+    color: isDark ? "#ffffff" : "#1f1d21",
+    fontWeight: "700",
+  },
+  fileTypeTextActive: {
+    color: "#ffffff",
+  },
+  fileItem: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "flex-end",
+    justifyContent: "space-between",
+    backgroundColor: isDark ? "#222" : "#f8fafc",
+    borderRadius: 16,
+    padding: Spacing.three,
+    marginTop: Spacing.two,
+  },
+  fileIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: "#fde68a",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: Spacing.three,
+  },
+  fileInfo: {
+    flex: 1,
     gap: Spacing.one,
+  },
+  fileName: {
+    color: isDark ? "#ffffff" : "#1f1d21",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  fileDate: {
+    color: isDark ? "#a0a0a0" : "#6b7280",
+    fontSize: 13,
+  },
+  fileActions: {
+    flexDirection: "row",
+    gap: Spacing.two,
+  },
+  fileActionButton: {
+    borderRadius: 12,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    backgroundColor: isDark ? "#333" : "#e5e7eb",
+  },
+  noteItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: isDark ? "#222" : "#f8fafc",
+    borderRadius: 16,
+    padding: Spacing.three,
+    marginTop: Spacing.two,
+  },
+  noteTextSection: {
+    flex: 1,
+    gap: Spacing.one,
+  },
+  noteText: {
+    color: isDark ? "#ffffff" : "#1f1d21",
+    fontSize: 15,
+  },
+  noteDate: {
+    color: isDark ? "#a0a0a0" : "#6b7280",
+    fontSize: 13,
+  },
+  noteActions: {
+    flexDirection: "row",
+    gap: Spacing.two,
+    alignItems: "center",
+  },
+  noteActionButton: {
+    borderRadius: 12,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    backgroundColor: isDark ? "#333" : "#e5e7eb",
+  },
+  noteActionText: {
+    color: isDark ? "#ffffff" : "#1f1d21",
+    fontWeight: "600",
+    fontSize: 13,
+  },
+  deleteActionButton: {
+    backgroundColor: "#fee2e2",
   },
 });
