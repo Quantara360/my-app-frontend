@@ -20,7 +20,11 @@ export default function WorksitePage() {
   const theme = useTheme();
   const { token } = useAuth();
   const worksiteId = Number(params.worksite);
-  const [worksite, setWorksite] = useState<{ id: number; name: string; description?: string } | null>(null);
+  const [worksite, setWorksite] = useState<{
+    id: number;
+    name: string;
+    description?: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!token || !worksiteId) {
@@ -29,12 +33,15 @@ export default function WorksitePage() {
 
     async function loadWorksite() {
       try {
-        const response = await fetch(`${API_BASE_URL}/worksites/${worksiteId}`, {
-          headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${token}`,
+        const response = await fetch(
+          `${API_BASE_URL}/worksites/${worksiteId}`,
+          {
+            headers: {
+              Accept: "application/json",
+              Authorization: `Bearer ${token}`,
+            },
           },
-        });
+        );
 
         if (!response.ok) {
           throw new Error("Unable to load worksite");
@@ -75,17 +82,36 @@ export default function WorksitePage() {
                 ]}
                 onPress={() => {
                   if (action.id === "attendance") {
-                    router.push({ pathname: "/mark-attendance", params: { worksiteId } } as any);
+                    router.push({
+                      pathname: "/mark-attendance",
+                      params: { worksiteId },
+                    } as any);
                     return;
                   }
                   if (action.id === "add-image") {
-                    router.push({ pathname: "/add-image", params: { worksiteId } } as any);
+                    const isAmil = worksite?.name
+                      ?.toLowerCase()
+                      .includes("amil");
+                    if (isAmil) {
+                      router.push(
+                        `/dashboard/select-hospitals?worksiteId=${worksiteId}`,
+                      );
+                      return;
+                    }
+
+                    router.push({
+                      pathname: "/add-image",
+                      params: { worksiteId },
+                    } as any);
                     return;
                   }
                 }}
               >
                 <View style={styles.imagePlaceholder}>
-                  <ThemedText type="small" style={[styles.imageLabel, { color: theme.textSecondary }]}>
+                  <ThemedText
+                    type="small"
+                    style={[styles.imageLabel, { color: theme.textSecondary }]}
+                  >
                     Image
                   </ThemedText>
                 </View>

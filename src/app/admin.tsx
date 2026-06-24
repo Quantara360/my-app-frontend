@@ -27,7 +27,7 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme
+  useColorScheme,
 } from "react-native";
 
 interface AdminCard {
@@ -49,7 +49,7 @@ export default function AdminDashboard() {
   const [showSiteDropdown, setShowSiteDropdown] = useState(false);
   const router = useRouter();
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const isDark = colorScheme === "dark";
   const styles = React.useMemo(() => createStyles(isDark), [isDark]);
 
   // Admin profile state
@@ -156,7 +156,9 @@ export default function AdminDashboard() {
   const [vehicles, setVehicles] = useState<VehicleRecord[]>([]);
   const [jewelleries, setJewelleries] = useState<JewelleryRecord[]>([]);
   const [properties, setProperties] = useState<PropertyRecord[]>([]);
-  const [attendances, setAttendances] = useState<AttendancesService.AttendanceRecord[]>([]);
+  const [attendances, setAttendances] = useState<
+    AttendancesService.AttendanceRecord[]
+  >([]);
   const [worksites, setWorksites] = useState<Worksite[]>([]);
   const [manageSites, setManageSites] = useState<any[]>([]);
 
@@ -174,13 +176,18 @@ export default function AdminDashboard() {
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [showAddSiteModal, setShowAddSiteModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [showApprovalSuccessModal, setShowApprovalSuccessModal] = useState(false);
+  const [showApprovalSuccessModal, setShowApprovalSuccessModal] =
+    useState(false);
   const [showRejectReasonModal, setShowRejectReasonModal] = useState(false);
   const [showRejectSuccessModal, setShowRejectSuccessModal] = useState(false);
-  const [showTerminateConfirmModal, setShowTerminateConfirmModal] = useState(false);
-  const [showTerminateSuccessModal, setShowTerminateSuccessModal] = useState(false);
-  const [showWorkerDeleteSuccessModal, setShowWorkerDeleteSuccessModal] = useState(false);
-  const [showSiteDeletedSuccessModal, setShowSiteDeletedSuccessModal] = useState(false);
+  const [showTerminateConfirmModal, setShowTerminateConfirmModal] =
+    useState(false);
+  const [showTerminateSuccessModal, setShowTerminateSuccessModal] =
+    useState(false);
+  const [showWorkerDeleteSuccessModal, setShowWorkerDeleteSuccessModal] =
+    useState(false);
+  const [showSiteDeletedSuccessModal, setShowSiteDeletedSuccessModal] =
+    useState(false);
   const [showAddPersonalModal, setShowAddPersonalModal] = useState(false);
   const [showPersonalEditModal, setShowPersonalEditModal] = useState(false);
   const [showAttendanceEditModal, setShowAttendanceEditModal] = useState(false);
@@ -204,9 +211,13 @@ export default function AdminDashboard() {
   const siteLogoInputRef = useRef<HTMLInputElement | null>(null);
   const [deletedSiteName, setDeletedSiteName] = useState("");
   const [rejectReason, setRejectReason] = useState("");
-  const [selectedApprovalForReject, setSelectedApprovalForReject] = useState<ApprovalRecord | null>(null);
-  const [selectedWorkerForTermination, setSelectedWorkerForTermination] = useState<WorkerRecord | null>(null);
-  const [successModalTitle, setSuccessModalTitle] = useState("Assets Updated Successfully!");
+  const [selectedApprovalForReject, setSelectedApprovalForReject] =
+    useState<ApprovalRecord | null>(null);
+  const [selectedWorkerForTermination, setSelectedWorkerForTermination] =
+    useState<WorkerRecord | null>(null);
+  const [successModalTitle, setSuccessModalTitle] = useState(
+    "Assets Updated Successfully!",
+  );
   const [successButtonText, setSuccessButtonText] = useState("Ok");
   const [selectedAsset, setSelectedAsset] = useState<AssetRecord | null>(null);
   const [editName, setEditName] = useState("");
@@ -214,22 +225,35 @@ export default function AdminDashboard() {
   const [editValue, setEditValue] = useState("");
 
   // Attendance edit
-  const [selectedAttendance, setSelectedAttendance] = useState<AttendancesService.AttendanceRecord | null>(null);
+  const [selectedAttendance, setSelectedAttendance] =
+    useState<AttendancesService.AttendanceRecord | null>(null);
   const [editAttendanceShift, setEditAttendanceShift] = useState("");
   const [editAttendanceDate, setEditAttendanceDate] = useState("");
   const [editAttendanceStatus, setEditAttendanceStatus] = useState("");
 
   // Notes and Files state for Personal Documents
-  const [notes, setNotes] = useState<PersonalDocumentsService.PersonalNote[]>([]);
-  const [files, setFiles] = useState<PersonalDocumentsService.PersonalFile[]>([]);
+  const [notes, setNotes] = useState<PersonalDocumentsService.PersonalNote[]>(
+    [],
+  );
+  const [files, setFiles] = useState<PersonalDocumentsService.PersonalFile[]>(
+    [],
+  );
   const [newNoteText, setNewNoteText] = useState("");
-  const [selectedNoteId, setSelectedNoteId] = useState<string | number | null>(null);
+  const [selectedNoteId, setSelectedNoteId] = useState<string | number | null>(
+    null,
+  );
   const [newFileName, setNewFileName] = useState("");
-  const [newFileType, setNewFileType] = useState<"PDF" | "WORD" | "IMG" | "">("");
-  const [selectedFileId, setSelectedFileId] = useState<string | number | null>(null);
+  const [newFileType, setNewFileType] = useState<"PDF" | "WORD" | "IMG" | "">(
+    "",
+  );
+  const [selectedFileId, setSelectedFileId] = useState<string | number | null>(
+    null,
+  );
   const [pickedFileUri, setPickedFileUri] = useState<string | null>(null);
   const [pickedFileMime, setPickedFileMime] = useState<string | null>(null);
-  const [pickedFileActualName, setPickedFileActualName] = useState<string | null>(null);
+  const [pickedFileActualName, setPickedFileActualName] = useState<
+    string | null
+  >(null);
 
   const handlePickFile = async (type: "PDF" | "WORD" | "IMG") => {
     setNewFileType(type);
@@ -239,27 +263,41 @@ export default function AdminDashboard() {
     try {
       if (type === "IMG") {
         const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (!perm.granted) { Alert.alert("Permission required", "Allow media access to pick images."); return; }
-        const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: false, quality: 0.85 });
+        if (!perm.granted) {
+          Alert.alert(
+            "Permission required",
+            "Allow media access to pick images.",
+          );
+          return;
+        }
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ["images"],
+          allowsEditing: false,
+          quality: 0.85,
+        });
         if (!result.canceled && result.assets.length > 0) {
           const asset = result.assets[0];
           setPickedFileUri(asset.uri);
-          setPickedFileMime(asset.mimeType || 'image/jpeg');
-          setPickedFileActualName(asset.fileName || 'image.jpg');
-          if (!newFileName) setNewFileName(asset.fileName?.replace(/\.[^.]+$/, '') || 'image');
+          setPickedFileMime(asset.mimeType || "image/jpeg");
+          setPickedFileActualName(asset.fileName || "image.jpg");
+          if (!newFileName)
+            setNewFileName(asset.fileName?.replace(/\.[^.]+$/, "") || "image");
         }
       } else {
         const mimeMap: Record<string, string> = {
-          PDF: 'application/pdf',
-          WORD: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          PDF: "application/pdf",
+          WORD: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         };
-        const result = await DocumentPicker.getDocumentAsync({ type: mimeMap[type] || '*/*', copyToCacheDirectory: true });
+        const result = await DocumentPicker.getDocumentAsync({
+          type: mimeMap[type] || "*/*",
+          copyToCacheDirectory: true,
+        });
         if (!result.canceled && result.assets && result.assets.length > 0) {
           const asset = result.assets[0];
           setPickedFileUri(asset.uri);
-          setPickedFileMime(asset.mimeType || 'application/octet-stream');
+          setPickedFileMime(asset.mimeType || "application/octet-stream");
           setPickedFileActualName(asset.name);
-          if (!newFileName) setNewFileName(asset.name.replace(/\.[^.]+$/, ''));
+          if (!newFileName) setNewFileName(asset.name.replace(/\.[^.]+$/, ""));
         }
       }
     } catch (e) {
@@ -272,11 +310,17 @@ export default function AdminDashboard() {
     if (!newNoteText.trim()) return;
     try {
       if (selectedNoteId) {
-        const updated = await PersonalDocumentsService.updateNote(selectedNoteId, { text: newNoteText });
-        setNotes(notes.map(n => n.id === selectedNoteId ? updated : n));
+        const updated = await PersonalDocumentsService.updateNote(
+          selectedNoteId,
+          { text: newNoteText },
+        );
+        setNotes(notes.map((n) => (n.id === selectedNoteId ? updated : n)));
         setSelectedNoteId(null);
       } else {
-        const created = await PersonalDocumentsService.createNote({ text: newNoteText, date: new Date().toLocaleDateString('en-GB') });
+        const created = await PersonalDocumentsService.createNote({
+          text: newNoteText,
+          date: new Date().toLocaleDateString("en-GB"),
+        });
         setNotes([created, ...notes]);
       }
       setNewNoteText("");
@@ -292,7 +336,7 @@ export default function AdminDashboard() {
   const handleDeleteNote = async (id: string | number) => {
     try {
       await PersonalDocumentsService.deleteNote(id);
-      setNotes(notes.filter(n => n.id !== id));
+      setNotes(notes.filter((n) => n.id !== id));
     } catch (e) {
       console.error(e);
       Alert.alert("Error", "Failed to delete note");
@@ -302,23 +346,35 @@ export default function AdminDashboard() {
   const handleSaveFile = async () => {
     if (!newFileName.trim() || !newFileType) return;
     if (!pickedFileUri && !selectedFileId) {
-      Alert.alert("No file selected", "Please tap a type button (PDF / WORD / IMG) to pick a file first.");
+      Alert.alert(
+        "No file selected",
+        "Please tap a type button (PDF / WORD / IMG) to pick a file first.",
+      );
       return;
     }
     try {
       if (selectedFileId) {
-        const updated = await PersonalDocumentsService.updateFile(selectedFileId, {
-          name: newFileName,
-          type: newFileType,
-          ...(pickedFileUri ? { fileUri: pickedFileUri, fileMimeType: pickedFileMime || undefined, fileActualName: pickedFileActualName || undefined } : {}),
-        });
-        setFiles(files.map(f => f.id === selectedFileId ? updated : f));
+        const updated = await PersonalDocumentsService.updateFile(
+          selectedFileId,
+          {
+            name: newFileName,
+            type: newFileType,
+            ...(pickedFileUri
+              ? {
+                  fileUri: pickedFileUri,
+                  fileMimeType: pickedFileMime || undefined,
+                  fileActualName: pickedFileActualName || undefined,
+                }
+              : {}),
+          },
+        );
+        setFiles(files.map((f) => (f.id === selectedFileId ? updated : f)));
         setSelectedFileId(null);
       } else {
         const created = await PersonalDocumentsService.createFile({
           name: newFileName,
           type: newFileType,
-          uploaded_at: new Date().toLocaleDateString('en-GB'),
+          uploaded_at: new Date().toLocaleDateString("en-GB"),
           fileUri: pickedFileUri || undefined,
           fileMimeType: pickedFileMime || undefined,
           fileActualName: pickedFileActualName || undefined,
@@ -344,30 +400,41 @@ export default function AdminDashboard() {
   const handleDeleteFile = async (id: string | number) => {
     try {
       await PersonalDocumentsService.deleteFile(id);
-      setFiles(files.filter(f => f.id !== id));
+      setFiles(files.filter((f) => f.id !== id));
     } catch (e) {
       console.error(e);
       Alert.alert("Error", "Failed to delete file");
     }
   };
   const getFileTypeIcon = (type: string) => {
-    if (type === 'PDF') return <Text style={{fontSize: 20}}>📄</Text>;
-    if (type === 'WORD') return <Text style={{fontSize: 20}}>📝</Text>;
-    return <Text style={{fontSize: 20}}>🖼️</Text>;
+    if (type === "PDF") return <Text style={{ fontSize: 20 }}>📄</Text>;
+    if (type === "WORD") return <Text style={{ fontSize: 20 }}>📝</Text>;
+    return <Text style={{ fontSize: 20 }}>🖼️</Text>;
   };
   const handlePersonalAssetsTilePress = () => setSelectedView("personalAssets");
-  const handlePersonalDocumentsTilePress = () => setSelectedView("personalDocuments");
+  const handlePersonalDocumentsTilePress = () =>
+    setSelectedView("personalDocuments");
 
   // Site-filtered data
-  const filteredMachineries = selectedSiteId ? machineries.filter((m: any) => m.worksite_id === selectedSiteId) : machineries;
-  const filteredAssets = selectedSiteId ? assets.filter((a: any) => a.worksite_id === selectedSiteId) : assets;
-  const filteredChemicals = selectedSiteId ? chemicals.filter((c: any) => c.worksite_id === selectedSiteId) : chemicals;
-  const filteredApprovals = selectedSiteId ? approvals.filter((a: any) => a.worksite_id === selectedSiteId) : approvals;
-  const filteredWorkers = selectedSiteId ? workers.filter((w: any) => w.worksite_id === selectedSiteId) : workers;
+  const filteredMachineries = selectedSiteId
+    ? machineries.filter((m: any) => m.worksite_id === selectedSiteId)
+    : machineries;
+  const filteredAssets = selectedSiteId
+    ? assets.filter((a: any) => a.worksite_id === selectedSiteId)
+    : assets;
+  const filteredChemicals = selectedSiteId
+    ? chemicals.filter((c: any) => c.worksite_id === selectedSiteId)
+    : chemicals;
+  const filteredApprovals = selectedSiteId
+    ? approvals.filter((a: any) => a.worksite_id === selectedSiteId)
+    : approvals;
+  const filteredWorkers = selectedSiteId
+    ? workers.filter((w: any) => w.worksite_id === selectedSiteId)
+    : workers;
 
   const todayAttendancesCount = attendances.filter((a: any) => {
     if (!a.date) return false;
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toISOString().split("T")[0];
     return a.date.startsWith(today);
   }).length;
 
@@ -379,7 +446,9 @@ export default function AdminDashboard() {
       String(item.id).includes(query) ||
       item.name.toLowerCase().includes(query) ||
       item.site.toLowerCase().includes(query) ||
-      (item.type || item.status || item.role || "").toLowerCase().includes(query)
+      (item.type || item.status || item.role || "")
+        .toLowerCase()
+        .includes(query)
     );
   });
 
@@ -428,13 +497,21 @@ export default function AdminDashboard() {
     );
   });
 
-  const filteredAttendances = selectedSiteId ? attendances.filter((a: any) => a.worksite_id === selectedSiteId) : attendances;
+  const filteredAttendances = selectedSiteId
+    ? attendances.filter((a: any) => a.worksite_id === selectedSiteId)
+    : attendances;
   const filteredAttendanceData = filteredAttendances.filter((item) => {
-    const searchMatch = attendanceSearch.trim() === "" ||
-      (item.worker?.name || "").toLowerCase().includes(attendanceSearch.toLowerCase()) ||
+    const searchMatch =
+      attendanceSearch.trim() === "" ||
+      (item.worker?.name || "")
+        .toLowerCase()
+        .includes(attendanceSearch.toLowerCase()) ||
       String(item.id).includes(attendanceSearch);
-    const shiftMatch = attendanceShiftFilter === "All" || item.shift === attendanceShiftFilter;
-    const dateMatch = attendanceDateFilter === "" || (item.date && item.date.startsWith(attendanceDateFilter));
+    const shiftMatch =
+      attendanceShiftFilter === "All" || item.shift === attendanceShiftFilter;
+    const dateMatch =
+      attendanceDateFilter === "" ||
+      (item.date && item.date.startsWith(attendanceDateFilter));
     return searchMatch && shiftMatch && dateMatch;
   });
 
@@ -445,22 +522,24 @@ export default function AdminDashboard() {
       setProfileError("");
       const headers = await getAuthHeaders();
       const response = await fetch(`${API_BASE_URL}/profile`, {
-        method: 'POST',
+        method: "POST",
         headers: {
           ...headers,
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           name: adminName,
           email: adminEmail,
-          ...(adminPassword ? { password: adminPassword } : {})
-        })
+          ...(adminPassword ? { password: adminPassword } : {}),
+        }),
       });
       const data = await response.json();
       if (!response.ok) {
         if (data.errors) {
           const firstError = Object.values(data.errors)[0];
-          const errorMessage = Array.isArray(firstError) ? firstError[0] : firstError;
+          const errorMessage = Array.isArray(firstError)
+            ? firstError[0]
+            : firstError;
           throw new Error(errorMessage as string);
         }
         throw new Error(data.message || "Failed to update profile");
@@ -481,11 +560,13 @@ export default function AdminDashboard() {
   const handleApproveApproval = async (item: ApprovalRecord) => {
     try {
       await ApprovalsService.approveApproval(item.id);
-      setApprovals((prev) => prev.map((a) => a.id === item.id ? { ...a, status: 'approved' } : a));
+      setApprovals((prev) =>
+        prev.map((a) => (a.id === item.id ? { ...a, status: "approved" } : a)),
+      );
       setShowApprovalSuccessModal(true);
     } catch (error) {
-      console.error('Failed to approve:', error);
-      Alert.alert('Error', 'Failed to approve');
+      console.error("Failed to approve:", error);
+      Alert.alert("Error", "Failed to approve");
     }
   };
 
@@ -498,13 +579,16 @@ export default function AdminDashboard() {
   const handleConfirmReject = async () => {
     if (selectedApprovalForReject) {
       try {
-        await ApprovalsService.rejectApproval(selectedApprovalForReject.id, rejectReason);
+        await ApprovalsService.rejectApproval(
+          selectedApprovalForReject.id,
+          rejectReason,
+        );
         await loadApprovalsData();
         setShowRejectReasonModal(false);
         setShowRejectSuccessModal(true);
       } catch (error) {
-        console.error('Failed to reject:', error);
-        Alert.alert('Error', 'Failed to reject');
+        console.error("Failed to reject:", error);
+        Alert.alert("Error", "Failed to reject");
       }
     }
   };
@@ -528,19 +612,21 @@ export default function AdminDashboard() {
       setShowTerminateConfirmModal(false);
       setShowTerminateSuccessModal(true);
     } catch (error) {
-      console.error('Failed to terminate worker:', error);
-      Alert.alert('Error', 'Failed to terminate worker');
+      console.error("Failed to terminate worker:", error);
+      Alert.alert("Error", "Failed to terminate worker");
     }
   };
 
   const handleDeleteWorker = async (item: WorkerRecord) => {
     try {
       await WorkersService.deleteWorker(item.id);
-      setWorkers((current) => current.filter((worker) => worker.id !== item.id));
+      setWorkers((current) =>
+        current.filter((worker) => worker.id !== item.id),
+      );
       setShowWorkerDeleteSuccessModal(true);
     } catch (error) {
-      console.error('Failed to delete worker:', error);
-      Alert.alert('Error', 'Failed to delete worker');
+      console.error("Failed to delete worker:", error);
+      Alert.alert("Error", "Failed to delete worker");
     }
   };
 
@@ -564,7 +650,12 @@ export default function AdminDashboard() {
       setAssets((current) =>
         current.map((asset) =>
           asset.id === selectedAsset.id
-            ? { ...asset, name: editName, count: Number(editCount) || 0, value: editValue }
+            ? {
+                ...asset,
+                name: editName,
+                count: Number(editCount) || 0,
+                value: editValue,
+              }
             : asset,
         ),
       );
@@ -573,8 +664,8 @@ export default function AdminDashboard() {
       setSuccessButtonText("Ok");
       setShowSuccessModal(true);
     } catch (error) {
-      console.error('Failed to update asset:', error);
-      Alert.alert('Error', 'Failed to update asset');
+      console.error("Failed to update asset:", error);
+      Alert.alert("Error", "Failed to update asset");
     }
   };
 
@@ -588,18 +679,20 @@ export default function AdminDashboard() {
       setSuccessButtonText("Close");
       setShowSuccessModal(true);
     } catch (error) {
-      console.error('Failed to delete asset:', error);
-      Alert.alert('Error', 'Failed to delete asset');
+      console.error("Failed to delete asset:", error);
+      Alert.alert("Error", "Failed to delete asset");
     }
   };
 
   const handleDeleteChemical = async (item: any) => {
     try {
       await ChemicalsService.deleteChemical(item.id);
-      setChemicals((current: any[]) => current.filter((c: any) => c.id !== item.id));
+      setChemicals((current: any[]) =>
+        current.filter((c: any) => c.id !== item.id),
+      );
     } catch (error) {
-      console.error('Failed to delete chemical:', error);
-      Alert.alert('Error', 'Failed to delete chemical');
+      console.error("Failed to delete chemical:", error);
+      Alert.alert("Error", "Failed to delete chemical");
     }
   };
 
@@ -608,25 +701,29 @@ export default function AdminDashboard() {
       await MachineriesService.deleteMachinery(item.id);
       setMachineries((current) => current.filter((m) => m.id !== item.id));
     } catch (error) {
-      console.error('Failed to delete machinery:', error);
-      Alert.alert('Error', 'Failed to delete machinery');
+      console.error("Failed to delete machinery:", error);
+      Alert.alert("Error", "Failed to delete machinery");
     }
   };
 
-  const handleDeleteAttendance = async (item: AttendancesService.AttendanceRecord) => {
+  const handleDeleteAttendance = async (
+    item: AttendancesService.AttendanceRecord,
+  ) => {
     try {
       await AttendancesService.deleteAttendance(item.id);
       setAttendances((current) => current.filter((a) => a.id !== item.id));
     } catch (error) {
-      console.error('Failed to delete attendance:', error);
-      Alert.alert('Error', 'Failed to delete attendance');
+      console.error("Failed to delete attendance:", error);
+      Alert.alert("Error", "Failed to delete attendance");
     }
   };
 
-  const openAttendanceEditModal = (item: AttendancesService.AttendanceRecord) => {
+  const openAttendanceEditModal = (
+    item: AttendancesService.AttendanceRecord,
+  ) => {
     setSelectedAttendance(item);
     setEditAttendanceShift(item.shift);
-    setEditAttendanceDate(item.date ? item.date.split('T')[0] : '');
+    setEditAttendanceDate(item.date ? item.date.split("T")[0] : "");
     setEditAttendanceStatus(item.status);
     setShowAttendanceEditModal(true);
   };
@@ -636,9 +733,14 @@ export default function AdminDashboard() {
     setAttendances((current) =>
       current.map((a) =>
         a.id === selectedAttendance.id
-          ? { ...a, shift: editAttendanceShift, date: editAttendanceDate, status: editAttendanceStatus }
-          : a
-      )
+          ? {
+              ...a,
+              shift: editAttendanceShift,
+              date: editAttendanceDate,
+              status: editAttendanceStatus,
+            }
+          : a,
+      ),
     );
     setShowAttendanceEditModal(false);
     setSelectedAttendance(null);
@@ -650,13 +752,19 @@ export default function AdminDashboard() {
     try {
       if (selectedPersonalTab === "vehicles") {
         await PersonalAssetsService.deleteVehicle(item.id);
-        setVehicles((current) => current.filter((record) => record.id !== item.id));
+        setVehicles((current) =>
+          current.filter((record) => record.id !== item.id),
+        );
       } else if (selectedPersonalTab === "jewelleries") {
         await PersonalAssetsService.deleteJewellery(item.id);
-        setJewelleries((current) => current.filter((record) => record.id !== item.id));
+        setJewelleries((current) =>
+          current.filter((record) => record.id !== item.id),
+        );
       } else {
         await PersonalAssetsService.deleteProperty(item.id);
-        setProperties((current) => current.filter((record) => record.id !== item.id));
+        setProperties((current) =>
+          current.filter((record) => record.id !== item.id),
+        );
       }
       setSuccessModalTitle("Record Deleted Successfully!");
       setSuccessButtonText("Close");
@@ -674,17 +782,24 @@ export default function AdminDashboard() {
     try {
       if (selectedPersonalTab === "vehicles") {
         const created = await PersonalAssetsService.createVehicle({
-          name: newPersonalName, type: newPersonalType, value: newPersonalValue, plateNo: newPersonalExtra,
+          name: newPersonalName,
+          type: newPersonalType,
+          value: newPersonalValue,
+          plateNo: newPersonalExtra,
         });
         setVehicles((current) => [...current, created]);
       } else if (selectedPersonalTab === "jewelleries") {
         const created = await PersonalAssetsService.createJewellery({
-          name: newPersonalName, value: newPersonalValue, weight: newPersonalExtra,
+          name: newPersonalName,
+          value: newPersonalValue,
+          weight: newPersonalExtra,
         });
         setJewelleries((current) => [...current, created]);
       } else {
         const created = await PersonalAssetsService.createProperty({
-          location: newPersonalName, value: newPersonalValue, area: newPersonalExtra,
+          location: newPersonalName,
+          value: newPersonalValue,
+          area: newPersonalExtra,
         });
         setProperties((current) => [...current, created]);
       }
@@ -702,20 +817,48 @@ export default function AdminDashboard() {
     if (!selectedPersonalItem) return;
     try {
       if (selectedPersonalTab === "vehicles") {
-        const updated = await PersonalAssetsService.updateVehicle(selectedPersonalItem.id, {
-          name: newPersonalName, type: newPersonalType, value: newPersonalValue, plateNo: newPersonalExtra,
-        });
-        setVehicles((current) => current.map((item) => item.id === selectedPersonalItem.id ? updated : item));
+        const updated = await PersonalAssetsService.updateVehicle(
+          selectedPersonalItem.id,
+          {
+            name: newPersonalName,
+            type: newPersonalType,
+            value: newPersonalValue,
+            plateNo: newPersonalExtra,
+          },
+        );
+        setVehicles((current) =>
+          current.map((item) =>
+            item.id === selectedPersonalItem.id ? updated : item,
+          ),
+        );
       } else if (selectedPersonalTab === "jewelleries") {
-        const updated = await PersonalAssetsService.updateJewellery(selectedPersonalItem.id, {
-          name: newPersonalName, value: newPersonalValue, weight: newPersonalExtra,
-        });
-        setJewelleries((current) => current.map((item) => item.id === selectedPersonalItem.id ? updated : item));
+        const updated = await PersonalAssetsService.updateJewellery(
+          selectedPersonalItem.id,
+          {
+            name: newPersonalName,
+            value: newPersonalValue,
+            weight: newPersonalExtra,
+          },
+        );
+        setJewelleries((current) =>
+          current.map((item) =>
+            item.id === selectedPersonalItem.id ? updated : item,
+          ),
+        );
       } else {
-        const updated = await PersonalAssetsService.updateProperty(selectedPersonalItem.id, {
-          location: newPersonalName, value: newPersonalValue, area: newPersonalExtra,
-        });
-        setProperties((current) => current.map((item) => item.id === selectedPersonalItem.id ? updated : item));
+        const updated = await PersonalAssetsService.updateProperty(
+          selectedPersonalItem.id,
+          {
+            location: newPersonalName,
+            value: newPersonalValue,
+            area: newPersonalExtra,
+          },
+        );
+        setProperties((current) =>
+          current.map((item) =>
+            item.id === selectedPersonalItem.id ? updated : item,
+          ),
+        );
       }
       resetPersonalForm();
       setShowPersonalEditModal(false);
@@ -749,12 +892,12 @@ export default function AdminDashboard() {
     }
     try {
       const response = await fetch(`${API_BASE_URL}/worksites`, {
-        method: 'POST',
+        method: "POST",
         headers: {
           ...(await getAuthHeaders()),
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name: newSiteName.trim() })
+        body: JSON.stringify({ name: newSiteName.trim() }),
       });
       if (!response.ok) throw new Error("Failed to add site");
       const addedSite = await response.json();
@@ -776,13 +919,17 @@ export default function AdminDashboard() {
   const handleDeleteSite = async (site: any) => {
     try {
       const response = await fetch(`${API_BASE_URL}/worksites/${site.id}`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: await getAuthHeaders(),
       });
       if (!response.ok) throw new Error("Failed to delete");
       setDeletedSiteName(site.title || site.name);
-      setManageSites((current: any) => current.filter((item: any) => item.id !== site.id));
-      setWorksites((current: any) => current.filter((item: any) => item.id !== site.id));
+      setManageSites((current: any) =>
+        current.filter((item: any) => item.id !== site.id),
+      );
+      setWorksites((current: any) =>
+        current.filter((item: any) => item.id !== site.id),
+      );
       setShowSiteDeletedSuccessModal(true);
     } catch (error) {
       Alert.alert("Error", "Could not delete the site.");
@@ -790,14 +937,70 @@ export default function AdminDashboard() {
   };
 
   const adminCards: AdminCard[] = [
-    { id: "1", title: "Attendance", value: todayAttendancesCount, icon: "\u{1F465}", backgroundColor: "#e0e0e0", textColor: "#1f1d21" },
-    { id: "2", title: "Machineries", value: filteredMachineries.length, icon: "\u2699\uFE0F", backgroundColor: "#f5c6c6", textColor: "#1f1d21" },
-    { id: "3", title: "Assets", value: filteredAssets.length, icon: "\u{1F4E6}", backgroundColor: "#a8d5a8", textColor: "#1f1d21" },
-    { id: "4", title: "Chemicals", value: filteredChemicals.length, icon: "\u{1F9EA}", backgroundColor: "#a8c1f5", textColor: "#1f1d21" },
-    { id: "5", title: "Approvals", value: filteredApprovals.length, icon: "\u2705", backgroundColor: "#f5f5b8", textColor: "#1f1d21" },
-    { id: "6", title: "Workers", value: filteredWorkers.length, icon: "\u{1F477}", backgroundColor: "#c0c0c0", textColor: "#1f1d21" },
-    { id: "7", title: "Personal", value: vehicles.length + jewelleries.length + properties.length, icon: "\u{1F464}", backgroundColor: "#a8d5a8", textColor: "#1f1d21" },
-    { id: "8", title: "Manage Site", value: worksites.length, icon: "\u{1F3E2}", backgroundColor: "#f5d7b3", textColor: "#1f1d21" },
+    {
+      id: "1",
+      title: "Attendance",
+      value: todayAttendancesCount,
+      icon: "\u{1F465}",
+      backgroundColor: "#e0e0e0",
+      textColor: "#1f1d21",
+    },
+    {
+      id: "2",
+      title: "Machineries",
+      value: filteredMachineries.length,
+      icon: "\u2699\uFE0F",
+      backgroundColor: "#f5c6c6",
+      textColor: "#1f1d21",
+    },
+    {
+      id: "3",
+      title: "Assets",
+      value: filteredAssets.length,
+      icon: "\u{1F4E6}",
+      backgroundColor: "#a8d5a8",
+      textColor: "#1f1d21",
+    },
+    {
+      id: "4",
+      title: "Chemicals",
+      value: filteredChemicals.length,
+      icon: "\u{1F9EA}",
+      backgroundColor: "#a8c1f5",
+      textColor: "#1f1d21",
+    },
+    {
+      id: "5",
+      title: "Approvals",
+      value: filteredApprovals.length,
+      icon: "\u2705",
+      backgroundColor: "#f5f5b8",
+      textColor: "#1f1d21",
+    },
+    {
+      id: "6",
+      title: "Workers",
+      value: filteredWorkers.length,
+      icon: "\u{1F477}",
+      backgroundColor: "#c0c0c0",
+      textColor: "#1f1d21",
+    },
+    {
+      id: "7",
+      title: "Personal",
+      value: vehicles.length + jewelleries.length + properties.length,
+      icon: "\u{1F464}",
+      backgroundColor: "#a8d5a8",
+      textColor: "#1f1d21",
+    },
+    {
+      id: "8",
+      title: "Manage Site",
+      value: worksites.length,
+      icon: "\u{1F3E2}",
+      backgroundColor: "#f5d7b3",
+      textColor: "#1f1d21",
+    },
   ];
 
   const getCardScaleValue = (cardId: string) => {
@@ -808,11 +1011,17 @@ export default function AdminDashboard() {
   };
 
   const onCardHoverEnter = (cardId: string) => {
-    Animated.spring(getCardScaleValue(cardId), { toValue: 1.08, useNativeDriver: true }).start();
+    Animated.spring(getCardScaleValue(cardId), {
+      toValue: 1.08,
+      useNativeDriver: true,
+    }).start();
   };
 
   const onCardHoverExit = (cardId: string) => {
-    Animated.spring(getCardScaleValue(cardId), { toValue: 1, useNativeDriver: true }).start();
+    Animated.spring(getCardScaleValue(cardId), {
+      toValue: 1,
+      useNativeDriver: true,
+    }).start();
   };
 
   useEffect(() => {
@@ -836,38 +1045,50 @@ export default function AdminDashboard() {
       setNotes(notesData);
       const filesData = await PersonalDocumentsService.getFiles();
       setFiles(filesData);
-    } catch (error) { console.error('Failed to load personal documents:', error); }
+    } catch (error) {
+      console.error("Failed to load personal documents:", error);
+    }
   };
 
   const loadAttendancesData = async () => {
     try {
       const data = await AttendancesService.getAttendances();
       setAttendances(data);
-    } catch (error) { console.error('Failed to load attendances:', error); }
+    } catch (error) {
+      console.error("Failed to load attendances:", error);
+    }
   };
 
   const loadWorksitesData = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/worksites`, { headers: await getAuthHeaders() });
+      const response = await fetch(`${API_BASE_URL}/worksites`, {
+        headers: await getAuthHeaders(),
+      });
       const data = await response.json();
       const loadedWorksites = Array.isArray(data) ? data : data.data || [];
       setWorksites(loadedWorksites);
       setManageSites(loadedWorksites);
-    } catch (error) { console.error('Failed to load worksites:', error); }
+    } catch (error) {
+      console.error("Failed to load worksites:", error);
+    }
   };
 
   const loadAssetsData = async () => {
     try {
       const data = await AssetsService.getAssets();
       setAssets(data);
-    } catch (error) { console.error('Failed to load assets:', error); }
+    } catch (error) {
+      console.error("Failed to load assets:", error);
+    }
   };
 
   const loadChemicalsData = async () => {
     try {
       const data = await ChemicalsService.getChemicals();
       setChemicals(data);
-    } catch (error) { console.error('Failed to load chemicals:', error); }
+    } catch (error) {
+      console.error("Failed to load chemicals:", error);
+    }
   };
 
   const loadMachineriesData = async () => {
@@ -875,27 +1096,33 @@ export default function AdminDashboard() {
       const data = await MachineriesService.getMachineries();
       const mappedData = data.map((item: any) => ({
         id: item.id,
-        machine: item.name || item.machine || '',
-        status: item.status || '',
-        description: item.location || item.description || '',
+        machine: item.name || item.machine || "",
+        status: item.status || "",
+        description: item.location || item.description || "",
         worksite_id: item.worksite_id || null,
       }));
       setMachineries(mappedData);
-    } catch (error) { console.error('Failed to load machineries:', error); }
+    } catch (error) {
+      console.error("Failed to load machineries:", error);
+    }
   };
 
   const loadWorkersData = async () => {
     try {
       const data = await WorkersService.getWorkers();
       setWorkers(data);
-    } catch (error) { console.error('Failed to load workers:', error); }
+    } catch (error) {
+      console.error("Failed to load workers:", error);
+    }
   };
 
   const loadApprovalsData = async () => {
     try {
       const data = await ApprovalsService.getApprovals();
       setApprovals(data);
-    } catch (error) { console.error('Failed to load approvals:', error); }
+    } catch (error) {
+      console.error("Failed to load approvals:", error);
+    }
   };
 
   const loadPersonalAssetsData = async () => {
@@ -906,7 +1133,9 @@ export default function AdminDashboard() {
       setJewelleries(jewelleriesData);
       const propertiesData = await PersonalAssetsService.getProperties();
       setProperties(propertiesData);
-    } catch (error) { console.error('Failed to load personal assets:', error); }
+    } catch (error) {
+      console.error("Failed to load personal assets:", error);
+    }
   };
 
   const updateDateTime = () => {
@@ -1017,14 +1246,43 @@ export default function AdminDashboard() {
 
   const renderAttendancesView = () => (
     <View style={styles.machineriesContainer}>
-      <View style={[styles.headerSection, styles.greetingContainer, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
-          <ThemedText type="subtitle" style={styles.greeting}>
-            Hii {user?.name || "Malith"}, Welcome!
-          </ThemedText>
-          <Pressable onPress={async () => { await signOut(); router.replace('/'); }} style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: isDark ? '#333' : '#e0e0e0', borderRadius: 8 }}>
-            <Text style={{ fontSize: 13, fontWeight: '600', color: isDark ? '#fff' : '#000' }}>Sign Out</Text>
-          </Pressable>
-        </View>
+      <View
+        style={[
+          styles.headerSection,
+          styles.greetingContainer,
+          {
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+          },
+        ]}
+      >
+        <ThemedText type="subtitle" style={styles.greeting}>
+          Hii {user?.name || "Malith"}, Welcome!
+        </ThemedText>
+        <Pressable
+          onPress={async () => {
+            await signOut();
+            router.replace("/");
+          }}
+          style={{
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            backgroundColor: isDark ? "#333" : "#e0e0e0",
+            borderRadius: 8,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 13,
+              fontWeight: "600",
+              color: isDark ? "#fff" : "#000",
+            }}
+          >
+            Sign Out
+          </Text>
+        </Pressable>
+      </View>
       <View style={styles.machineriesHeader}>
         <Pressable
           onPress={() => {
@@ -1042,7 +1300,15 @@ export default function AdminDashboard() {
         </ThemedText>
       </View>
 
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 15, zIndex: 1 }}>
+      <View
+        style={{
+          flexDirection: "row",
+          flexWrap: "wrap",
+          gap: 10,
+          marginBottom: 15,
+          zIndex: 1,
+        }}
+      >
         <View style={styles.searchContainer}>
           <Text style={styles.searchIcon}>🔍</Text>
           <TextInput
@@ -1056,7 +1322,14 @@ export default function AdminDashboard() {
         <select
           value={attendanceShiftFilter}
           onChange={(e: any) => setAttendanceShiftFilter(e.target.value)}
-          style={{ backgroundColor: 'transparent', color: isDark ? '#ffffff' : '#333', border: `1px solid ${isDark ? '#333' : '#ccc'}`, borderRadius: 8, padding: '8px 12px', fontSize: 14 }}
+          style={{
+            backgroundColor: "transparent",
+            color: isDark ? "#ffffff" : "#333",
+            border: `1px solid ${isDark ? "#333" : "#ccc"}`,
+            borderRadius: 8,
+            padding: "8px 12px",
+            fontSize: 14,
+          }}
         >
           <option value="All">All Shifts</option>
           <option value="Morning">Morning</option>
@@ -1066,11 +1339,23 @@ export default function AdminDashboard() {
           type="date"
           value={attendanceDateFilter}
           onChange={(e: any) => setAttendanceDateFilter(e.target.value)}
-          style={{ backgroundColor: 'transparent', color: isDark ? '#ffffff' : '#333', border: `1px solid ${isDark ? '#333' : '#ccc'}`, borderRadius: 8, padding: '8px 12px', fontSize: 14, colorScheme: isDark ? 'dark' : 'light' }}
+          style={{
+            backgroundColor: "transparent",
+            color: isDark ? "#ffffff" : "#333",
+            border: `1px solid ${isDark ? "#333" : "#ccc"}`,
+            borderRadius: 8,
+            padding: "8px 12px",
+            fontSize: 14,
+            colorScheme: isDark ? "dark" : "light",
+          }}
         />
       </View>
 
-      <ScrollView style={styles.tableScrollContainer} showsVerticalScrollIndicator={true} nestedScrollEnabled={true}>
+      <ScrollView
+        style={styles.tableScrollContainer}
+        showsVerticalScrollIndicator={true}
+        nestedScrollEnabled={true}
+      >
         <ScrollView horizontal showsHorizontalScrollIndicator={true}>
           <View style={[styles.tableCard, { minWidth: 700 }]}>
             <View style={[styles.tableRow, styles.tableHeaderRow]}>
@@ -1078,7 +1363,9 @@ export default function AdminDashboard() {
               <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Worker</Text>
               <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Date</Text>
               <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Shift</Text>
-              <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Marked At</Text>
+              <Text style={[styles.tableHeaderCell, { flex: 2 }]}>
+                Marked At
+              </Text>
               <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Status</Text>
               <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Actions</Text>
             </View>
@@ -1088,22 +1375,69 @@ export default function AdminDashboard() {
                 key={item.id}
                 style={[
                   styles.tableRow,
-                  index !== filteredAttendanceData.length - 1 && { borderBottomWidth: 1, borderBottomColor: '#e5e7eb' },
+                  index !== filteredAttendanceData.length - 1 && {
+                    borderBottomWidth: 1,
+                    borderBottomColor: "#e5e7eb",
+                  },
                 ]}
               >
                 <Text style={[styles.tableCell, { flex: 1 }]}>{item.id}</Text>
-                <Text style={[styles.tableCell, { flex: 2 }]}>{item.worker?.name || `Worker #${item.worker_id}`}</Text>
-                <Text style={[styles.tableCell, { flex: 2 }]}>{item.date ? item.date.split('T')[0] : ''}</Text>
-                <Text style={[styles.tableCell, { flex: 2 }]}>{item.shift}</Text>
-                <Text style={[styles.tableCell, { flex: 2 }]}>{new Date(item.marked_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
-                <Text style={[styles.tableCell, { flex: 2 }, item.status === "present" ? styles.statusAvailable : styles.statusFinished]}>
+                <Text style={[styles.tableCell, { flex: 2 }]}>
+                  {item.worker?.name || `Worker #${item.worker_id}`}
+                </Text>
+                <Text style={[styles.tableCell, { flex: 2 }]}>
+                  {item.date ? item.date.split("T")[0] : ""}
+                </Text>
+                <Text style={[styles.tableCell, { flex: 2 }]}>
+                  {item.shift}
+                </Text>
+                <Text style={[styles.tableCell, { flex: 2 }]}>
+                  {new Date(item.marked_at).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </Text>
+                <Text
+                  style={[
+                    styles.tableCell,
+                    { flex: 2 },
+                    item.status === "present"
+                      ? styles.statusAvailable
+                      : styles.statusFinished,
+                  ]}
+                >
                   {item.status === "present" ? "Present" : "Absent"}
                 </Text>
-                <View style={[styles.tableCell, { flex: 2, flexDirection: 'row', gap: 6 }]}>
-                  <Pressable onPress={() => openAttendanceEditModal(item)} style={[styles.assetActionButtonEdit, { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }]}>
+                <View
+                  style={[
+                    styles.tableCell,
+                    { flex: 2, flexDirection: "row", gap: 6 },
+                  ]}
+                >
+                  <Pressable
+                    onPress={() => openAttendanceEditModal(item)}
+                    style={[
+                      styles.assetActionButtonEdit,
+                      {
+                        paddingHorizontal: 8,
+                        paddingVertical: 4,
+                        borderRadius: 8,
+                      },
+                    ]}
+                  >
                     <Text style={styles.assetActionIcon}>✏️</Text>
                   </Pressable>
-                  <Pressable onPress={() => handleDeleteAttendance(item)} style={[styles.assetActionButtonDelete, { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }]}>
+                  <Pressable
+                    onPress={() => handleDeleteAttendance(item)}
+                    style={[
+                      styles.assetActionButtonDelete,
+                      {
+                        paddingHorizontal: 8,
+                        paddingVertical: 4,
+                        borderRadius: 8,
+                      },
+                    ]}
+                  >
                     <Text style={styles.assetActionIcon}>🗑️</Text>
                   </Pressable>
                 </View>
@@ -1111,7 +1445,9 @@ export default function AdminDashboard() {
             ))}
             {filteredAttendanceData.length === 0 && (
               <View style={styles.emptyRow}>
-                <Text style={styles.emptyText}>No matching attendances found.</Text>
+                <Text style={styles.emptyText}>
+                  No matching attendances found.
+                </Text>
               </View>
             )}
           </View>
@@ -1121,28 +1457,54 @@ export default function AdminDashboard() {
   );
 
   const renderAttendanceEditModal = () => (
-    <Modal visible={showAttendanceEditModal} transparent animationType="fade" onRequestClose={() => setShowAttendanceEditModal(false)}>
+    <Modal
+      visible={showAttendanceEditModal}
+      transparent
+      animationType="fade"
+      onRequestClose={() => setShowAttendanceEditModal(false)}
+    >
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Edit Attendance</Text>
-            <Pressable onPress={() => setShowAttendanceEditModal(false)} style={styles.modalClose}>
+            <Pressable
+              onPress={() => setShowAttendanceEditModal(false)}
+              style={styles.modalClose}
+            >
               <Text style={styles.modalCloseText}>✕</Text>
             </Pressable>
           </View>
           <View style={styles.formRow}>
             <Text style={styles.formLabel}>Date</Text>
-            <TextInput value={editAttendanceDate} onChangeText={setEditAttendanceDate} style={styles.formInput} placeholder="YYYY-MM-DD" />
+            <TextInput
+              value={editAttendanceDate}
+              onChangeText={setEditAttendanceDate}
+              style={styles.formInput}
+              placeholder="YYYY-MM-DD"
+            />
           </View>
           <View style={styles.formRow}>
             <Text style={styles.formLabel}>Shift</Text>
-            <TextInput value={editAttendanceShift} onChangeText={setEditAttendanceShift} style={styles.formInput} placeholder="Morning / Evening" />
+            <TextInput
+              value={editAttendanceShift}
+              onChangeText={setEditAttendanceShift}
+              style={styles.formInput}
+              placeholder="Morning / Evening"
+            />
           </View>
           <View style={styles.formRow}>
             <Text style={styles.formLabel}>Status</Text>
-            <TextInput value={editAttendanceStatus} onChangeText={setEditAttendanceStatus} style={styles.formInput} placeholder="present / absent" />
+            <TextInput
+              value={editAttendanceStatus}
+              onChangeText={setEditAttendanceStatus}
+              style={styles.formInput}
+              placeholder="present / absent"
+            />
           </View>
-          <Pressable onPress={handleSaveAttendanceEdit} style={styles.updateButton}>
+          <Pressable
+            onPress={handleSaveAttendanceEdit}
+            style={styles.updateButton}
+          >
             <Text style={styles.updateButtonText}>Save</Text>
           </Pressable>
         </View>
@@ -1152,14 +1514,43 @@ export default function AdminDashboard() {
 
   const renderMachineriesView = () => (
     <View style={styles.machineriesContainer}>
-      <View style={[styles.headerSection, styles.greetingContainer, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
-          <ThemedText type="subtitle" style={styles.greeting}>
-            Hii {user?.name || "Malith"}, Welcome!
-          </ThemedText>
-          <Pressable onPress={async () => { await signOut(); router.replace('/'); }} style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: isDark ? '#333' : '#e0e0e0', borderRadius: 8 }}>
-            <Text style={{ fontSize: 13, fontWeight: '600', color: isDark ? '#fff' : '#000' }}>Sign Out</Text>
-          </Pressable>
-        </View>
+      <View
+        style={[
+          styles.headerSection,
+          styles.greetingContainer,
+          {
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+          },
+        ]}
+      >
+        <ThemedText type="subtitle" style={styles.greeting}>
+          Hii {user?.name || "Malith"}, Welcome!
+        </ThemedText>
+        <Pressable
+          onPress={async () => {
+            await signOut();
+            router.replace("/");
+          }}
+          style={{
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            backgroundColor: isDark ? "#333" : "#e0e0e0",
+            borderRadius: 8,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 13,
+              fontWeight: "600",
+              color: isDark ? "#fff" : "#000",
+            }}
+          >
+            Sign Out
+          </Text>
+        </Pressable>
+      </View>
       <View style={styles.machineriesHeader}>
         <Pressable
           onPress={() => {
@@ -1255,14 +1646,43 @@ export default function AdminDashboard() {
   const renderDashboardView = () => (
     <>
       {/* Header with greeting */}
-      <View style={[styles.headerSection, styles.greetingContainer, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
-          <ThemedText type="subtitle" style={styles.greeting}>
-            Hii {user?.name || "Malith"}, Welcome!
-          </ThemedText>
-          <Pressable onPress={async () => { await signOut(); router.replace('/'); }} style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: isDark ? '#333' : '#e0e0e0', borderRadius: 8 }}>
-            <Text style={{ fontSize: 13, fontWeight: '600', color: isDark ? '#fff' : '#000' }}>Sign Out</Text>
-          </Pressable>
-        </View>
+      <View
+        style={[
+          styles.headerSection,
+          styles.greetingContainer,
+          {
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+          },
+        ]}
+      >
+        <ThemedText type="subtitle" style={styles.greeting}>
+          Hii {user?.name || "Malith"}, Welcome!
+        </ThemedText>
+        <Pressable
+          onPress={async () => {
+            await signOut();
+            router.replace("/");
+          }}
+          style={{
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            backgroundColor: isDark ? "#333" : "#e0e0e0",
+            borderRadius: 8,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 13,
+              fontWeight: "600",
+              color: isDark ? "#fff" : "#000",
+            }}
+          >
+            Sign Out
+          </Text>
+        </Pressable>
+      </View>
 
       {/* Site Selection and Time/Date Row */}
       <View style={styles.siteTimeRow}>
@@ -1315,11 +1735,16 @@ export default function AdminDashboard() {
                 onPress={() => handleCardPress(card)}
               >
                 <Text style={styles.cardIcon}>{card.icon}</Text>
-                <ThemedText type="smallBold" style={[styles.cardTitle, { color: card.textColor }]}>
-                    {card.title}
-                  </ThemedText>
+                <ThemedText
+                  type="smallBold"
+                  style={[styles.cardTitle, { color: card.textColor }]}
+                >
+                  {card.title}
+                </ThemedText>
                 {card.value && (
-                  <Text style={[styles.cardValue, { color: card.textColor }]}>{card.value}</Text>
+                  <Text style={[styles.cardValue, { color: card.textColor }]}>
+                    {card.value}
+                  </Text>
                 )}
               </AnimatedPressable>
             );
@@ -1340,11 +1765,16 @@ export default function AdminDashboard() {
                 onPress={() => handleCardPress(card)}
               >
                 <Text style={styles.cardIcon}>{card.icon}</Text>
-                <ThemedText type="smallBold" style={[styles.cardTitle, { color: card.textColor }]}>
-                    {card.title}
-                  </ThemedText>
+                <ThemedText
+                  type="smallBold"
+                  style={[styles.cardTitle, { color: card.textColor }]}
+                >
+                  {card.title}
+                </ThemedText>
                 {card.value && (
-                  <Text style={[styles.cardValue, { color: card.textColor }]}>{card.value}</Text>
+                  <Text style={[styles.cardValue, { color: card.textColor }]}>
+                    {card.value}
+                  </Text>
                 )}
               </AnimatedPressable>
             );
@@ -1365,11 +1795,16 @@ export default function AdminDashboard() {
                 onPress={() => handleCardPress(card)}
               >
                 <Text style={styles.cardIcon}>{card.icon}</Text>
-                <ThemedText type="smallBold" style={[styles.cardTitle, { color: card.textColor }]}>
-                    {card.title}
-                  </ThemedText>
+                <ThemedText
+                  type="smallBold"
+                  style={[styles.cardTitle, { color: card.textColor }]}
+                >
+                  {card.title}
+                </ThemedText>
                 {card.value && (
-                  <Text style={[styles.cardValue, { color: card.textColor }]}>{card.value}</Text>
+                  <Text style={[styles.cardValue, { color: card.textColor }]}>
+                    {card.value}
+                  </Text>
                 )}
               </AnimatedPressable>
             );
@@ -1390,11 +1825,16 @@ export default function AdminDashboard() {
                 onPress={() => handleCardPress(card)}
               >
                 <Text style={styles.cardIcon}>{card.icon}</Text>
-                <ThemedText type="smallBold" style={[styles.cardTitle, { color: card.textColor }]}>
-                    {card.title}
-                  </ThemedText>
+                <ThemedText
+                  type="smallBold"
+                  style={[styles.cardTitle, { color: card.textColor }]}
+                >
+                  {card.title}
+                </ThemedText>
                 {card.value && (
-                  <Text style={[styles.cardValue, { color: card.textColor }]}>{card.value}</Text>
+                  <Text style={[styles.cardValue, { color: card.textColor }]}>
+                    {card.value}
+                  </Text>
                 )}
               </AnimatedPressable>
             );
@@ -1419,9 +1859,12 @@ export default function AdminDashboard() {
               }
             >
               <Text style={styles.cardIcon}>💰</Text>
-              <ThemedText type="smallBold" style={[styles.fullWidthCardTitle, { color: "#1f1d21" }]}>
-                  Peticash & Accounts
-                </ThemedText>
+              <ThemedText
+                type="smallBold"
+                style={[styles.fullWidthCardTitle, { color: "#1f1d21" }]}
+              >
+                Peticash & Accounts
+              </ThemedText>
             </AnimatedPressable>
           );
         })()}
@@ -1431,14 +1874,43 @@ export default function AdminDashboard() {
 
   const renderManageSiteView = () => (
     <View style={styles.manageSiteContainer}>
-      <View style={[styles.headerSection, styles.greetingContainer, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
-          <ThemedText type="subtitle" style={styles.greeting}>
-            Hii {user?.name || "Malith"}, Welcome!
-          </ThemedText>
-          <Pressable onPress={async () => { await signOut(); router.replace('/'); }} style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: isDark ? '#333' : '#e0e0e0', borderRadius: 8 }}>
-            <Text style={{ fontSize: 13, fontWeight: '600', color: isDark ? '#fff' : '#000' }}>Sign Out</Text>
-          </Pressable>
-        </View>
+      <View
+        style={[
+          styles.headerSection,
+          styles.greetingContainer,
+          {
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+          },
+        ]}
+      >
+        <ThemedText type="subtitle" style={styles.greeting}>
+          Hii {user?.name || "Malith"}, Welcome!
+        </ThemedText>
+        <Pressable
+          onPress={async () => {
+            await signOut();
+            router.replace("/");
+          }}
+          style={{
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            backgroundColor: isDark ? "#333" : "#e0e0e0",
+            borderRadius: 8,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 13,
+              fontWeight: "600",
+              color: isDark ? "#fff" : "#000",
+            }}
+          >
+            Sign Out
+          </Text>
+        </Pressable>
+      </View>
 
       <View style={styles.manageSiteHeader}>
         <Pressable
@@ -1462,7 +1934,11 @@ export default function AdminDashboard() {
             <View style={styles.manageSiteCardTopRow}>
               <View style={styles.manageSiteLogoWrapper}>
                 {site.logoUri ? (
-                  <Image source={{ uri: site.logoUri }} style={{ width: 70, height: 70, borderRadius: 12 }} resizeMode="cover" />
+                  <Image
+                    source={{ uri: site.logoUri }}
+                    style={{ width: 70, height: 70, borderRadius: 12 }}
+                    resizeMode="cover"
+                  />
                 ) : (
                   <Text style={styles.manageSiteLogoIcon}>🏗️</Text>
                 )}
@@ -1474,7 +1950,9 @@ export default function AdminDashboard() {
                 <Text style={styles.manageSiteDeleteIcon}>🗑️</Text>
               </Pressable>
             </View>
-            <Text style={styles.manageSiteCardLabel}>{site.title || site.name}</Text>
+            <Text style={styles.manageSiteCardLabel}>
+              {site.title || site.name}
+            </Text>
           </Pressable>
         ))}
 
@@ -1487,9 +1965,6 @@ export default function AdminDashboard() {
       </View>
     </View>
   );
-
-  
-
 
   const renderAddSiteModal = () => (
     <Modal
@@ -1528,9 +2003,23 @@ export default function AdminDashboard() {
               onPress={handlePickSiteLogo}
             >
               {siteLogoUri ? (
-                <Image source={{ uri: siteLogoUri }} style={{ width: 44, height: 44, borderRadius: 8, marginRight: 8 }} resizeMode="cover" />
+                <Image
+                  source={{ uri: siteLogoUri }}
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 8,
+                    marginRight: 8,
+                  }}
+                  resizeMode="cover"
+                />
               ) : null}
-              <Text style={[styles.logoUploadText, siteLogoUri ? { fontSize: 12 } : {}]}>
+              <Text
+                style={[
+                  styles.logoUploadText,
+                  siteLogoUri ? { fontSize: 12 } : {},
+                ]}
+              >
                 {siteLogoName || "Tap to upload image"}
               </Text>
             </Pressable>
@@ -1539,7 +2028,14 @@ export default function AdminDashboard() {
               type="file"
               accept="image/*"
               onChange={handleSiteLogoFileChange}
-              style={{ position: 'absolute', opacity: 0, width: 1, height: 1, zIndex: -1, pointerEvents: 'none' }}
+              style={{
+                position: "absolute",
+                opacity: 0,
+                width: 1,
+                height: 1,
+                zIndex: -1,
+                pointerEvents: "none",
+              }}
             />
           </View>
 
@@ -1577,14 +2073,43 @@ export default function AdminDashboard() {
 
   const renderAssetsView = () => (
     <View style={styles.assetsContainer}>
-      <View style={[styles.headerSection, styles.greetingContainer, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
-          <ThemedText type="subtitle" style={styles.greeting}>
-            Hii {user?.name || "Malith"}, Welcome!
-          </ThemedText>
-          <Pressable onPress={async () => { await signOut(); router.replace('/'); }} style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: isDark ? '#333' : '#e0e0e0', borderRadius: 8 }}>
-            <Text style={{ fontSize: 13, fontWeight: '600', color: isDark ? '#fff' : '#000' }}>Sign Out</Text>
-          </Pressable>
-        </View>
+      <View
+        style={[
+          styles.headerSection,
+          styles.greetingContainer,
+          {
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+          },
+        ]}
+      >
+        <ThemedText type="subtitle" style={styles.greeting}>
+          Hii {user?.name || "Malith"}, Welcome!
+        </ThemedText>
+        <Pressable
+          onPress={async () => {
+            await signOut();
+            router.replace("/");
+          }}
+          style={{
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            backgroundColor: isDark ? "#333" : "#e0e0e0",
+            borderRadius: 8,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 13,
+              fontWeight: "600",
+              color: isDark ? "#fff" : "#000",
+            }}
+          >
+            Sign Out
+          </Text>
+        </Pressable>
+      </View>
       <View style={styles.assetsHeader}>
         <Pressable
           onPress={() => {
@@ -1717,30 +2242,44 @@ export default function AdminDashboard() {
     </View>
   );
 
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-
-
-
   const renderPersonalSelectionView = () => {
     return (
       <View style={styles.personalSelectionContainer}>
-        <View style={[styles.headerSection, styles.greetingContainer, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
+        <View
+          style={[
+            styles.headerSection,
+            styles.greetingContainer,
+            {
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+            },
+          ]}
+        >
           <ThemedText type="subtitle" style={styles.greeting}>
             Hii {user?.name || "Malith"}, Welcome!
           </ThemedText>
-          <Pressable onPress={async () => { await signOut(); router.replace('/'); }} style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: isDark ? '#333' : '#e0e0e0', borderRadius: 8 }}>
-            <Text style={{ fontSize: 13, fontWeight: '600', color: isDark ? '#fff' : '#000' }}>Sign Out</Text>
+          <Pressable
+            onPress={async () => {
+              await signOut();
+              router.replace("/");
+            }}
+            style={{
+              paddingHorizontal: 12,
+              paddingVertical: 6,
+              backgroundColor: isDark ? "#333" : "#e0e0e0",
+              borderRadius: 8,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 13,
+                fontWeight: "600",
+                color: isDark ? "#fff" : "#000",
+              }}
+            >
+              Sign Out
+            </Text>
           </Pressable>
         </View>
 
@@ -1792,25 +2331,74 @@ export default function AdminDashboard() {
   const renderPersonalDocumentsView = () => {
     return (
       <View style={styles.personalDocumentsContainer}>
-        <View style={[styles.headerSection, styles.greetingContainer, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
+        <View
+          style={[
+            styles.headerSection,
+            styles.greetingContainer,
+            {
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+            },
+          ]}
+        >
           <ThemedText type="subtitle" style={styles.greeting}>
             Hii {user?.name || "Malith"}, Welcome!
           </ThemedText>
-          <Pressable onPress={async () => { await signOut(); router.replace('/'); }} style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: isDark ? '#333' : '#e0e0e0', borderRadius: 8 }}>
-            <Text style={{ fontSize: 13, fontWeight: '600', color: isDark ? '#fff' : '#000' }}>Sign Out</Text>
+          <Pressable
+            onPress={async () => {
+              await signOut();
+              router.replace("/");
+            }}
+            style={{
+              paddingHorizontal: 12,
+              paddingVertical: 6,
+              backgroundColor: isDark ? "#333" : "#e0e0e0",
+              borderRadius: 8,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 13,
+                fontWeight: "600",
+                color: isDark ? "#fff" : "#000",
+              }}
+            >
+              Sign Out
+            </Text>
           </Pressable>
         </View>
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 12 }}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            marginBottom: 16,
+            gap: 12,
+          }}
+        >
           <Pressable
             onPress={() => setSelectedView("personalSelection")}
             style={{
-              width: 40, height: 40, borderRadius: 20,
-              backgroundColor: isDark ? '#333' : '#e0e0e0',
-              alignItems: 'center', justifyContent: 'center',
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              backgroundColor: isDark ? "#333" : "#e0e0e0",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            <Text style={{ fontSize: 22, color: isDark ? '#fff' : '#333', fontWeight: '600', includeFontPadding: false, textAlignVertical: 'center' }}>{'←'}</Text>
+            <Text
+              style={{
+                fontSize: 22,
+                color: isDark ? "#fff" : "#333",
+                fontWeight: "600",
+                includeFontPadding: false,
+                textAlignVertical: "center",
+              }}
+            >
+              {"←"}
+            </Text>
           </Pressable>
           <ThemedText type="subtitle" style={styles.personalDocumentsTitle}>
             Personal Details & Documents
@@ -1842,7 +2430,10 @@ export default function AdminDashboard() {
                   <Text style={styles.noteDate}>{note.date}</Text>
                 </View>
                 <View style={styles.noteActions}>
-                  <Pressable onPress={() => handleEditNote(note)} style={styles.noteActionButton}>
+                  <Pressable
+                    onPress={() => handleEditNote(note)}
+                    style={styles.noteActionButton}
+                  >
                     <Text style={styles.noteActionText}>Edit</Text>
                   </Pressable>
                   <Pressable
@@ -1866,7 +2457,13 @@ export default function AdminDashboard() {
               placeholderTextColor="#8a8a8f"
               style={styles.textInput}
             />
-            <Text style={{ color: isDark ? '#a0a0a0' : '#6b7280', fontSize: 13, marginBottom: 6 }}>
+            <Text
+              style={{
+                color: isDark ? "#a0a0a0" : "#6b7280",
+                fontSize: 13,
+                marginBottom: 6,
+              }}
+            >
               Tap a type to pick a file from your device:
             </Text>
             <View style={styles.fileTypeRow}>
@@ -1879,16 +2476,41 @@ export default function AdminDashboard() {
                     newFileType === type && styles.fileTypeButtonActive,
                   ]}
                 >
-                  <Text style={[styles.fileTypeText, newFileType === type && styles.fileTypeTextActive]}>
-                    {type === 'IMG' ? '🖼️' : type === 'PDF' ? '📄' : '📝'}{' '}{type}
+                  <Text
+                    style={[
+                      styles.fileTypeText,
+                      newFileType === type && styles.fileTypeTextActive,
+                    ]}
+                  >
+                    {type === "IMG" ? "🖼️" : type === "PDF" ? "📄" : "📝"}{" "}
+                    {type}
                   </Text>
                 </Pressable>
               ))}
             </View>
             {pickedFileActualName ? (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8, padding: 8, backgroundColor: isDark ? '#1a2a1a' : '#dcfce7', borderRadius: 8 }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 8,
+                  marginBottom: 8,
+                  padding: 8,
+                  backgroundColor: isDark ? "#1a2a1a" : "#dcfce7",
+                  borderRadius: 8,
+                }}
+              >
                 <Text style={{ fontSize: 16 }}>✅</Text>
-                <Text style={{ color: isDark ? '#86efac' : '#166534', fontSize: 13, flex: 1 }} numberOfLines={1}>{pickedFileActualName}</Text>
+                <Text
+                  style={{
+                    color: isDark ? "#86efac" : "#166534",
+                    fontSize: 13,
+                    flex: 1,
+                  }}
+                  numberOfLines={1}
+                >
+                  {pickedFileActualName}
+                </Text>
               </View>
             ) : null}
             <Pressable onPress={handleSaveFile} style={styles.sectionButton}>
@@ -1907,7 +2529,10 @@ export default function AdminDashboard() {
                   <Text style={styles.fileDate}>{file.uploaded_at}</Text>
                 </View>
                 <View style={styles.fileActions}>
-                  <Pressable onPress={() => handleEditFile(file)} style={styles.noteActionButton}>
+                  <Pressable
+                    onPress={() => handleEditFile(file)}
+                    style={styles.noteActionButton}
+                  >
                     <Text style={styles.noteActionText}>Edit</Text>
                   </Pressable>
                   <Pressable
@@ -1928,12 +2553,41 @@ export default function AdminDashboard() {
   const renderPersonalAssetsView = () => {
     return (
       <View style={styles.personalContainer}>
-        <View style={[styles.headerSection, styles.greetingContainer, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
+        <View
+          style={[
+            styles.headerSection,
+            styles.greetingContainer,
+            {
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+            },
+          ]}
+        >
           <ThemedText type="subtitle" style={styles.greeting}>
             Hii {user?.name || "Malith"}, Welcome!
           </ThemedText>
-          <Pressable onPress={async () => { await signOut(); router.replace('/'); }} style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: isDark ? '#333' : '#e0e0e0', borderRadius: 8 }}>
-            <Text style={{ fontSize: 13, fontWeight: '600', color: isDark ? '#fff' : '#000' }}>Sign Out</Text>
+          <Pressable
+            onPress={async () => {
+              await signOut();
+              router.replace("/");
+            }}
+            style={{
+              paddingHorizontal: 12,
+              paddingVertical: 6,
+              backgroundColor: isDark ? "#333" : "#e0e0e0",
+              borderRadius: 8,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 13,
+                fontWeight: "600",
+                color: isDark ? "#fff" : "#000",
+              }}
+            >
+              Sign Out
+            </Text>
           </Pressable>
         </View>
 
@@ -2619,14 +3273,43 @@ export default function AdminDashboard() {
 
   const renderChemicalsView = () => (
     <View style={styles.chemicalsContainer}>
-      <View style={[styles.headerSection, styles.greetingContainer, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
-          <ThemedText type="subtitle" style={styles.greeting}>
-            Hii {user?.name || "Malith"}, Welcome!
-          </ThemedText>
-          <Pressable onPress={async () => { await signOut(); router.replace('/'); }} style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: isDark ? '#333' : '#e0e0e0', borderRadius: 8 }}>
-            <Text style={{ fontSize: 13, fontWeight: '600', color: isDark ? '#fff' : '#000' }}>Sign Out</Text>
-          </Pressable>
-        </View>
+      <View
+        style={[
+          styles.headerSection,
+          styles.greetingContainer,
+          {
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+          },
+        ]}
+      >
+        <ThemedText type="subtitle" style={styles.greeting}>
+          Hii {user?.name || "Malith"}, Welcome!
+        </ThemedText>
+        <Pressable
+          onPress={async () => {
+            await signOut();
+            router.replace("/");
+          }}
+          style={{
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            backgroundColor: isDark ? "#333" : "#e0e0e0",
+            borderRadius: 8,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 13,
+              fontWeight: "600",
+              color: isDark ? "#fff" : "#000",
+            }}
+          >
+            Sign Out
+          </Text>
+        </Pressable>
+      </View>
       <View style={styles.chemicalsHeader}>
         <Pressable
           onPress={() => {
@@ -2715,14 +3398,43 @@ export default function AdminDashboard() {
 
   const renderApprovalsView = () => (
     <View style={styles.approvalsContainer}>
-      <View style={[styles.headerSection, styles.greetingContainer, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
-          <ThemedText type="subtitle" style={styles.greeting}>
-            Hii {user?.name || "Malith"}, Welcome!
-          </ThemedText>
-          <Pressable onPress={async () => { await signOut(); router.replace('/'); }} style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: isDark ? '#333' : '#e0e0e0', borderRadius: 8 }}>
-            <Text style={{ fontSize: 13, fontWeight: '600', color: isDark ? '#fff' : '#000' }}>Sign Out</Text>
-          </Pressable>
-        </View>
+      <View
+        style={[
+          styles.headerSection,
+          styles.greetingContainer,
+          {
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+          },
+        ]}
+      >
+        <ThemedText type="subtitle" style={styles.greeting}>
+          Hii {user?.name || "Malith"}, Welcome!
+        </ThemedText>
+        <Pressable
+          onPress={async () => {
+            await signOut();
+            router.replace("/");
+          }}
+          style={{
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            backgroundColor: isDark ? "#333" : "#e0e0e0",
+            borderRadius: 8,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 13,
+              fontWeight: "600",
+              color: isDark ? "#fff" : "#000",
+            }}
+          >
+            Sign Out
+          </Text>
+        </Pressable>
+      </View>
       <View style={styles.approvalsHeader}>
         <Pressable
           onPress={() => {
@@ -2868,14 +3580,43 @@ export default function AdminDashboard() {
 
   const renderWorkersView = () => (
     <View style={styles.workersContainer}>
-      <View style={[styles.headerSection, styles.greetingContainer, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
-          <ThemedText type="subtitle" style={styles.greeting}>
-            Hii {user?.name || "Malith"}, Welcome!
-          </ThemedText>
-          <Pressable onPress={async () => { await signOut(); router.replace('/'); }} style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: isDark ? '#333' : '#e0e0e0', borderRadius: 8 }}>
-            <Text style={{ fontSize: 13, fontWeight: '600', color: isDark ? '#fff' : '#000' }}>Sign Out</Text>
-          </Pressable>
-        </View>
+      <View
+        style={[
+          styles.headerSection,
+          styles.greetingContainer,
+          {
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+          },
+        ]}
+      >
+        <ThemedText type="subtitle" style={styles.greeting}>
+          Hii {user?.name || "Malith"}, Welcome!
+        </ThemedText>
+        <Pressable
+          onPress={async () => {
+            await signOut();
+            router.replace("/");
+          }}
+          style={{
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            backgroundColor: isDark ? "#333" : "#e0e0e0",
+            borderRadius: 8,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 13,
+              fontWeight: "600",
+              color: isDark ? "#fff" : "#000",
+            }}
+          >
+            Sign Out
+          </Text>
+        </Pressable>
+      </View>
       <View style={styles.workersHeader}>
         <Pressable
           onPress={() => {
@@ -3004,39 +3745,103 @@ export default function AdminDashboard() {
     </View>
   );
 
-
   const renderAdminProfileModal = () => (
     <View style={styles.personalContainer}>
-      <View style={[styles.headerSection, styles.greetingContainer, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
-          <ThemedText type="subtitle" style={styles.greeting}>
-            Hii {user?.name || "Malith"}, Welcome!
-          </ThemedText>
-          <Pressable onPress={async () => { await signOut(); router.replace('/'); }} style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: isDark ? '#333' : '#e0e0e0', borderRadius: 8 }}>
-            <Text style={{ fontSize: 13, fontWeight: '600', color: isDark ? '#fff' : '#000' }}>Sign Out</Text>
-          </Pressable>
-        </View>
+      <View
+        style={[
+          styles.headerSection,
+          styles.greetingContainer,
+          {
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+          },
+        ]}
+      >
+        <ThemedText type="subtitle" style={styles.greeting}>
+          Hii {user?.name || "Malith"}, Welcome!
+        </ThemedText>
+        <Pressable
+          onPress={async () => {
+            await signOut();
+            router.replace("/");
+          }}
+          style={{
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            backgroundColor: isDark ? "#333" : "#e0e0e0",
+            borderRadius: 8,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 13,
+              fontWeight: "600",
+              color: isDark ? "#fff" : "#000",
+            }}
+          >
+            Sign Out
+          </Text>
+        </Pressable>
+      </View>
       <View style={styles.personalHeader}>
-        <Pressable onPress={() => setSelectedView("dashboard")} style={styles.backButton}>
+        <Pressable
+          onPress={() => setSelectedView("dashboard")}
+          style={styles.backButton}
+        >
           <Text style={styles.backButtonIcon}>‹</Text>
         </Pressable>
-        <ThemedText type="subtitle" style={styles.personalTitle}>Admin Profile</ThemedText>
+        <ThemedText type="subtitle" style={styles.personalTitle}>
+          Admin Profile
+        </ThemedText>
       </View>
       <View style={styles.formRow}>
         <Text style={styles.formLabel}>Name</Text>
-        <TextInput value={adminName} onChangeText={(text) => { setAdminName(text); setProfileError(""); }} style={styles.formInput} placeholder="Admin name" />
+        <TextInput
+          value={adminName}
+          onChangeText={(text) => {
+            setAdminName(text);
+            setProfileError("");
+          }}
+          style={styles.formInput}
+          placeholder="Admin name"
+        />
       </View>
       <View style={styles.formRow}>
         <Text style={styles.formLabel}>Email</Text>
-        <TextInput value={adminEmail} onChangeText={(text) => { setAdminEmail(text); setProfileError(""); }} style={styles.formInput} placeholder="Email" keyboardType="email-address" />
+        <TextInput
+          value={adminEmail}
+          onChangeText={(text) => {
+            setAdminEmail(text);
+            setProfileError("");
+          }}
+          style={styles.formInput}
+          placeholder="Email"
+          keyboardType="email-address"
+        />
       </View>
       <View style={styles.formRow}>
         <Text style={styles.formLabel}>Password</Text>
-        <TextInput value={adminPassword} onChangeText={(text) => { setAdminPassword(text); setProfileError(""); }} style={styles.formInput} placeholder="New password (leave blank to keep)" secureTextEntry />
+        <TextInput
+          value={adminPassword}
+          onChangeText={(text) => {
+            setAdminPassword(text);
+            setProfileError("");
+          }}
+          style={styles.formInput}
+          placeholder="New password (leave blank to keep)"
+          secureTextEntry
+        />
       </View>
       {profileError ? (
-        <Text style={{ color: 'red', marginBottom: 8, paddingHorizontal: 16 }}>{profileError}</Text>
+        <Text style={{ color: "red", marginBottom: 8, paddingHorizontal: 16 }}>
+          {profileError}
+        </Text>
       ) : null}
-      <Pressable onPress={handleUpdateAdminProfile} style={[styles.addSiteButton, { marginTop: 16, marginHorizontal: 16 }]}>
+      <Pressable
+        onPress={handleUpdateAdminProfile}
+        style={[styles.addSiteButton, { marginTop: 16, marginHorizontal: 16 }]}
+      >
         <Text style={styles.addSiteButtonText}>Save Profile</Text>
       </Pressable>
     </View>
@@ -3053,24 +3858,24 @@ export default function AdminDashboard() {
           {selectedView === "attendance"
             ? renderAttendancesView()
             : selectedView === "machineries"
-            ? renderMachineriesView()
-            : selectedView === "assets"
-            ? renderAssetsView()
-            : selectedView === "chemicals"
-            ? renderChemicalsView()
-            : selectedView === "approvals"
-            ? renderApprovalsView()
-            : selectedView === "workers"
-            ? renderWorkersView()
-            : selectedView === "personalAssets"
-            ? renderPersonalAssetsView()
-            : selectedView === "personalSelection"
-            ? renderPersonalSelectionView()
-            : selectedView === "personalDocuments"
-            ? renderPersonalDocumentsView()
-            : selectedView === "manageSite"
-            ? renderManageSiteView()
-            : null}
+              ? renderMachineriesView()
+              : selectedView === "assets"
+                ? renderAssetsView()
+                : selectedView === "chemicals"
+                  ? renderChemicalsView()
+                  : selectedView === "approvals"
+                    ? renderApprovalsView()
+                    : selectedView === "workers"
+                      ? renderWorkersView()
+                      : selectedView === "personalAssets"
+                        ? renderPersonalAssetsView()
+                        : selectedView === "personalSelection"
+                          ? renderPersonalSelectionView()
+                          : selectedView === "personalDocuments"
+                            ? renderPersonalDocumentsView()
+                            : selectedView === "manageSite"
+                              ? renderManageSiteView()
+                              : null}
         </ScrollView>
       )}
       {renderUpdateModal()}
@@ -3090,1319 +3895,1320 @@ export default function AdminDashboard() {
   );
 }
 
-const createStyles = (isDark: boolean) => StyleSheet.create({
-  statusAvailable: { color: 'green' },
-  statusFinished: { color: 'red' },
+const createStyles = (isDark: boolean) =>
+  StyleSheet.create({
+    statusAvailable: { color: "green" },
+    statusFinished: { color: "red" },
 
-  container: {
-    flex: 1,
-    padding: Spacing.four,
-    paddingBottom: BottomTabInset,
-    backgroundColor: isDark ? "#121212" : "#f5f5f5",
-  },
-  headerSection: {
-    marginBottom: Spacing.three,
-  },
-  greeting: {
-    fontSize: 24,
-    fontWeight: "600",
-  },
-  greetingContainer: {
-    height: 64,
-    justifyContent: "center",
-  },
-  siteTimeRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: Spacing.three,
-    gap: Spacing.two,
-    zIndex: 100,
-  },
-  siteSelectionContainer: {
-    flex: 1,
-    position: "relative",
-    zIndex: 100,
-  },
-  siteDropdown: {
-    backgroundColor: isDark ? "#333333" : "#e0e0e0",
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  siteDropdownText: {
-    fontSize: 13,
-    color: isDark ? "#e0e0e0" : "#666",
-    fontWeight: "500",
-  },
-  dropdownIcon: {
-    fontSize: 10,
-    color: isDark ? "#ffffff" : "#333",
-  },
-  dropdownMenu: {
-    position: "absolute",
-    top: 44,
-    left: 0,
-    right: 0,
-    backgroundColor: isDark ? "#1e1e1e" : "#fff",
-    borderRadius: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 5,
-    zIndex: 10,
-  },
-  machineriesContainer: {
-    gap: Spacing.three,
-    paddingBottom: Spacing.three,
-    flex: 1,
-  },
-  assetsContainer: {
-    gap: Spacing.three,
-    paddingBottom: Spacing.three,
-    flex: 1,
-  },
-  chemicalsContainer: {
-    gap: Spacing.three,
-    paddingBottom: Spacing.three,
-    flex: 1,
-  },
-  workersContainer: {
-    gap: Spacing.three,
-    paddingBottom: Spacing.three,
-    flex: 1,
-  },
-  personalContainer: {
-    gap: Spacing.three,
-    paddingBottom: Spacing.three,
-    flex: 1,
-  },
-  workersHeader: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: Spacing.two,
-    position: "relative",
-  },
-  workersTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: isDark ? "#ffffff" : "#1f1d21",
-  },
-  tableScrollContainer: {
-    flex: 1,
-    maxHeight: 500,
-  },
-  machineriesHeader: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: Spacing.two,
-    position: "relative",
-  },
-  assetsHeader: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: Spacing.two,
-    position: "relative",
-  },
-  chemicalsHeader: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: Spacing.two,
-    position: "relative",
-  },
-  backButton: {
-    position: "absolute",
-    left: 0,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: isDark ? "#333333" : "#e0e0e0",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  backButtonIcon: {
-    fontSize: 24,
-    color: isDark ? "#ffffff" : "#333",
-    fontWeight: "600",
-    lineHeight: 28,
-    marginTop: -4,
-  },
-  machineriesTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: isDark ? "#ffffff" : "#1f1d21",
-  },
-  assetsTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: isDark ? "#ffffff" : "#1f1d21",
-  },
-  chemicalsTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: isDark ? "#ffffff" : "#1f1d21",
-  },
-  personalHeader: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: Spacing.two,
-    position: "relative",
-  },
-  personalTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: isDark ? "#ffffff" : "#1f1d21",
-  },
-  machineriesSubtitle: {
-    fontSize: 13,
-    color: isDark ? "#e0e0e0" : "#666",
-    lineHeight: 20,
-  },
-  searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: isDark ? "#1e1e1e" : "#ffffff",
-    borderRadius: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    shadowColor: "#000",
-    shadowOpacity: 0.03,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
-    gap: Spacing.two,
-    marginBottom: Spacing.three,
-  },
-  searchIcon: {
-    fontSize: 18,
-    color: isDark ? "#aaaaaa" : "#8a8a8f",
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    color: isDark ? "#ffffff" : "#1f1d21",
-    padding: 0,
-    minHeight: 22,
-  },
-  tableCard: {
-    backgroundColor: isDark ? "#1e1e1e" : "#ffffff",
-    borderRadius: 24,
-    paddingVertical: Spacing.three,
-    paddingHorizontal: Spacing.four,
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 4,
-  },
-  horizontalTableScroll: {
-    marginHorizontal: -Spacing.four,
-    paddingHorizontal: Spacing.four,
-  },
-  tableRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f3",
-  },
-  tableHeaderRow: {
-    borderBottomWidth: 1,
-    borderBottomColor: "#d8d8dc",
-    paddingBottom: 10,
-  },
-  tableCell: {
-    fontSize: 13,
-    color: isDark ? "#ffffff" : "#1f1d21",
-    paddingHorizontal: 8,
-  },
-  tableHeaderCell: {
-    fontWeight: "700",
-    color: "#4f4f53",
-  },
-  cellId: {
-    flex: 0.5,
-  },
-  cellMachine: {
-    flex: 1.4,
-  },
-  cellStatus: {
-    flex: 1,
-  },
-  cellDescription: {
-    flex: 1.8,
-  },
-  assetCellId: {
-    flex: 0.4,
-  },
-  assetCellName: {
-    flex: 1.2,
-  },
-  assetCellCount: {
-    flex: 0.8,
-  },
-  assetCellValue: {
-    flex: 1.2,
-  },
-  assetCellActions: {
-    flex: 0.8,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  assetCellActionsContainer: {
-    flexDirection: "row",
-    justifyContent: "flex-start",
-    alignItems: "center",
-    flex: 0.8,
-    minWidth: 120,
-    maxWidth: 220,
-  },
-  actionButton: {
-    marginHorizontal: 4,
-    padding: 6,
-  },
-  editIcon: {
-    fontSize: 16,
-  },
-  deleteIcon: {
-    fontSize: 16,
-  },
-  assetActionsScrollContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 4,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.35)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: Spacing.four,
-  },
-  modalContent: {
-    width: "100%",
-    maxWidth: 400,
-    backgroundColor: isDark ? "#1e1e1e" : "#fff",
-    borderRadius: 24,
-    padding: Spacing.four,
-    alignItems: "stretch",
-    shadowColor: "#000",
-    shadowOpacity: 0.12,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 8,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: Spacing.four,
-    position: "relative",
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#111",
-  },
-  modalClose: {
-    position: "absolute",
-    right: 0,
-    top: 0,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#efefef",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  modalCloseText: {
-    fontSize: 16,
-    color: isDark ? "#ffffff" : "#333",
-  },
-  formRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: Spacing.three,
-  },
-  formLabel: {
-    fontSize: 14,
-    color: isDark ? "#ffffff" : "#1f1d21",
-    fontWeight: "600",
-    flex: 0.35,
-  },
-  formInput: {
-    flex: 0.65,
-    backgroundColor: isDark ? "#333333" : "#f2f2f6",
-    borderRadius: 999,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    color: isDark ? "#ffffff" : "#1f1d21",
-    fontSize: 14,
-  },
-  updateButton: {
-    marginTop: Spacing.three,
-    backgroundColor: "#16a34a",
-    borderRadius: 999,
-    paddingVertical: 14,
-    alignItems: "center",
-  },
-  updateButtonText: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 15,
-  },
-  addSiteButton: {
-    marginTop: Spacing.three,
-    backgroundColor: "#16a34a",
-    borderRadius: 999,
-    paddingVertical: 14,
-    alignItems: "center",
-  },
-  addSiteButtonText: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 15,
-  },
-  logoUploadButton: {
-    flex: 0.65,
-    backgroundColor: isDark ? "#333333" : "#f2f2f6",
-    borderRadius: 16,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    flexDirection: "row",
-    gap: 8,
-    minHeight: 56,
-  },
-  logoUploadText: {
-    color: isDark ? "#ffffff" : "#1f1d21",
-    fontSize: 14,
-    flexShrink: 1,
-  },
-  successModalCard: {
-    width: "100%",
-    maxWidth: 340,
-    backgroundColor: isDark ? "#1e1e1e" : "#fff",
-    borderRadius: 24,
-    padding: Spacing.four,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.12,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 8,
-  },
-  successIconWrapper: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: "#22c55e",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: Spacing.three,
-  },
-  successIcon: {
-    color: "#fff",
-    fontSize: 32,
-    fontWeight: "700",
-  },
-  successTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: isDark ? "#ffffff" : "#1f1d21",
-    textAlign: "center",
-    marginBottom: Spacing.four,
-  },
-  successButton: {
-    backgroundColor: "#16a34a",
-    borderRadius: 999,
-    paddingVertical: 12,
-    paddingHorizontal: 32,
-  },
-  successButtonText: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 15,
-  },
-  emptyRow: {
-    paddingVertical: Spacing.three,
-    alignItems: "center",
-  },
-  chemicalCellName: {
-    flex: 1.6,
-  },
-  chemicalCellQuantity: {
-    flex: 0.8,
-  },
-  chemicalCellStatus: {
-    flex: 1.0,
-  },
-  emptyText: {
-    color: isDark ? "#aaaaaa" : "#8a8a8f",
-    fontSize: 14,
-  },
-  dropdownItem: {
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-  },
-  dropdownItemText: {
-    fontSize: 13,
-    color: isDark ? "#ffffff" : "#333",
-  },
-  timeSection: {
-    alignItems: "flex-end",
-  },
-  timeText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: isDark ? "#ffffff" : "#1f1d21",
-  },
-  dateText: {
-    fontSize: 13,
-    color: isDark ? "#e0e0e0" : "#666",
-    marginTop: 4,
-  },
-  cardsContainer: {
-    gap: Spacing.two,
-    flex: 1,
-    justifyContent: "space-between",
-  },
-  manageSiteContainer: {
-    flex: 1,
-    paddingTop: Spacing.four,
-    paddingHorizontal: Spacing.four,
-  },
-  manageSiteHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: Spacing.four,
-    position: "relative",
-  },
-  manageSiteTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: isDark ? "#ffffff" : "#1f1d21",
-  },
-  manageSiteCardsContainer: {
-    gap: Spacing.four,
-    alignItems: "center",
-    paddingTop: Spacing.two,
-  },
-  manageSiteCard: {
-    width: "100%",
-    maxWidth: 320,
-    backgroundColor: isDark ? "#1e1e1e" : "#ffffff",
-    borderRadius: 24,
-    paddingVertical: 28,
-    paddingHorizontal: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.12,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 6,
-  },
-  manageSiteCardTopRow: {
-    width: "100%",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: Spacing.three,
-  },
-  manageSiteLogoWrapper: {
-    width: 96,
-    height: 96,
-    borderRadius: 20,
-    backgroundColor: "#f5f3ef",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  manageSiteLogoIcon: {
-    fontSize: 38,
-  },
-  manageSiteCardLabel: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: isDark ? "#ffffff" : "#1f1d21",
-    marginTop: 4,
-  },
-  manageSiteDeleteIcon: {
-    fontSize: 18,
-    color: "#e11d48",
-  },
-  manageSiteDeleteButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: isDark ? "#1e1e1e" : "#ffffff",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
-  },
-  deleteSuccessIconWrapper: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: "#ef4444",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: Spacing.three,
-  },
-  manageSiteAddCard: {
-    minHeight: 180,
-    justifyContent: "center",
-  },
-  manageSiteAddIcon: {
-    fontSize: 42,
-    color: isDark ? "#ffffff" : "#1f1d21",
-  },
-  cardsRow: {
-    flexDirection: "row",
-    gap: Spacing.two,
-    flex: 1,
-    alignItems: "stretch",
-  },
-  card: {
-    flex: 1,
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  cardIcon: {
-    fontSize: 22,
-    marginBottom: 6,
-  },
-  cardTitle: {
-    fontSize: 12,
-    fontWeight: "600",
-    textAlign: "center",
-    marginBottom: 2,
-    color: isDark ? "#ffffff" : "#1f1d21",
-  },
-  cardValue: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: isDark ? "#ffffff" : "#1f1d21",
-  },
-  fullWidthCard: {
-    backgroundColor: "#b3e5d8",
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-    marginTop: Spacing.two,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  fullWidthCardTitle: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: isDark ? "#ffffff" : "#1f1d21",
-  },
-  approvalsContainer: {
-    gap: Spacing.three,
-    paddingBottom: Spacing.three,
-    flex: 1,
-  },
-  approvalsHeader: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: Spacing.two,
-    position: "relative",
-  },
-  approvalsTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: isDark ? "#ffffff" : "#1f1d21",
-  },
-  approvalCellID: {
-    minWidth: 50,
-    paddingHorizontal: 10,
-  },
-  approvalCellDescription: {
-    minWidth: 140,
-    paddingHorizontal: 10,
-  },
-  approvalCellAmount: {
-    minWidth: 100,
-    paddingHorizontal: 10,
-  },
-  approvalCellDate: {
-    minWidth: 90,
-    paddingHorizontal: 10,
-  },
-  approvalCellHolder: {
-    minWidth: 110,
-    paddingHorizontal: 10,
-  },
-  approvalCellAction: {
-    minWidth: 130,
-    paddingHorizontal: 10,
-  },
-  workerCellID: {
-    minWidth: 50,
-    paddingHorizontal: 10,
-  },
-  workerCellName: {
-    minWidth: 120,
-    paddingHorizontal: 10,
-  },
-  workerCellSite: {
-    minWidth: 110,
-    paddingHorizontal: 10,
-  },
-  workerCellType: {
-    minWidth: 120,
-    paddingHorizontal: 10,
-  },
-  workerCellActions: {
-    minWidth: 140,
-    paddingHorizontal: 10,
-  },
-  workerActionsContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    minWidth: 140,
-    paddingHorizontal: 10,
-    gap: 8,
-  },
-  workerActionButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  terminateButton: {
-    backgroundColor: "#fbbf24",
-  },
-  deleteButton: {
-    backgroundColor: "#ef4444",
-  },
-  workerActionIcon: {
-    fontSize: 16,
-  },
-  approvalActionsContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    minWidth: 130,
-    paddingHorizontal: 10,
-    gap: 6,
-  },
-  approveButton: {
-    backgroundColor: "#22c55e",
-    borderRadius: 6,
-    width: 28,
-    height: 28,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  approveButtonText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  rejectButton: {
-    backgroundColor: "#dc2626",
-    borderRadius: 6,
-    width: 28,
-    height: 28,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  rejectButtonText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  rejectModalCard: {
-    width: "100%",
-    maxWidth: 320,
-    backgroundColor: isDark ? "#1e1e1e" : "#fff",
-    borderRadius: 24,
-    paddingVertical: 30,
-    paddingHorizontal: 22,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.22,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 12,
-  },
-  rejectIconWrapper: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: "#dc2626",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 20,
-  },
-  rejectIcon: {
-    fontSize: 36,
-    color: "#fff",
-    fontWeight: "700",
-  },
-  rejectTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#111",
-    textAlign: "center",
-    marginBottom: 16,
-  },
-  rejectInput: {
-    width: "100%",
-    backgroundColor: "#f0f0f0",
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginBottom: 20,
-    color: isDark ? "#ffffff" : "#1f1d21",
-    fontSize: 14,
-  },
-  confirmModalCard: {
-    width: "100%",
-    maxWidth: 320,
-    backgroundColor: isDark ? "#1e1e1e" : "#fff",
-    borderRadius: 24,
-    paddingVertical: 30,
-    paddingHorizontal: 22,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.22,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 12,
-  },
-  terminateIconWrapper: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: "#fbbf24",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 20,
-  },
-  terminateIcon: {
-    fontSize: 36,
-    color: "#fff",
-  },
-  confirmTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#111",
-    textAlign: "center",
-    marginBottom: 22,
-  },
-  confirmButtonRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    width: "100%",
-    gap: 12,
-  },
-  confirmButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 999,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  confirmYesButton: {
-    backgroundColor: "#22c55e",
-  },
-  confirmNoButton: {
-    backgroundColor: "#ef4444",
-  },
-  confirmButtonText: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 15,
-  },
-  // Assets Table Grid Styles
-  assetsTableVerticalScroll: {
-    flex: 1,
-  },
-  assetsTableHorizontalScroll: {
-    flex: 1,
-  },
-  assetsTableWrapper: {
-    backgroundColor: isDark ? "#1e1e1e" : "#ffffff",
-    borderRadius: 12,
-    marginHorizontal: -Spacing.four,
-    paddingHorizontal: Spacing.four,
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
-  },
-  assetsTableRow: {
-    flexDirection: "row",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e8e8ec",
-    minHeight: 50,
-    alignItems: "center",
-  },
-  assetsTableHeaderRow: {
-    backgroundColor: isDark ? "#121212" : "#f5f5f5",
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
-    borderBottomWidth: 2,
-    borderBottomColor: "#d0d0d4",
-    minHeight: 48,
-  },
-  assetsTableCell: {
-    fontSize: 13,
-    color: isDark ? "#ffffff" : "#1f1d21",
-    paddingHorizontal: Spacing.two,
-    paddingVertical: Spacing.two,
-  },
-  assetsTableHeaderCell: {
-    fontWeight: "700",
-    color: "#4f4f53",
-    backgroundColor: isDark ? "#121212" : "#f5f5f5",
-  },
-  assetColId: {
-    minWidth: 45,
-    paddingLeft: Spacing.three,
-  },
-  assetColName: {
-    minWidth: 100,
-  },
-  assetColCount: {
-    minWidth: 80,
-    textAlign: "center",
-  },
-  assetColValue: {
-    minWidth: 110,
-    textAlign: "center",
-  },
-  assetColActions: {
-    minWidth: 100,
-    justifyContent: "center",
-    alignItems: "center",
-    flexDirection: "row",
-    gap: Spacing.one,
-  },
-  assetActionButtonEdit: {
-    width: 32,
-    height: 32,
-    borderRadius: 6,
-    backgroundColor: "#22c55e",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  assetActionButtonDelete: {
-    width: 32,
-    height: 32,
-    borderRadius: 6,
-    backgroundColor: "#ef4444",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  assetActionIcon: {
-    fontSize: 14,
-    color: "#fff",
-  },
-  assetsTableEmptyRow: {
-    paddingVertical: Spacing.four,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  emptyAssetsContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: Spacing.four,
-  },
-  // Personal View Styles
-  personalButtonsContainer: {
-    gap: Spacing.three,
-    justifyContent: "center",
-    alignItems: "center",
-    flex: 1,
-    width: "100%",
-    paddingHorizontal: Spacing.three,
-    marginTop: Spacing.four * 6,
-  },
-  personalAssetButton: {
-    width: "100%",
-    maxWidth: 300,
-    minHeight: 80,
-    backgroundColor: "#dc2626",
-    borderRadius: 16,
-    paddingVertical: Spacing.four,
-    paddingHorizontal: Spacing.three,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
-  },
-  personalDetailsButton: {
-    width: "100%",
-    maxWidth: 300,
-    minHeight: 80,
-    backgroundColor: "#8b7355",
-    borderRadius: 16,
-    paddingVertical: Spacing.four,
-    paddingHorizontal: Spacing.three,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
-  },
-  personalButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#ffffff",
-    textAlign: "center",
-    lineHeight: 22,
-  },
-  personalTabRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "center",
-    gap: Spacing.two,
-    marginBottom: Spacing.three,
-  },
-  personalTabButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 999,
-    backgroundColor: "#f5f5f7",
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
-  },
-  personalTabDot: {
-    position: "absolute",
-    top: -6,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#22c55e",
-  },
-  personalTabText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#4b5563",
-  },
-  personalTabTextActive: {
-    color: "#111827",
-  },
-  personalAddButton: {
-    marginLeft: "auto",
-    backgroundColor: "#2563eb",
-    borderRadius: 999,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  personalAddButtonText: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 14,
-  },
-  personalTableScroll: {
-    flex: 1,
-  },
-  personalTableHorizontalScroll: {
-    flex: 1,
-    marginBottom: Spacing.two,
-  },
-  personalTableCard: {
-    backgroundColor: isDark ? "#1e1e1e" : "#ffffff",
-    borderRadius: 24,
-    paddingVertical: Spacing.three,
-    paddingHorizontal: Spacing.four,
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 4,
-    alignSelf: "flex-start",
-  },
-  personalCellId: {
-    minWidth: 50,
-    paddingHorizontal: 10,
-  },
-  personalCellMain: {
-    minWidth: 140,
-    paddingHorizontal: 10,
-  },
-  personalCellType: {
-    minWidth: 100,
-    paddingHorizontal: 10,
-  },
-  personalCellValue: {
-    minWidth: 100,
-    paddingHorizontal: 10,
-  },
-  personalCellExtra: {
-    minWidth: 100,
-    paddingHorizontal: 10,
-  },
-  personalCellActions: {
-    minWidth: 100,
-    flexDirection: "row",
-    gap: Spacing.one,
-    alignItems: "center",
-    paddingHorizontal: 10,
-  },
-  personalSelectionContainer: {
-    gap: Spacing.three,
-    paddingBottom: Spacing.three,
-    flex: 1,
-  },
-  personalSelectionHeader: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: Spacing.two,
-    position: "relative",
-  },
-  personalSelectionTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-  },
-  personalSelectionContent: {
-    gap: Spacing.four,
-    marginTop: Spacing.four,
-    paddingHorizontal: Spacing.two,
-  },
-  personalTile: {
-    height: 120,
-    borderRadius: 20,
-    overflow: "hidden",
-  },
-  personalTileInner: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: Spacing.three,
-  },
-  personalTileText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#ffffff",
-    textAlign: "center",
-    lineHeight: 26,
-  },
+    container: {
+      flex: 1,
+      padding: Spacing.four,
+      paddingBottom: BottomTabInset,
+      backgroundColor: isDark ? "#121212" : "#f5f5f5",
+    },
+    headerSection: {
+      marginBottom: Spacing.three,
+    },
+    greeting: {
+      fontSize: 24,
+      fontWeight: "600",
+    },
+    greetingContainer: {
+      height: 64,
+      justifyContent: "center",
+    },
+    siteTimeRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      marginBottom: Spacing.three,
+      gap: Spacing.two,
+      zIndex: 100,
+    },
+    siteSelectionContainer: {
+      flex: 1,
+      position: "relative",
+      zIndex: 100,
+    },
+    siteDropdown: {
+      backgroundColor: isDark ? "#333333" : "#e0e0e0",
+      borderRadius: 8,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    siteDropdownText: {
+      fontSize: 13,
+      color: isDark ? "#e0e0e0" : "#666",
+      fontWeight: "500",
+    },
+    dropdownIcon: {
+      fontSize: 10,
+      color: isDark ? "#ffffff" : "#333",
+    },
+    dropdownMenu: {
+      position: "absolute",
+      top: 44,
+      left: 0,
+      right: 0,
+      backgroundColor: isDark ? "#1e1e1e" : "#fff",
+      borderRadius: 8,
+      shadowColor: "#000",
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 5,
+      zIndex: 10,
+    },
+    machineriesContainer: {
+      gap: Spacing.three,
+      paddingBottom: Spacing.three,
+      flex: 1,
+    },
+    assetsContainer: {
+      gap: Spacing.three,
+      paddingBottom: Spacing.three,
+      flex: 1,
+    },
+    chemicalsContainer: {
+      gap: Spacing.three,
+      paddingBottom: Spacing.three,
+      flex: 1,
+    },
+    workersContainer: {
+      gap: Spacing.three,
+      paddingBottom: Spacing.three,
+      flex: 1,
+    },
+    personalContainer: {
+      gap: Spacing.three,
+      paddingBottom: Spacing.three,
+      flex: 1,
+    },
+    workersHeader: {
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: Spacing.two,
+      position: "relative",
+    },
+    workersTitle: {
+      fontSize: 22,
+      fontWeight: "700",
+      color: isDark ? "#ffffff" : "#1f1d21",
+    },
+    tableScrollContainer: {
+      flex: 1,
+      maxHeight: 500,
+    },
+    machineriesHeader: {
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: Spacing.two,
+      position: "relative",
+    },
+    assetsHeader: {
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: Spacing.two,
+      position: "relative",
+    },
+    chemicalsHeader: {
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: Spacing.two,
+      position: "relative",
+    },
+    backButton: {
+      position: "absolute",
+      left: 0,
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: isDark ? "#333333" : "#e0e0e0",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    backButtonIcon: {
+      fontSize: 24,
+      color: isDark ? "#ffffff" : "#333",
+      fontWeight: "600",
+      lineHeight: 28,
+      marginTop: -4,
+    },
+    machineriesTitle: {
+      fontSize: 22,
+      fontWeight: "700",
+      color: isDark ? "#ffffff" : "#1f1d21",
+    },
+    assetsTitle: {
+      fontSize: 22,
+      fontWeight: "700",
+      color: isDark ? "#ffffff" : "#1f1d21",
+    },
+    chemicalsTitle: {
+      fontSize: 22,
+      fontWeight: "700",
+      color: isDark ? "#ffffff" : "#1f1d21",
+    },
+    personalHeader: {
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: Spacing.two,
+      position: "relative",
+    },
+    personalTitle: {
+      fontSize: 22,
+      fontWeight: "700",
+      color: isDark ? "#ffffff" : "#1f1d21",
+    },
+    machineriesSubtitle: {
+      fontSize: 13,
+      color: isDark ? "#e0e0e0" : "#666",
+      lineHeight: 20,
+    },
+    searchContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: isDark ? "#1e1e1e" : "#ffffff",
+      borderRadius: 16,
+      paddingVertical: 12,
+      paddingHorizontal: 14,
+      shadowColor: "#000",
+      shadowOpacity: 0.03,
+      shadowRadius: 10,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 2,
+      gap: Spacing.two,
+      marginBottom: Spacing.three,
+    },
+    searchIcon: {
+      fontSize: 18,
+      color: isDark ? "#aaaaaa" : "#8a8a8f",
+    },
+    searchInput: {
+      flex: 1,
+      fontSize: 15,
+      color: isDark ? "#ffffff" : "#1f1d21",
+      padding: 0,
+      minHeight: 22,
+    },
+    tableCard: {
+      backgroundColor: isDark ? "#1e1e1e" : "#ffffff",
+      borderRadius: 24,
+      paddingVertical: Spacing.three,
+      paddingHorizontal: Spacing.four,
+      shadowColor: "#000",
+      shadowOpacity: 0.06,
+      shadowRadius: 16,
+      shadowOffset: { width: 0, height: 8 },
+      elevation: 4,
+    },
+    horizontalTableScroll: {
+      marginHorizontal: -Spacing.four,
+      paddingHorizontal: Spacing.four,
+    },
+    tableRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 14,
+      borderBottomWidth: 1,
+      borderBottomColor: "#f0f0f3",
+    },
+    tableHeaderRow: {
+      borderBottomWidth: 1,
+      borderBottomColor: "#d8d8dc",
+      paddingBottom: 10,
+    },
+    tableCell: {
+      fontSize: 13,
+      color: isDark ? "#ffffff" : "#1f1d21",
+      paddingHorizontal: 8,
+    },
+    tableHeaderCell: {
+      fontWeight: "700",
+      color: "#4f4f53",
+    },
+    cellId: {
+      flex: 0.5,
+    },
+    cellMachine: {
+      flex: 1.4,
+    },
+    cellStatus: {
+      flex: 1,
+    },
+    cellDescription: {
+      flex: 1.8,
+    },
+    assetCellId: {
+      flex: 0.4,
+    },
+    assetCellName: {
+      flex: 1.2,
+    },
+    assetCellCount: {
+      flex: 0.8,
+    },
+    assetCellValue: {
+      flex: 1.2,
+    },
+    assetCellActions: {
+      flex: 0.8,
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    assetCellActionsContainer: {
+      flexDirection: "row",
+      justifyContent: "flex-start",
+      alignItems: "center",
+      flex: 0.8,
+      minWidth: 120,
+      maxWidth: 220,
+    },
+    actionButton: {
+      marginHorizontal: 4,
+      padding: 6,
+    },
+    editIcon: {
+      fontSize: 16,
+    },
+    deleteIcon: {
+      fontSize: 16,
+    },
+    assetActionsScrollContent: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 4,
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.35)",
+      justifyContent: "center",
+      alignItems: "center",
+      padding: Spacing.four,
+    },
+    modalContent: {
+      width: "100%",
+      maxWidth: 400,
+      backgroundColor: isDark ? "#1e1e1e" : "#fff",
+      borderRadius: 24,
+      padding: Spacing.four,
+      alignItems: "stretch",
+      shadowColor: "#000",
+      shadowOpacity: 0.12,
+      shadowRadius: 24,
+      shadowOffset: { width: 0, height: 12 },
+      elevation: 8,
+    },
+    modalHeader: {
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: Spacing.four,
+      position: "relative",
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontWeight: "700",
+      color: "#111",
+    },
+    modalClose: {
+      position: "absolute",
+      right: 0,
+      top: 0,
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: "#efefef",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    modalCloseText: {
+      fontSize: 16,
+      color: isDark ? "#ffffff" : "#333",
+    },
+    formRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: Spacing.three,
+    },
+    formLabel: {
+      fontSize: 14,
+      color: isDark ? "#ffffff" : "#1f1d21",
+      fontWeight: "600",
+      flex: 0.35,
+    },
+    formInput: {
+      flex: 0.65,
+      backgroundColor: isDark ? "#333333" : "#f2f2f6",
+      borderRadius: 999,
+      paddingVertical: 10,
+      paddingHorizontal: 16,
+      color: isDark ? "#ffffff" : "#1f1d21",
+      fontSize: 14,
+    },
+    updateButton: {
+      marginTop: Spacing.three,
+      backgroundColor: "#16a34a",
+      borderRadius: 999,
+      paddingVertical: 14,
+      alignItems: "center",
+    },
+    updateButtonText: {
+      color: "#fff",
+      fontWeight: "700",
+      fontSize: 15,
+    },
+    addSiteButton: {
+      marginTop: Spacing.three,
+      backgroundColor: "#16a34a",
+      borderRadius: 999,
+      paddingVertical: 14,
+      alignItems: "center",
+    },
+    addSiteButtonText: {
+      color: "#fff",
+      fontWeight: "700",
+      fontSize: 15,
+    },
+    logoUploadButton: {
+      flex: 0.65,
+      backgroundColor: isDark ? "#333333" : "#f2f2f6",
+      borderRadius: 16,
+      paddingVertical: 10,
+      paddingHorizontal: 16,
+      alignItems: "center",
+      justifyContent: "center",
+      flexDirection: "row",
+      gap: 8,
+      minHeight: 56,
+    },
+    logoUploadText: {
+      color: isDark ? "#ffffff" : "#1f1d21",
+      fontSize: 14,
+      flexShrink: 1,
+    },
+    successModalCard: {
+      width: "100%",
+      maxWidth: 340,
+      backgroundColor: isDark ? "#1e1e1e" : "#fff",
+      borderRadius: 24,
+      padding: Spacing.four,
+      alignItems: "center",
+      shadowColor: "#000",
+      shadowOpacity: 0.12,
+      shadowRadius: 24,
+      shadowOffset: { width: 0, height: 12 },
+      elevation: 8,
+    },
+    successIconWrapper: {
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      backgroundColor: "#22c55e",
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: Spacing.three,
+    },
+    successIcon: {
+      color: "#fff",
+      fontSize: 32,
+      fontWeight: "700",
+    },
+    successTitle: {
+      fontSize: 18,
+      fontWeight: "700",
+      color: isDark ? "#ffffff" : "#1f1d21",
+      textAlign: "center",
+      marginBottom: Spacing.four,
+    },
+    successButton: {
+      backgroundColor: "#16a34a",
+      borderRadius: 999,
+      paddingVertical: 12,
+      paddingHorizontal: 32,
+    },
+    successButtonText: {
+      color: "#fff",
+      fontWeight: "700",
+      fontSize: 15,
+    },
+    emptyRow: {
+      paddingVertical: Spacing.three,
+      alignItems: "center",
+    },
+    chemicalCellName: {
+      flex: 1.6,
+    },
+    chemicalCellQuantity: {
+      flex: 0.8,
+    },
+    chemicalCellStatus: {
+      flex: 1.0,
+    },
+    emptyText: {
+      color: isDark ? "#aaaaaa" : "#8a8a8f",
+      fontSize: 14,
+    },
+    dropdownItem: {
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: "#eee",
+    },
+    dropdownItemText: {
+      fontSize: 13,
+      color: isDark ? "#ffffff" : "#333",
+    },
+    timeSection: {
+      alignItems: "flex-end",
+    },
+    timeText: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: isDark ? "#ffffff" : "#1f1d21",
+    },
+    dateText: {
+      fontSize: 13,
+      color: isDark ? "#e0e0e0" : "#666",
+      marginTop: 4,
+    },
+    cardsContainer: {
+      gap: Spacing.two,
+      flex: 1,
+      justifyContent: "space-between",
+    },
+    manageSiteContainer: {
+      flex: 1,
+      paddingTop: Spacing.four,
+      paddingHorizontal: Spacing.four,
+    },
+    manageSiteHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: Spacing.four,
+      position: "relative",
+    },
+    manageSiteTitle: {
+      fontSize: 22,
+      fontWeight: "700",
+      color: isDark ? "#ffffff" : "#1f1d21",
+    },
+    manageSiteCardsContainer: {
+      gap: Spacing.four,
+      alignItems: "center",
+      paddingTop: Spacing.two,
+    },
+    manageSiteCard: {
+      width: "100%",
+      maxWidth: 320,
+      backgroundColor: isDark ? "#1e1e1e" : "#ffffff",
+      borderRadius: 24,
+      paddingVertical: 28,
+      paddingHorizontal: 20,
+      alignItems: "center",
+      justifyContent: "center",
+      shadowColor: "#000",
+      shadowOpacity: 0.12,
+      shadowRadius: 18,
+      shadowOffset: { width: 0, height: 10 },
+      elevation: 6,
+    },
+    manageSiteCardTopRow: {
+      width: "100%",
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: Spacing.three,
+    },
+    manageSiteLogoWrapper: {
+      width: 96,
+      height: 96,
+      borderRadius: 20,
+      backgroundColor: "#f5f3ef",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    manageSiteLogoIcon: {
+      fontSize: 38,
+    },
+    manageSiteCardLabel: {
+      fontSize: 18,
+      fontWeight: "700",
+      color: isDark ? "#ffffff" : "#1f1d21",
+      marginTop: 4,
+    },
+    manageSiteDeleteIcon: {
+      fontSize: 18,
+      color: "#e11d48",
+    },
+    manageSiteDeleteButton: {
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      backgroundColor: isDark ? "#1e1e1e" : "#ffffff",
+      alignItems: "center",
+      justifyContent: "center",
+      shadowColor: "#000",
+      shadowOpacity: 0.08,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 4,
+    },
+    deleteSuccessIconWrapper: {
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      backgroundColor: "#ef4444",
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: Spacing.three,
+    },
+    manageSiteAddCard: {
+      minHeight: 180,
+      justifyContent: "center",
+    },
+    manageSiteAddIcon: {
+      fontSize: 42,
+      color: isDark ? "#ffffff" : "#1f1d21",
+    },
+    cardsRow: {
+      flexDirection: "row",
+      gap: Spacing.two,
+      flex: 1,
+      alignItems: "stretch",
+    },
+    card: {
+      flex: 1,
+      borderRadius: 12,
+      paddingVertical: 12,
+      paddingHorizontal: 10,
+      alignItems: "center",
+      justifyContent: "center",
+      shadowColor: "#000",
+      shadowOpacity: 0.05,
+      shadowRadius: 6,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 2,
+    },
+    cardIcon: {
+      fontSize: 22,
+      marginBottom: 6,
+    },
+    cardTitle: {
+      fontSize: 12,
+      fontWeight: "600",
+      textAlign: "center",
+      marginBottom: 2,
+      color: isDark ? "#ffffff" : "#1f1d21",
+    },
+    cardValue: {
+      fontSize: 18,
+      fontWeight: "700",
+      color: isDark ? "#ffffff" : "#1f1d21",
+    },
+    fullWidthCard: {
+      backgroundColor: "#b3e5d8",
+      borderRadius: 12,
+      paddingVertical: 12,
+      paddingHorizontal: 12,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 12,
+      marginTop: Spacing.two,
+      shadowColor: "#000",
+      shadowOpacity: 0.05,
+      shadowRadius: 6,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 2,
+    },
+    fullWidthCardTitle: {
+      fontSize: 15,
+      fontWeight: "600",
+      color: isDark ? "#ffffff" : "#1f1d21",
+    },
+    approvalsContainer: {
+      gap: Spacing.three,
+      paddingBottom: Spacing.three,
+      flex: 1,
+    },
+    approvalsHeader: {
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: Spacing.two,
+      position: "relative",
+    },
+    approvalsTitle: {
+      fontSize: 22,
+      fontWeight: "700",
+      color: isDark ? "#ffffff" : "#1f1d21",
+    },
+    approvalCellID: {
+      minWidth: 50,
+      paddingHorizontal: 10,
+    },
+    approvalCellDescription: {
+      minWidth: 140,
+      paddingHorizontal: 10,
+    },
+    approvalCellAmount: {
+      minWidth: 100,
+      paddingHorizontal: 10,
+    },
+    approvalCellDate: {
+      minWidth: 90,
+      paddingHorizontal: 10,
+    },
+    approvalCellHolder: {
+      minWidth: 110,
+      paddingHorizontal: 10,
+    },
+    approvalCellAction: {
+      minWidth: 130,
+      paddingHorizontal: 10,
+    },
+    workerCellID: {
+      minWidth: 50,
+      paddingHorizontal: 10,
+    },
+    workerCellName: {
+      minWidth: 120,
+      paddingHorizontal: 10,
+    },
+    workerCellSite: {
+      minWidth: 110,
+      paddingHorizontal: 10,
+    },
+    workerCellType: {
+      minWidth: 120,
+      paddingHorizontal: 10,
+    },
+    workerCellActions: {
+      minWidth: 140,
+      paddingHorizontal: 10,
+    },
+    workerActionsContainer: {
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      minWidth: 140,
+      paddingHorizontal: 10,
+      gap: 8,
+    },
+    workerActionButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 12,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    terminateButton: {
+      backgroundColor: "#fbbf24",
+    },
+    deleteButton: {
+      backgroundColor: "#ef4444",
+    },
+    workerActionIcon: {
+      fontSize: 16,
+    },
+    approvalActionsContainer: {
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      minWidth: 130,
+      paddingHorizontal: 10,
+      gap: 6,
+    },
+    approveButton: {
+      backgroundColor: "#22c55e",
+      borderRadius: 6,
+      width: 28,
+      height: 28,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    approveButtonText: {
+      color: "#fff",
+      fontSize: 14,
+      fontWeight: "700",
+    },
+    rejectButton: {
+      backgroundColor: "#dc2626",
+      borderRadius: 6,
+      width: 28,
+      height: 28,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    rejectButtonText: {
+      color: "#fff",
+      fontSize: 14,
+      fontWeight: "700",
+    },
+    rejectModalCard: {
+      width: "100%",
+      maxWidth: 320,
+      backgroundColor: isDark ? "#1e1e1e" : "#fff",
+      borderRadius: 24,
+      paddingVertical: 30,
+      paddingHorizontal: 22,
+      alignItems: "center",
+      shadowColor: "#000",
+      shadowOpacity: 0.22,
+      shadowRadius: 16,
+      shadowOffset: { width: 0, height: 6 },
+      elevation: 12,
+    },
+    rejectIconWrapper: {
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      backgroundColor: "#dc2626",
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 20,
+    },
+    rejectIcon: {
+      fontSize: 36,
+      color: "#fff",
+      fontWeight: "700",
+    },
+    rejectTitle: {
+      fontSize: 18,
+      fontWeight: "700",
+      color: "#111",
+      textAlign: "center",
+      marginBottom: 16,
+    },
+    rejectInput: {
+      width: "100%",
+      backgroundColor: "#f0f0f0",
+      borderRadius: 12,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      marginBottom: 20,
+      color: isDark ? "#ffffff" : "#1f1d21",
+      fontSize: 14,
+    },
+    confirmModalCard: {
+      width: "100%",
+      maxWidth: 320,
+      backgroundColor: isDark ? "#1e1e1e" : "#fff",
+      borderRadius: 24,
+      paddingVertical: 30,
+      paddingHorizontal: 22,
+      alignItems: "center",
+      shadowColor: "#000",
+      shadowOpacity: 0.22,
+      shadowRadius: 16,
+      shadowOffset: { width: 0, height: 6 },
+      elevation: 12,
+    },
+    terminateIconWrapper: {
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      backgroundColor: "#fbbf24",
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 20,
+    },
+    terminateIcon: {
+      fontSize: 36,
+      color: "#fff",
+    },
+    confirmTitle: {
+      fontSize: 18,
+      fontWeight: "700",
+      color: "#111",
+      textAlign: "center",
+      marginBottom: 22,
+    },
+    confirmButtonRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      width: "100%",
+      gap: 12,
+    },
+    confirmButton: {
+      flex: 1,
+      paddingVertical: 12,
+      borderRadius: 999,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    confirmYesButton: {
+      backgroundColor: "#22c55e",
+    },
+    confirmNoButton: {
+      backgroundColor: "#ef4444",
+    },
+    confirmButtonText: {
+      color: "#fff",
+      fontWeight: "700",
+      fontSize: 15,
+    },
+    // Assets Table Grid Styles
+    assetsTableVerticalScroll: {
+      flex: 1,
+    },
+    assetsTableHorizontalScroll: {
+      flex: 1,
+    },
+    assetsTableWrapper: {
+      backgroundColor: isDark ? "#1e1e1e" : "#ffffff",
+      borderRadius: 12,
+      marginHorizontal: -Spacing.four,
+      paddingHorizontal: Spacing.four,
+      shadowColor: "#000",
+      shadowOpacity: 0.06,
+      shadowRadius: 12,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 2,
+    },
+    assetsTableRow: {
+      flexDirection: "row",
+      borderBottomWidth: 1,
+      borderBottomColor: "#e8e8ec",
+      minHeight: 50,
+      alignItems: "center",
+    },
+    assetsTableHeaderRow: {
+      backgroundColor: isDark ? "#121212" : "#f5f5f5",
+      borderTopLeftRadius: 12,
+      borderTopRightRadius: 12,
+      borderBottomWidth: 2,
+      borderBottomColor: "#d0d0d4",
+      minHeight: 48,
+    },
+    assetsTableCell: {
+      fontSize: 13,
+      color: isDark ? "#ffffff" : "#1f1d21",
+      paddingHorizontal: Spacing.two,
+      paddingVertical: Spacing.two,
+    },
+    assetsTableHeaderCell: {
+      fontWeight: "700",
+      color: "#4f4f53",
+      backgroundColor: isDark ? "#121212" : "#f5f5f5",
+    },
+    assetColId: {
+      minWidth: 45,
+      paddingLeft: Spacing.three,
+    },
+    assetColName: {
+      minWidth: 100,
+    },
+    assetColCount: {
+      minWidth: 80,
+      textAlign: "center",
+    },
+    assetColValue: {
+      minWidth: 110,
+      textAlign: "center",
+    },
+    assetColActions: {
+      minWidth: 100,
+      justifyContent: "center",
+      alignItems: "center",
+      flexDirection: "row",
+      gap: Spacing.one,
+    },
+    assetActionButtonEdit: {
+      width: 32,
+      height: 32,
+      borderRadius: 6,
+      backgroundColor: "#22c55e",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    assetActionButtonDelete: {
+      width: 32,
+      height: 32,
+      borderRadius: 6,
+      backgroundColor: "#ef4444",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    assetActionIcon: {
+      fontSize: 14,
+      color: "#fff",
+    },
+    assetsTableEmptyRow: {
+      paddingVertical: Spacing.four,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    emptyAssetsContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      paddingVertical: Spacing.four,
+    },
+    // Personal View Styles
+    personalButtonsContainer: {
+      gap: Spacing.three,
+      justifyContent: "center",
+      alignItems: "center",
+      flex: 1,
+      width: "100%",
+      paddingHorizontal: Spacing.three,
+      marginTop: Spacing.four * 6,
+    },
+    personalAssetButton: {
+      width: "100%",
+      maxWidth: 300,
+      minHeight: 80,
+      backgroundColor: "#dc2626",
+      borderRadius: 16,
+      paddingVertical: Spacing.four,
+      paddingHorizontal: Spacing.three,
+      justifyContent: "center",
+      alignItems: "center",
+      shadowColor: "#000",
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 4,
+    },
+    personalDetailsButton: {
+      width: "100%",
+      maxWidth: 300,
+      minHeight: 80,
+      backgroundColor: "#8b7355",
+      borderRadius: 16,
+      paddingVertical: Spacing.four,
+      paddingHorizontal: Spacing.three,
+      justifyContent: "center",
+      alignItems: "center",
+      shadowColor: "#000",
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 4,
+    },
+    personalButtonText: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: "#ffffff",
+      textAlign: "center",
+      lineHeight: 22,
+    },
+    personalTabRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      alignItems: "center",
+      gap: Spacing.two,
+      marginBottom: Spacing.three,
+    },
+    personalTabButton: {
+      paddingVertical: 10,
+      paddingHorizontal: 16,
+      borderRadius: 999,
+      backgroundColor: "#f5f5f7",
+      alignItems: "center",
+      justifyContent: "center",
+      position: "relative",
+    },
+    personalTabDot: {
+      position: "absolute",
+      top: -6,
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: "#22c55e",
+    },
+    personalTabText: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: "#4b5563",
+    },
+    personalTabTextActive: {
+      color: "#111827",
+    },
+    personalAddButton: {
+      marginLeft: "auto",
+      backgroundColor: "#2563eb",
+      borderRadius: 999,
+      paddingVertical: 12,
+      paddingHorizontal: 20,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    personalAddButtonText: {
+      color: "#fff",
+      fontWeight: "700",
+      fontSize: 14,
+    },
+    personalTableScroll: {
+      flex: 1,
+    },
+    personalTableHorizontalScroll: {
+      flex: 1,
+      marginBottom: Spacing.two,
+    },
+    personalTableCard: {
+      backgroundColor: isDark ? "#1e1e1e" : "#ffffff",
+      borderRadius: 24,
+      paddingVertical: Spacing.three,
+      paddingHorizontal: Spacing.four,
+      shadowColor: "#000",
+      shadowOpacity: 0.06,
+      shadowRadius: 14,
+      shadowOffset: { width: 0, height: 8 },
+      elevation: 4,
+      alignSelf: "flex-start",
+    },
+    personalCellId: {
+      minWidth: 50,
+      paddingHorizontal: 10,
+    },
+    personalCellMain: {
+      minWidth: 140,
+      paddingHorizontal: 10,
+    },
+    personalCellType: {
+      minWidth: 100,
+      paddingHorizontal: 10,
+    },
+    personalCellValue: {
+      minWidth: 100,
+      paddingHorizontal: 10,
+    },
+    personalCellExtra: {
+      minWidth: 100,
+      paddingHorizontal: 10,
+    },
+    personalCellActions: {
+      minWidth: 100,
+      flexDirection: "row",
+      gap: Spacing.one,
+      alignItems: "center",
+      paddingHorizontal: 10,
+    },
+    personalSelectionContainer: {
+      gap: Spacing.three,
+      paddingBottom: Spacing.three,
+      flex: 1,
+    },
+    personalSelectionHeader: {
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: Spacing.two,
+      position: "relative",
+    },
+    personalSelectionTitle: {
+      fontSize: 22,
+      fontWeight: "700",
+    },
+    personalSelectionContent: {
+      gap: Spacing.four,
+      marginTop: Spacing.four,
+      paddingHorizontal: Spacing.two,
+    },
+    personalTile: {
+      height: 120,
+      borderRadius: 20,
+      overflow: "hidden",
+    },
+    personalTileInner: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      paddingHorizontal: Spacing.three,
+    },
+    personalTileText: {
+      fontSize: 18,
+      fontWeight: "600",
+      color: "#ffffff",
+      textAlign: "center",
+      lineHeight: 26,
+    },
 
-  personalDocumentsContainer: {
-    gap: Spacing.three,
-    paddingBottom: Spacing.three,
-    flex: 1,
-  },
-  personalDocumentsHeader: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: Spacing.two,
-    position: "relative",
-  },
-  personalDocumentsTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-  },
-  personalDocumentsSection: {
-    gap: Spacing.three,
-  },
-  sectionCard: {
-    backgroundColor: isDark ? "#1e1e1e" : "#ffffff",
-    borderRadius: 20,
-    padding: Spacing.four,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
-    gap: Spacing.three,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: isDark ? "#ffffff" : "#1f1d21",
-  },
-  notesInput: {
-    backgroundColor: isDark ? "#2a2a2a" : "#f2f2f7",
-    borderRadius: 16,
-    padding: Spacing.three,
-    minHeight: 100,
-    textAlignVertical: "top",
-    color: isDark ? "#ffffff" : "#1f1d21",
-  },
-  textInput: {
-    backgroundColor: isDark ? "#2a2a2a" : "#f2f2f7",
-    borderRadius: 16,
-    padding: Spacing.three,
-    color: isDark ? "#ffffff" : "#1f1d21",
-  },
-  sectionButton: {
-    backgroundColor: "#f97316",
-    borderRadius: 16,
-    paddingVertical: 14,
-    alignItems: "center",
-  },
-  sectionButtonText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  fileTypeRow: {
-    flexDirection: "row",
-    gap: Spacing.two,
-  },
-  fileTypeButton: {
-    flex: 1,
-    borderRadius: 12,
-    paddingVertical: Spacing.three,
-    alignItems: "center",
-    backgroundColor: isDark ? "#2a2a2a" : "#f2f2f7",
-  },
-  fileTypeButtonActive: {
-    backgroundColor: "#fb923c",
-  },
-  fileTypeText: {
-    color: isDark ? "#ffffff" : "#1f1d21",
-    fontWeight: "700",
-  },
-  fileTypeTextActive: {
-    color: "#ffffff",
-  },
-  fileItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: isDark ? "#222" : "#f8fafc",
-    borderRadius: 16,
-    padding: Spacing.three,
-    marginTop: Spacing.two,
-  },
-  fileIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: "#fde68a",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: Spacing.three,
-  },
-  fileInfo: {
-    flex: 1,
-    gap: Spacing.one,
-  },
-  fileName: {
-    color: isDark ? "#ffffff" : "#1f1d21",
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  fileDate: {
-    color: isDark ? "#a0a0a0" : "#6b7280",
-    fontSize: 13,
-  },
-  fileActions: {
-    flexDirection: "row",
-    gap: Spacing.two,
-  },
-  fileActionButton: {
-    borderRadius: 12,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
-    backgroundColor: isDark ? "#333" : "#e5e7eb",
-  },
-  noteItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: isDark ? "#222" : "#f8fafc",
-    borderRadius: 16,
-    padding: Spacing.three,
-    marginTop: Spacing.two,
-  },
-  noteTextSection: {
-    flex: 1,
-    gap: Spacing.one,
-  },
-  noteText: {
-    color: isDark ? "#ffffff" : "#1f1d21",
-    fontSize: 15,
-  },
-  noteDate: {
-    color: isDark ? "#a0a0a0" : "#6b7280",
-    fontSize: 13,
-  },
-  noteActions: {
-    flexDirection: "row",
-    gap: Spacing.two,
-    alignItems: "center",
-  },
-  noteActionButton: {
-    borderRadius: 12,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
-    backgroundColor: isDark ? "#333" : "#e5e7eb",
-  },
-  noteActionText: {
-    color: isDark ? "#ffffff" : "#1f1d21",
-    fontWeight: "600",
-    fontSize: 13,
-  },
-  deleteActionButton: {
-    backgroundColor: "#ef4444",
-  },
-  deleteBtn: {
-    borderRadius: 12,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
-    backgroundColor: "#ef4444",
-  },
-  deleteBtnText: {
-    color: "#ffffff",
-    fontWeight: "600",
-    fontSize: 13,
-  },
-});
+    personalDocumentsContainer: {
+      gap: Spacing.three,
+      paddingBottom: Spacing.three,
+      flex: 1,
+    },
+    personalDocumentsHeader: {
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: Spacing.two,
+      position: "relative",
+    },
+    personalDocumentsTitle: {
+      fontSize: 22,
+      fontWeight: "700",
+    },
+    personalDocumentsSection: {
+      gap: Spacing.three,
+    },
+    sectionCard: {
+      backgroundColor: isDark ? "#1e1e1e" : "#ffffff",
+      borderRadius: 20,
+      padding: Spacing.four,
+      shadowColor: "#000",
+      shadowOpacity: 0.05,
+      shadowRadius: 10,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 3,
+      gap: Spacing.three,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: "700",
+      color: isDark ? "#ffffff" : "#1f1d21",
+    },
+    notesInput: {
+      backgroundColor: isDark ? "#2a2a2a" : "#f2f2f7",
+      borderRadius: 16,
+      padding: Spacing.three,
+      minHeight: 100,
+      textAlignVertical: "top",
+      color: isDark ? "#ffffff" : "#1f1d21",
+    },
+    textInput: {
+      backgroundColor: isDark ? "#2a2a2a" : "#f2f2f7",
+      borderRadius: 16,
+      padding: Spacing.three,
+      color: isDark ? "#ffffff" : "#1f1d21",
+    },
+    sectionButton: {
+      backgroundColor: "#f97316",
+      borderRadius: 16,
+      paddingVertical: 14,
+      alignItems: "center",
+    },
+    sectionButtonText: {
+      color: "#ffffff",
+      fontSize: 16,
+      fontWeight: "700",
+    },
+    fileTypeRow: {
+      flexDirection: "row",
+      gap: Spacing.two,
+    },
+    fileTypeButton: {
+      flex: 1,
+      borderRadius: 12,
+      paddingVertical: Spacing.three,
+      alignItems: "center",
+      backgroundColor: isDark ? "#2a2a2a" : "#f2f2f7",
+    },
+    fileTypeButtonActive: {
+      backgroundColor: "#fb923c",
+    },
+    fileTypeText: {
+      color: isDark ? "#ffffff" : "#1f1d21",
+      fontWeight: "700",
+    },
+    fileTypeTextActive: {
+      color: "#ffffff",
+    },
+    fileItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      backgroundColor: isDark ? "#222" : "#f8fafc",
+      borderRadius: 16,
+      padding: Spacing.three,
+      marginTop: Spacing.two,
+    },
+    fileIcon: {
+      width: 44,
+      height: 44,
+      borderRadius: 12,
+      backgroundColor: "#fde68a",
+      alignItems: "center",
+      justifyContent: "center",
+      marginRight: Spacing.three,
+    },
+    fileInfo: {
+      flex: 1,
+      gap: Spacing.one,
+    },
+    fileName: {
+      color: isDark ? "#ffffff" : "#1f1d21",
+      fontSize: 15,
+      fontWeight: "700",
+    },
+    fileDate: {
+      color: isDark ? "#a0a0a0" : "#6b7280",
+      fontSize: 13,
+    },
+    fileActions: {
+      flexDirection: "row",
+      gap: Spacing.two,
+    },
+    fileActionButton: {
+      borderRadius: 12,
+      paddingHorizontal: Spacing.three,
+      paddingVertical: Spacing.two,
+      backgroundColor: isDark ? "#333" : "#e5e7eb",
+    },
+    noteItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      backgroundColor: isDark ? "#222" : "#f8fafc",
+      borderRadius: 16,
+      padding: Spacing.three,
+      marginTop: Spacing.two,
+    },
+    noteTextSection: {
+      flex: 1,
+      gap: Spacing.one,
+    },
+    noteText: {
+      color: isDark ? "#ffffff" : "#1f1d21",
+      fontSize: 15,
+    },
+    noteDate: {
+      color: isDark ? "#a0a0a0" : "#6b7280",
+      fontSize: 13,
+    },
+    noteActions: {
+      flexDirection: "row",
+      gap: Spacing.two,
+      alignItems: "center",
+    },
+    noteActionButton: {
+      borderRadius: 12,
+      paddingHorizontal: Spacing.three,
+      paddingVertical: Spacing.two,
+      backgroundColor: isDark ? "#333" : "#e5e7eb",
+    },
+    noteActionText: {
+      color: isDark ? "#ffffff" : "#1f1d21",
+      fontWeight: "600",
+      fontSize: 13,
+    },
+    deleteActionButton: {
+      backgroundColor: "#ef4444",
+    },
+    deleteBtn: {
+      borderRadius: 12,
+      paddingHorizontal: Spacing.three,
+      paddingVertical: Spacing.two,
+      backgroundColor: "#ef4444",
+    },
+    deleteBtnText: {
+      color: "#ffffff",
+      fontWeight: "600",
+      fontSize: 13,
+    },
+  });

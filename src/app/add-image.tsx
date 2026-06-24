@@ -1,18 +1,16 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Modal,
   Pressable,
   SafeAreaView,
-  ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
   Image,
-  ActivityIndicator,
 } from "react-native";
-import * as ImagePicker from 'expo-image-picker';
+import * as ImagePicker from "expo-image-picker";
+import * as SecureStore from "expo-secure-store";
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
@@ -31,8 +29,36 @@ export default function AddImagePage() {
   const [workers, setWorkers] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [showSuccess, setShowSuccess] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
+  const [showMenu, setShowMenu] = useState(false);
+  const [failedImages, setFailedImages] = useState<Record<number, boolean>>({});
+
+  const refreshKey = String(params.refresh ?? "");
+
+  useEffect(() => {
+    const loadStored = async () => {
+      try {
+        const loaded: Record<number, string | null> = {
+          1: null,
+          2: null,
+          3: null,
+        };
+        for (let i = 1; i <= 3; i++) {
+          const key = `addimage.${worksiteId}.book.${i}`;
+          const json = await SecureStore.getItemAsync(key);
+          if (json) {
+            const arr: string[] = JSON.parse(json);
+            // take first image preview for card
+            if (arr.length > 0) loaded[i] = arr[0];
+          }
+        }
+        setImages(loaded);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+
+    loadStored();
+  }, [worksiteId, refreshKey]);
   const [images, setImages] = useState<Record<number, string | null>>({
     1: null,
     2: null,
@@ -47,134 +73,112 @@ export default function AddImagePage() {
     });
 
     if (!result.canceled && result.assets && result.assets.length > 0) {
-      setImages(prev => ({ ...prev, [index]: result.assets[0].uri }));
+      setImages((prev) => ({ ...prev, [index]: result.assets[0].uri }));
     }
   };
 
-  const handleProceed = async () => {
-    if (!worksiteId) {
-      alert("Missing worksite ID");
-      return;
-    }
-    
-    setIsSubmitting(true);
-    try {
-      const formData = new FormData();
-      if (workers) {
-        formData.append("workers_count", workers);
-      }
-      if (date) {
-        formData.append("report_date", date);
-      }
-
-      const appendImage = async (index: number) => {
-        if (images[index]) {
-          const uri = images[index] as string;
-          const response = await fetch(uri);
-          const blob = await response.blob();
-          formData.append(`image_${index}`, blob, `image_${index}.jpg`);
-        }
-      };
-
-      await appendImage(1);
-      await appendImage(2);
-      await appendImage(3);
-
-      const response = await fetch(`${API_BASE_URL}/worksites/${worksiteId}/reports`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to save report");
-      }
-
-      setShowSuccess(true);
-    } catch (error) {
-      console.error(error);
-      alert("Failed to upload. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
+  const openCapture = (index: number) => {
+    router.push({
+      pathname: "/add-image-capture",
+      params: { book: index, worksiteId },
+    } as any);
   };
 
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-        <View style={styles.header}>
-          <Pressable style={styles.backButton} onPress={() => router.back()}>
-            <ThemedText style={styles.backText}>Back</ThemedText>
+        <View style={styles.headerRow}>
+          <Pressable
+            style={[
+              styles.menuButton,
+              { backgroundColor: theme.backgroundElement },
+            ]}
+            onPress={() => router.back()}
+            accessibilityLabel="Back"
+          >
+            <ThemedText type="subtitle" style={styles.menuText}>
+              ←
+            </ThemedText>
           </Pressable>
+
+          <Pressable
+            style={[
+              styles.menuCircle,
+              { backgroundColor: theme.backgroundElement },
+            ]}
+            onPress={() => setShowMenu((prev) => !prev)}
+          >
+            <ThemedText type="subtitle" style={styles.menuText}>
+              ☰
+            </ThemedText>
+          </Pressable>
+        </View>
+
+        {showMenu ? (
+          <View
+            style={[
+              styles.menuDropdown,
+              { backgroundColor: theme.backgroundElement },
+            ]}
+          >
+            <Pressable
+              style={styles.menuDropdownItem}
+              onPress={() => {
+                setShowMenu(false);
+                router.replace("/login");
+              }}
+            >
+              <Text style={[styles.menuDropdownText, { color: theme.text }]}>
+                Logout
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
+
+        <View style={styles.headerTitleRow}>
           <ThemedText type="title" style={styles.title}>
             Add Image
           </ThemedText>
         </View>
 
-        <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}>
-          <View style={styles.fieldRow}>
-            <ThemedText type="small">No of workers</ThemedText>
-            <TextInput
-              value={workers}
-              onChangeText={setWorkers}
-              placeholder="no. of workers count"
-              placeholderTextColor={theme.textSecondary}
-              style={[styles.input, { backgroundColor: theme.background, borderColor: theme.backgroundSelected, color: theme.text }]}
-              keyboardType="number-pad"
-            />
-          </View>
-
-          {[1, 2, 3].map((index) => (
-            <View key={index} style={styles.fieldRow}>
-              <ThemedText type="small">Image {index}</ThemedText>
-              <Pressable 
-                style={[styles.uploadButton, { backgroundColor: theme.background, borderColor: theme.backgroundSelected }]} 
-                onPress={() => pickImage(index)}
-              >
-                {images[index] ? (
-                  <Image source={{ uri: images[index]! }} style={styles.previewImage} />
-                ) : (
-                  <Text style={[styles.uploadText, { color: theme.textSecondary }]}>Upload</Text>
-                )}
-              </Pressable>
-            </View>
+        <View style={styles.cardsContainer}>
+          {[1, 2, 3].map((i) => (
+            <Pressable
+              key={i}
+              style={({ pressed }) => [
+                styles.bigCard,
+                { backgroundColor: theme.backgroundElement },
+                pressed && styles.cardPressed,
+              ]}
+              onPress={() => openCapture(i)}
+            >
+              {images[i] && !failedImages[i] ? (
+                <Image
+                  source={{ uri: images[i]! }}
+                  style={styles.cardImage}
+                  onError={() =>
+                    setFailedImages((prev) => ({ ...prev, [i]: true }))
+                  }
+                />
+              ) : (
+                <ThemedText type="subtitle" style={styles.bigCardText}>
+                  {`Book ${i}`}
+                </ThemedText>
+              )}
+            </Pressable>
           ))}
-
-          <View style={styles.fieldRow}>
-            <ThemedText type="small">Date</ThemedText>
-            <TextInput
-              value={date}
-              onChangeText={setDate}
-              placeholder="YYYY.MM.DD"
-              placeholderTextColor={theme.textSecondary}
-              style={[styles.input, { backgroundColor: theme.background, borderColor: theme.backgroundSelected, color: theme.text }]}
-            />
-          </View>
-
-          <Pressable
-            style={[styles.proceedButton, isSubmitting && styles.proceedButtonDisabled]}
-            onPress={handleProceed}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.proceedText}>Proceed</Text>
-            )}
-          </Pressable>
         </View>
+
+        <View style={styles.footer} />
 
         <Modal visible={showSuccess} transparent animationType="fade">
           <View style={styles.modalOverlay}>
-            <View style={[styles.modalCard, { backgroundColor: theme.backgroundElement }]}>
+            <View
+              style={[
+                styles.modalCard,
+                { backgroundColor: theme.backgroundElement },
+              ]}
+            >
               <Pressable
                 style={styles.modalClose}
                 onPress={() => setShowSuccess(false)}
@@ -202,18 +206,25 @@ export default function AddImagePage() {
             </View>
           </View>
         </Modal>
-        </ScrollView>
       </SafeAreaView>
     </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, flexDirection: "row" },
+  container: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.four,
+  },
   safeArea: {
     flex: 1,
-    paddingHorizontal: Spacing.four,
+    width: "100%",
     maxWidth: MaxContentWidth,
+    alignSelf: "center",
+    justifyContent: "center",
   },
   scroll: {
     flex: 1,
@@ -223,13 +234,13 @@ const styles = StyleSheet.create({
     paddingBottom: BottomTabInset + Spacing.five,
     flexGrow: 1,
   },
-  header: { 
-    width: "100%", 
-    flexDirection: "row", 
-    alignItems: "center", 
-    marginTop: Spacing.four, 
+  header: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: Spacing.four,
     justifyContent: "center",
-    position: "relative"
+    position: "relative",
   },
   backButton: {
     position: "absolute",
@@ -237,6 +248,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.three,
     borderRadius: 20,
+    marginTop: 50,
     backgroundColor: "rgba(0,0,0,0.05)",
     borderWidth: 1,
     borderColor: "rgba(0,0,0,0.1)",
@@ -346,4 +358,112 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   modalOkText: { color: "#fff", fontWeight: "700", fontSize: 14 },
+  headerRow: {
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: Spacing.two,
+    marginBottom: Spacing.two,
+  },
+  menuButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.08)",
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+    marginLeft: 2,
+  },
+  menuText: {
+    fontSize: 18,
+    lineHeight: 20,
+  },
+  menuCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.08)",
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+    marginRight: 2,
+  },
+  menuDropdown: {
+    position: "absolute",
+    right: Spacing.two,
+    top: 110,
+    borderRadius: 12,
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 6,
+    zIndex: 50,
+  },
+  menuDropdownItem: {
+    paddingVertical: Spacing.two,
+  },
+  menuDropdownText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  headerTitleRow: {
+    width: "100%",
+    alignItems: "center",
+    marginBottom: Spacing.three,
+  },
+  cardsContainer: {
+    width: "100%",
+    maxWidth: 380,
+    alignSelf: "center",
+    gap: Spacing.three,
+  },
+  bigCard: {
+    borderRadius: 18,
+    paddingVertical: Spacing.four,
+    paddingHorizontal: Spacing.four,
+    height: 140,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
+  },
+  bigCardText: {
+    fontSize: 28,
+    lineHeight: 28,
+    textAlign: "center",
+    color: "#000",
+    fontWeight: "600",
+  },
+  cardImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 12,
+    resizeMode: "cover",
+  },
+  cardPressed: {
+    opacity: 0.85,
+  },
+  footer: {
+    width: "100%",
+    alignItems: "center",
+    marginTop: Spacing.four,
+  },
 });

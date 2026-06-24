@@ -1,0 +1,26 @@
+<svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Outer circle -->
+  <circle cx="100" cy="100" r="95" stroke="currentColor" stroke-width="8" fill="none"/>
+  
+  <!-- Aperture blades creating shutter effect -->
+  <!-- Top blade -->
+  <path d="M 100 10 L 160 60 L 140 100 L 100 100 Z" fill="currentColor"/>
+  
+  <!-- Top right blade -->
+  <path d="M 160 60 L 180 140 L 140 140 L 140 100 Z" fill="currentColor"/>
+  
+  <!-- Bottom right blade -->
+  <path d="M 180 140 L 100 190 L 100 140 L 140 140 Z" fill="currentColor"/>
+  
+  <!-- Bottom left blade -->
+  <path d="M 100 190 L 20 140 L 60 140 L 100 140 Z" fill="currentColor"/>
+  
+  <!-- Top left blade -->
+  <path d="M 20 140 L 40 60 L 100 100 L 60 140 Z" fill="currentColor"/>
+  
+  <!-- Left blade -->
+  <path d="M 40 60 L 100 10 L 100 100 L 60 100 Z" fill="currentColor"/>
+  
+  <!-- Inner white circle -->
+  <circle cx="100" cy="100" r="35" fill="white"/>
+</svg>

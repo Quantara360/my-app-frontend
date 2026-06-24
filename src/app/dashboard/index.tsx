@@ -1,5 +1,12 @@
 import { Redirect, useRouter } from "expo-router";
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { useEffect, useState } from "react";
 
 import { ThemedText } from "@/components/themed-text";
@@ -62,7 +69,9 @@ export default function DashboardScreen() {
   const router = useRouter();
   const theme = useTheme();
   const { user, token, signOut } = useAuth();
-  const [supervisorWorksites, setSupervisorWorksites] = useState<WorksiteTile[]>([]);
+  const [supervisorWorksites, setSupervisorWorksites] = useState<
+    WorksiteTile[]
+  >([]);
 
   useEffect(() => {
     if (!token || user?.role !== "supervisor") {
@@ -102,36 +111,79 @@ export default function DashboardScreen() {
 
   if (user.role === "officeStaff") {
     return (
-      <View style={[styles.staffContainer, { backgroundColor: theme.background }]}>
+      <View
+        style={[styles.staffContainer, { backgroundColor: theme.background }]}
+      >
         <SafeAreaView style={styles.staffSafeArea}>
-          <ScrollView contentContainerStyle={styles.staffScroll} keyboardShouldPersistTaps="handled">
+          <ScrollView
+            contentContainerStyle={styles.staffScroll}
+            keyboardShouldPersistTaps="handled"
+          >
             <View style={styles.staffHeader}>
-            <View style={{ flex: 1, paddingRight: 10 }}>
-              <Text style={[styles.staffGreeting, { color: theme.textSecondary }]} numberOfLines={1} adjustsFontSizeToFit>Hii Office Staff,</Text>
-              <Text style={[styles.staffWelcome, { color: theme.text }]} numberOfLines={1} adjustsFontSizeToFit>Welcome!</Text>
-            </View>
-            <Pressable style={[styles.staffMenuButton, { backgroundColor: theme.backgroundElement, borderColor: theme.backgroundSelected }]} onPress={signOut}>
-              <Text style={[styles.staffMenuText, { color: theme.text }]}>Sign Out</Text>
-            </Pressable>
-          </View>
-
-          <View style={[styles.staffPanel, { backgroundColor: theme.backgroundElement, borderColor: theme.backgroundSelected }]}>
-            <View style={styles.staffGrid}>
-              {officeStaffTiles.map((tile) => (
-                <Pressable
-                  key={tile.id}
-                  style={({ pressed }) => [
-                    styles.staffCard,
-                    { backgroundColor: theme.background, borderColor: theme.backgroundSelected },
-                    pressed && styles.staffCardPressed,
-                  ]}
-                  onPress={() => router.push(tile.route as any)}
+              <View style={{ flex: 1, paddingRight: 10 }}>
+                <Text
+                  style={[styles.staffGreeting, { color: theme.textSecondary }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
                 >
-                  <Text style={[styles.staffCardTitle, { color: theme.text }]}>{tile.title}</Text>
-                </Pressable>
-              ))}
+                  Hii Office Staff,
+                </Text>
+                <Text
+                  style={[styles.staffWelcome, { color: theme.text }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                >
+                  Welcome!
+                </Text>
+              </View>
+              <Pressable
+                style={[
+                  styles.staffMenuButton,
+                  {
+                    backgroundColor: theme.backgroundElement,
+                    borderColor: theme.backgroundSelected,
+                  },
+                ]}
+                onPress={signOut}
+              >
+                <Text style={[styles.staffMenuText, { color: theme.text }]}>
+                  Sign Out
+                </Text>
+              </Pressable>
             </View>
-          </View>
+
+            <View
+              style={[
+                styles.staffPanel,
+                {
+                  backgroundColor: theme.backgroundElement,
+                  borderColor: theme.backgroundSelected,
+                },
+              ]}
+            >
+              <View style={styles.staffGrid}>
+                {officeStaffTiles.map((tile) => (
+                  <Pressable
+                    key={tile.id}
+                    style={({ pressed }) => [
+                      styles.staffCard,
+                      {
+                        backgroundColor: theme.background,
+                        borderColor: theme.backgroundSelected,
+                      },
+                      pressed && styles.staffCardPressed,
+                    ]}
+                    onPress={() => router.push(tile.route as any)}
+                  >
+                    <Text
+                      style={[styles.staffCardTitle, { color: theme.text }]}
+                    >
+                      {tile.title}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
           </ScrollView>
         </SafeAreaView>
       </View>
@@ -141,10 +193,26 @@ export default function DashboardScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView style={{ flex: 1, width: "100%" }} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+        <ScrollView
+          style={{ flex: 1, width: "100%" }}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.topRightControls}>
-            <Pressable style={[styles.menuButton, { backgroundColor: theme.backgroundElement, borderColor: theme.backgroundSelected }]} onPress={signOut}>
-              <Text style={[styles.menuText, { color: theme.text }]}>Sign Out</Text>
+            <Pressable
+              style={[
+                styles.menuButton,
+                {
+                  backgroundColor: theme.backgroundElement,
+                  borderColor: theme.backgroundSelected,
+                },
+              ]}
+              onPress={signOut}
+            >
+              <Text style={[styles.menuText, { color: theme.text }]}>
+                Sign Out
+              </Text>
             </Pressable>
           </View>
           <View style={styles.headerCentered}>
@@ -153,38 +221,63 @@ export default function DashboardScreen() {
             </ThemedText>
           </View>
 
-        <View style={styles.tileGrid}>
-          {supervisorWorksites.length === 0 ? (
-            <ThemedText type="small" themeColor="textSecondary" style={styles.emptyText}>
-              No worksites found for your account.
-            </ThemedText>
-          ) : (
-            supervisorWorksites.map((worksite) => (
-              <Pressable
-                key={worksite.id}
-                style={({ pressed }) => [
-                  styles.tile,
-                  { backgroundColor: theme.backgroundElement },
-                  pressed && styles.tilePressed,
-                ]}
-                onPress={() => router.push(`/dashboard/${worksite.id}` as any)}
+          <View style={styles.tileGrid}>
+            {supervisorWorksites.length === 0 ? (
+              <ThemedText
+                type="small"
+                themeColor="textSecondary"
+                style={styles.emptyText}
               >
-                <View style={[styles.imagePlaceholder, { backgroundColor: theme.background }]}> 
-                  <ThemedText type="small" themeColor="textSecondary" style={styles.imageLabel}>
-                    Image
-                  </ThemedText>
-                </View>
-                <View style={styles.tileText}>
-                  <ThemedText type="subtitle" style={styles.tileTitle}>
-                    {worksite.name}
-                  </ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary" style={styles.tileSubtitle}>
-                    {worksite.description ?? "Open your worksite"}
-                  </ThemedText>
-                </View>
-              </Pressable>
-            ))
-          )}
+                No worksites found for your account.
+              </ThemedText>
+            ) : (
+              supervisorWorksites.map((worksite) => (
+                <Pressable
+                  key={worksite.id}
+                  style={({ pressed }) => [
+                    styles.tile,
+                    { backgroundColor: theme.backgroundElement },
+                    pressed && styles.tilePressed,
+                  ]}
+                  onPress={() => {
+                    const name = (worksite.name || "").toString().toLowerCase();
+                    if (name.includes("amil")) {
+                      router.push("/dashboard/select-hospitals");
+                      return;
+                    }
+
+                    router.push(`/dashboard/${worksite.id}` as any);
+                  }}
+                >
+                  <View
+                    style={[
+                      styles.imagePlaceholder,
+                      { backgroundColor: theme.background },
+                    ]}
+                  >
+                    <ThemedText
+                      type="small"
+                      themeColor="textSecondary"
+                      style={styles.imageLabel}
+                    >
+                      Image
+                    </ThemedText>
+                  </View>
+                  <View style={styles.tileText}>
+                    <ThemedText type="subtitle" style={styles.tileTitle}>
+                      {worksite.name}
+                    </ThemedText>
+                    <ThemedText
+                      type="small"
+                      themeColor="textSecondary"
+                      style={styles.tileSubtitle}
+                    >
+                      {worksite.description ?? "Open your worksite"}
+                    </ThemedText>
+                  </View>
+                </Pressable>
+              ))
+            )}
           </View>
         </ScrollView>
       </SafeAreaView>

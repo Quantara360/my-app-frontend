@@ -1,0 +1,13 @@
+{
+  "files.watcherExclude": {
+    "**/node_modules/**": true
+  },
+  "search.exclude": {
+    "**/node_modules/**": true
+  },
+  "javascript.validate.enable": false,
+  "typescript.validate.enable": true,
+  "js/ts.implicitProjectConfig.checkJs": false,
+  "typescript.tsdk": "./node_modules/typescript/lib",
+  "typescript.preferences.includePackageJsonAutoImports": "off"
+}
