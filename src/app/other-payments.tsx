@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+﻿import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Modal, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -9,6 +9,7 @@ import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { API_BASE_URL } from '@/services/authService';
 import { useAuth } from '@/contexts/AuthContext';
+import { useGoBack } from "@/hooks/use-go-back";
 
 type OtherPayment = {
   id: number;
@@ -37,6 +38,7 @@ const normalizePayment = (item: any): OtherPayment => ({
 });
 
 export default function OtherPaymentsPage() {
+  const goBack = useGoBack();
   const router = useRouter();
   const theme = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -182,7 +184,7 @@ export default function OtherPaymentsPage() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.headerRow}>
-          <Pressable style={[styles.backButton, { backgroundColor: theme.backgroundSelected }]} onPress={() => router.back()}>
+          <Pressable style={[styles.backButton, { backgroundColor: theme.backgroundSelected }]} onPress={() => goBack()}>
             <ThemedText type="smallBold">←</ThemedText>
           </Pressable>
           <ThemedText type="title" style={styles.pageTitle}>Other Payments</ThemedText>

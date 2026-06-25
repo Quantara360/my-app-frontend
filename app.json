@@ -4,25 +4,25 @@
     "slug": "MyFirstProject",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/logo.jpeg",
+    "icon": "./assets/images/logo.png",
     "scheme": "myfirstproject",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/images/logo.jpeg"
+      "icon": "./assets/images/logo.png"
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/logo.jpeg",
-        "backgroundImage": "./assets/images/logo.jpeg",
-        "monochromeImage": "./assets/images/logo.jpeg"
+        "foregroundImage": "./assets/images/logo.png",
+        "backgroundImage": "./assets/images/logo.png",
+        "monochromeImage": "./assets/images/logo.png"
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.anonymous.MyFirstProject"
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/logo.jpeg"
+      "favicon": "./assets/images/logo.png"
     },
     "plugins": [
       "expo-router",
@@ -31,7 +31,7 @@
         {
           "backgroundColor": "#208AEF",
           "android": {
-            "image": "./assets/images/logo.jpeg",
+            "image": "./assets/images/logo.png",
             "imageWidth": 76
           }
         }

@@ -19,13 +19,20 @@ import {
 import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/contexts/AuthContext";
 import { API_BASE_URL } from "@/services/authService";
+import { useGoBack } from "@/hooks/use-go-back";
+import { useColorScheme } from "react-native";
 
 export default function MarkAttendance() {
   const router = useRouter();
+  const goBack = useGoBack();
   const theme = useTheme();
-  const { worksiteId } = useLocalSearchParams();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+  const { worksiteId, subSiteId, shift: paramShift, state: paramState } = useLocalSearchParams<{ worksiteId?: string; subSiteId?: string; shift?: string; state?: string }>();
+  console.log('[mark-attendance] params:', { worksiteId, subSiteId, paramShift, paramState });
   const { token } = useAuth();
-  const [shift, setShift] = useState("Evening");
+  const [shift, setShift] = useState(paramShift || "Evening");
+  const [state, setState] = useState(paramState || "IN");
   const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [workers, setWorkers] = useState<any[]>([]);
@@ -86,14 +93,14 @@ export default function MarkAttendance() {
             </ThemedText>
 
             <View style={styles.formRow}>
-              <ThemedText type="small">Select Shift:</ThemedText>
+              <ThemedText type="small">Shift:</ThemedText>
               <Pressable
                 style={[styles.pill, { backgroundColor: theme.background }]}
                 onPress={() =>
                   setShift((s) => (s === "Evening" ? "Morning" : "Evening"))
                 }
               >
-                <ThemedText type="small">{shift}</ThemedText>
+                <ThemedText type="small">{shift === "Morning" ? "Day Shift" : "Night Shift"}</ThemedText>
               </Pressable>
             </View>
 
@@ -104,6 +111,18 @@ export default function MarkAttendance() {
                 onPress={() => setShowDatePicker(true)}
               >
                 <ThemedText type="small">{formattedDate}</ThemedText>
+              </Pressable>
+            </View>
+
+            <View style={styles.formRow}>
+              <ThemedText type="small">State:</ThemedText>
+              <Pressable
+                style={[styles.pill, { backgroundColor: theme.background }]}
+                onPress={() =>
+                  setState((s) => (s === "IN" ? "OUT" : "IN"))
+                }
+              >
+                <ThemedText type="small">{state}</ThemedText>
               </Pressable>
             </View>
 
@@ -126,7 +145,11 @@ export default function MarkAttendance() {
                       return (
                         <Pressable 
                           key={worker.id}
-                          style={[styles.workerItem, isSelected && { backgroundColor: theme.backgroundSelected }]}
+                          style={[
+                            styles.workerItem,
+                            { borderBottomColor: isDark ? '#333' : '#e2e8f0' },
+                            isSelected && { backgroundColor: theme.backgroundSelected }
+                          ]}
                           onPress={() => toggleWorker(worker.id)}
                         >
                           <View style={[styles.checkbox, isSelected && { backgroundColor: '#28a745', borderColor: '#28a745' }]}>
@@ -144,7 +167,7 @@ export default function MarkAttendance() {
             <View style={styles.buttonRow}>
               <Pressable
                 style={[styles.button, styles.prevButton]}
-                onPress={() => router.back()}
+                onPress={goBack}
               >
                 <ThemedText type="smallBold">&lt;&lt; Previous</ThemedText>
               </Pressable>
@@ -159,7 +182,9 @@ export default function MarkAttendance() {
                       pathname: "/face-recognition" as any,
                       params: {
                         worksiteId: String(worksiteId || ""),
+                        subSiteId: String(subSiteId || ""),
                         shift,
+                        state,
                       },
                     });
                   } else {

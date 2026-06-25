@@ -12,6 +12,7 @@ import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { API_BASE_URL } from '@/services/authService';
 import { useAuth } from '@/contexts/AuthContext';
+import { useGoBack } from "@/hooks/use-go-back";
 
 type Worksite = {
   id: number;
@@ -28,6 +29,9 @@ type Worker = {
   age?: number;
   join_date?: string;
   face_recognition_enabled: boolean;
+  epf?: string;
+  gender?: string;
+  epfHistories?: { id: number; epf_number: string; created_at: string }[];
 };
 
 const initialFormState = {
@@ -38,9 +42,12 @@ const initialFormState = {
   age: '',
   join_date: '',
   face_recognition_enabled: false,
+  epf: '',
+  gender: '',
 };
 
 export default function WorkersPage() {
+  const goBack = useGoBack();
   const router = useRouter();
   const theme = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -69,8 +76,28 @@ export default function WorkersPage() {
   const [selectedViewWorker, setSelectedViewWorker] = useState<Worker | null>(null);
   const [pendingPhotoUri, setPendingPhotoUri] = useState<string | null>(null); // face photo to upload
   const [uploadingFace, setUploadingFace] = useState(false);
+  const [epfHistoryOpen, setEpfHistoryOpen] = useState(false);
+  const [epfHistory, setEpfHistory] = useState<{ id: number; epf_number: string; created_at: string }[]>([]);
+  const [loadingEpfHistory, setLoadingEpfHistory] = useState(false);
   const cameraRef = useRef<any>(null);
   const webDateInputRef = useRef<HTMLInputElement | null>(null);
+
+  const fetchEpfHistory = async (workerId: number) => {
+    if (!token) return;
+    setLoadingEpfHistory(true);
+    setEpfHistoryOpen(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/workers/${workerId}/epf-history`, {
+        headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+      setEpfHistory(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.warn(e);
+    } finally {
+      setLoadingEpfHistory(false);
+    }
+  };
 
   useEffect(() => {
     if (!token) {
@@ -125,6 +152,8 @@ export default function WorkersPage() {
       age: worker.age?.toString() ?? '',
       join_date: worker.join_date ?? '',
       face_recognition_enabled: worker.face_recognition_enabled,
+      epf: worker.epf ?? '',
+      gender: worker.gender ?? '',
     });
     setJoinDate(parsedJoinDate);
     setShowJoinDatePicker(false);
@@ -213,6 +242,8 @@ export default function WorkersPage() {
       age: formValues.age ? Number(formValues.age) : null,
       join_date: formValues.join_date || joinDate.toISOString().split('T')[0],
       face_recognition_enabled: formValues.face_recognition_enabled,
+      epf: formValues.epf || null,
+      gender: formValues.gender || null,
     };
 
     const method = isEditing ? 'PUT' : 'POST';
@@ -239,14 +270,32 @@ export default function WorkersPage() {
         try {
           setUploadingFace(true);
           const formData = new FormData();
-          const fileName = pendingPhotoUri.split('/').pop() || 'photo.jpg';
-          const ext = fileName.split('.').pop() || 'jpg';
-          const mimeType = `image/${ext}`;
+          let fileName = 'photo.jpg';
+          let mimeType = 'image/jpeg';
+          
+          if (!pendingPhotoUri.startsWith('data:')) {
+            fileName = pendingPhotoUri.split('/').pop() || 'photo.jpg';
+            const ext = fileName.split('.').pop() || 'jpg';
+            mimeType = `image/${ext}`;
+          }
 
           if (Platform.OS === 'web') {
-            const res = await fetch(pendingPhotoUri);
-            const blob = await res.blob();
-            formData.append('photo', blob, fileName);
+            if (pendingPhotoUri.startsWith('data:')) {
+              // data URI — convert to proper blob with explicit MIME type
+              const arr = pendingPhotoUri.split(',');
+              const mime = (arr[0].match(/:(.*?);/) || [])[1] || 'image/jpeg';
+              const bstr = atob(arr[1]);
+              let n = bstr.length;
+              const u8arr = new Uint8Array(n);
+              while (n--) u8arr[n] = bstr.charCodeAt(n);
+              const blob = new Blob([u8arr], { type: mime });
+              formData.append('photo', blob, 'photo.jpg');
+            } else {
+              const res = await fetch(pendingPhotoUri);
+              const rawBlob = await res.blob();
+              const typedBlob = new Blob([rawBlob], { type: 'image/jpeg' });
+              formData.append('photo', typedBlob, fileName);
+            }
           } else {
             formData.append('photo', {
               uri: pendingPhotoUri,
@@ -255,7 +304,7 @@ export default function WorkersPage() {
             } as any);
           }
 
-          await fetch(`${API_BASE_URL}/workers/${savedId}/upload-face`, {
+          const uploadRes = await fetch(`${API_BASE_URL}/workers/${savedId}/upload-face`, {
             method: 'POST',
             headers: {
               Authorization: `Bearer ${token}`,
@@ -263,6 +312,10 @@ export default function WorkersPage() {
             },
             body: formData,
           });
+          if (!uploadRes.ok) {
+            const errBody = await uploadRes.text();
+            console.warn('Face upload failed:', uploadRes.status, errBody);
+          }
         } catch (err) {
           console.warn('Face upload error:', err);
         } finally {
@@ -311,7 +364,7 @@ export default function WorkersPage() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.headerRow}>
-          <Pressable style={[styles.backButton, { backgroundColor: theme.backgroundSelected }]} onPress={() => router.back()}>
+          <Pressable style={[styles.backButton, { backgroundColor: theme.backgroundSelected }]} onPress={() => goBack()}>
             <ThemedText type="smallBold">←</ThemedText>
           </Pressable>
           <ThemedText type="title" style={styles.pageTitle}>
@@ -418,7 +471,7 @@ export default function WorkersPage() {
                 </Pressable>
               </View>
 
-              <ScrollView style={styles.formBody} showsVerticalScrollIndicator={false}>
+              <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={styles.formBody} showsVerticalScrollIndicator={false}>
                 <View style={[styles.fieldRow, { zIndex: sitePickerOpen ? 100 : 1 }]}>
                   <Text style={styles.fieldLabel}>Site Selection</Text>
                   <Pressable style={styles.selectInput} onPress={() => setSitePickerOpen((prev) => !prev)}>
@@ -451,12 +504,30 @@ export default function WorkersPage() {
                   </View>
                   )}
                 </View>
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="Type"
-                  value={formValues.role}
-                  onChangeText={(value) => setFormValues((prev) => ({ ...prev, role: value }))}
-                />
+                <View style={[styles.fieldRow, { zIndex: 90, marginBottom: 12 }]}>
+                  <Text style={styles.fieldLabel}>Role</Text>
+                  <View style={styles.statusList}>
+                    {['janitor', 'supervisor'].map((roleOpt) => (
+                      <Pressable
+                        key={roleOpt}
+                        style={[
+                          styles.statusOption,
+                          formValues.role === roleOpt && styles.statusOptionSelected,
+                        ]}
+                        onPress={() => setFormValues((prev) => ({ ...prev, role: roleOpt }))}
+                      >
+                        <Text
+                          style={[
+                            styles.statusOptionText,
+                            formValues.role === roleOpt && styles.statusOptionTextSelected,
+                          ]}
+                        >
+                          {roleOpt === 'janitor' ? 'Janitor' : 'Supervisor'}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
                 <TextInput
                   style={styles.textInput}
                   placeholder="Full Name"
@@ -476,6 +547,48 @@ export default function WorkersPage() {
                   value={formValues.age}
                   onChangeText={(value) => setFormValues((prev) => ({ ...prev, age: value }))}
                 />
+
+                <View style={[styles.fieldRow, { marginBottom: 12 }]}>
+                  <Text style={styles.fieldLabel}>Gender</Text>
+                  <View style={styles.statusList}>
+                    {['male', 'female'].map((genderOpt) => (
+                      <Pressable
+                        key={genderOpt}
+                        style={[
+                          styles.statusOption,
+                          formValues.gender === genderOpt && styles.statusOptionSelected,
+                        ]}
+                        onPress={() => setFormValues((prev) => ({ ...prev, gender: genderOpt }))}
+                      >
+                        <Text
+                          style={[
+                            styles.statusOptionText,
+                            formValues.gender === genderOpt && styles.statusOptionTextSelected,
+                          ]}
+                        >
+                          {genderOpt === 'male' ? 'Male' : 'Female'}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
+
+                <View style={styles.epfInputRow}>
+                  <TextInput
+                    style={[styles.textInput, { flex: 1, marginBottom: 0 }]}
+                    placeholder="EPF No."
+                    value={formValues.epf}
+                    onChangeText={(value) => setFormValues((prev) => ({ ...prev, epf: value }))}
+                  />
+                  {isEditing && selectedWorker && (
+                    <Pressable
+                      style={styles.epfHistoryBtn}
+                      onPress={() => fetchEpfHistory(selectedWorker.id)}
+                    >
+                      <Text style={styles.epfHistoryBtnText}>📋 History</Text>
+                    </Pressable>
+                  )}
+                </View>
                 {Platform.OS === 'web' ? (
                   <View style={styles.fieldRow}>
                     <Text style={styles.fieldLabel}>Join Date</Text>
@@ -668,6 +781,27 @@ export default function WorkersPage() {
                       <ThemedText>{selectedViewWorker.age ?? '—'}</ThemedText>
                     </View>
                     <View style={styles.detailRow}>
+                      <ThemedText type="subtitle" style={styles.detailLabel}>Gender</ThemedText>
+                      <ThemedText>{selectedViewWorker.gender ?? '—'}</ThemedText>
+                    </View>
+                    <View style={styles.detailRow}>
+                      <ThemedText type="subtitle" style={styles.detailLabel}>EPF No.</ThemedText>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <ThemedText>{selectedViewWorker.epf ?? '—'}</ThemedText>
+                        {selectedViewWorker.epfHistories && selectedViewWorker.epfHistories.length > 0 && (
+                          <Pressable
+                            style={{ paddingHorizontal: 10, paddingVertical: 4, backgroundColor: '#3b82f6', borderRadius: 12 }}
+                            onPress={() => {
+                              setEpfHistory(selectedViewWorker.epfHistories || []);
+                              setEpfHistoryOpen(true);
+                            }}
+                          >
+                            <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>History</Text>
+                          </Pressable>
+                        )}
+                      </View>
+                    </View>
+                    <View style={styles.detailRow}>
                       <ThemedText type="subtitle" style={styles.detailLabel}>Join Date</ThemedText>
                       <ThemedText>{selectedViewWorker.join_date ? new Date(selectedViewWorker.join_date).toLocaleDateString() : '—'}</ThemedText>
                     </View>
@@ -680,6 +814,41 @@ export default function WorkersPage() {
               </ScrollView>
               <View style={styles.modalFooter}>
                 <Pressable style={[styles.modalButton, { backgroundColor: '#3b82f6' }]} onPress={() => setViewDetailsOpen(false)}>
+                  <Text style={styles.modalButtonText}>Close</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* EPF History Modal */}
+        <Modal visible={epfHistoryOpen} transparent animationType="fade" onRequestClose={() => setEpfHistoryOpen(false)}>
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { backgroundColor: theme.background }]}>
+              <View style={styles.modalHeader}>
+                <ThemedText type="title">EPF History</ThemedText>
+                <Pressable onPress={() => setEpfHistoryOpen(false)}>
+                  <Text style={styles.modalCloseButton}>✕</Text>
+                </Pressable>
+              </View>
+              <ScrollView style={styles.modalBody}>
+                {loadingEpfHistory ? (
+                  <ActivityIndicator size="large" color="#3b82f6" style={{ marginVertical: 24 }} />
+                ) : epfHistory.length === 0 ? (
+                  <ThemedText style={{ textAlign: 'center', marginTop: 24, color: theme.textSecondary }}>No EPF history records found.</ThemedText>
+                ) : (
+                  epfHistory.map((record) => (
+                    <View key={record.id} style={{ paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: theme.backgroundSelected }}>
+                      <ThemedText style={{ fontWeight: '600', fontSize: 15 }}>EPF No: {record.epf_number}</ThemedText>
+                      <ThemedText style={{ color: theme.textSecondary, fontSize: 13, marginTop: 2 }}>
+                        Added: {new Date(record.created_at).toLocaleDateString()} at {new Date(record.created_at).toLocaleTimeString()}
+                      </ThemedText>
+                    </View>
+                  ))
+                )}
+              </ScrollView>
+              <View style={styles.modalFooter}>
+                <Pressable style={[styles.modalButton, { backgroundColor: '#3b82f6' }]} onPress={() => setEpfHistoryOpen(false)}>
                   <Text style={styles.modalButtonText}>Close</Text>
                 </Pressable>
               </View>
@@ -873,6 +1042,8 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   formCard: {
     width: '100%',
     maxWidth: 520,
+    maxHeight: '85%',
+    flexShrink: 1,
     borderRadius: 32,
     backgroundColor: theme.backgroundElement,
     padding: Spacing.four,
@@ -949,12 +1120,14 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     paddingHorizontal: Spacing.four,
     borderRadius: 20,
     backgroundColor: '#10b981',
-    minWidth: 150,
+    flexShrink: 1,
+    marginLeft: Spacing.two,
     alignItems: 'center',
   },
   faceButtonText: {
     color: '#ffffff',
     fontWeight: '700',
+    textAlign: 'center',
   },
   faceOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -1227,5 +1400,49 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   modalButtonText: {
     color: 'white',
     fontWeight: '600',
+  },
+  statusList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
+  },
+  statusOption: {
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    borderRadius: 20,
+    backgroundColor: theme.backgroundSelected,
+    borderWidth: 1,
+    borderColor: theme.backgroundSelected,
+  },
+  statusOptionSelected: {
+    backgroundColor: '#f59e0b',
+    borderColor: '#f59e0b',
+  },
+  statusOptionText: {
+    color: theme.text,
+    fontWeight: '600',
+    fontSize: 13,
+  },
+  statusOptionTextSelected: {
+    color: '#fff',
+  },
+  epfInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    marginBottom: Spacing.two,
+  },
+  epfHistoryBtn: {
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    borderRadius: 20,
+    backgroundColor: '#3b82f6',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  epfHistoryBtnText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 13,
   },
 });

@@ -28,6 +28,7 @@ import {
   TextInput,
   View,
   useColorScheme,
+  RefreshControl,
 } from "react-native";
 
 interface AdminCard {
@@ -130,6 +131,8 @@ export default function AdminDashboard() {
   interface Worksite {
     id: number;
     name: string;
+    type?: string;
+    parent_id?: number | null;
   }
 
   const [selectedView, setSelectedView] = useState<
@@ -160,7 +163,10 @@ export default function AdminDashboard() {
     AttendancesService.AttendanceRecord[]
   >([]);
   const [worksites, setWorksites] = useState<Worksite[]>([]);
-  const [manageSites, setManageSites] = useState<any[]>([]);
+  const [mainSites, setMainSites] = useState<any[]>([]);
+  const [hospitals, setHospitals] = useState<any[]>([]);
+  const [subSites, setSubSites] = useState<any[]>([]);
+  const [worksitesRefreshing, setWorksitesRefreshing] = useState(false);
 
   // Search state
   const [machinerySearch, setMachinerySearch] = useState("");
@@ -170,7 +176,9 @@ export default function AdminDashboard() {
   const [workerSearch, setWorkerSearch] = useState("");
   const [attendanceSearch, setAttendanceSearch] = useState("");
   const [attendanceShiftFilter, setAttendanceShiftFilter] = useState("All");
+  const [attendanceStatusFilter, setAttendanceStatusFilter] = useState("All");
   const [attendanceDateFilter, setAttendanceDateFilter] = useState("");
+  const [attendanceTab, setAttendanceTab] = useState<"IN" | "OUT">("IN");
 
   // Modal state
   const [showUpdateModal, setShowUpdateModal] = useState(false);
@@ -206,6 +214,18 @@ export default function AdminDashboard() {
   const [newPersonalValue, setNewPersonalValue] = useState("");
   const [newPersonalExtra, setNewPersonalExtra] = useState("");
   const [newSiteName, setNewSiteName] = useState("");
+
+  // Drill-down navigation for Manage Sites: null=root, number=inside that site
+  const [currentMainSiteId, setCurrentMainSiteId] = useState<number | null>(null);
+  const [currentHospitalId, setCurrentHospitalId] = useState<number | null>(null);
+  // drillLevel: 'main' | 'hospital' | 'subsite'
+  const [drillLevel, setDrillLevel] = useState<'main' | 'hospital' | 'subsite'>('main');
+
+  // Edit Site State
+  const [showEditSiteModal, setShowEditSiteModal] = useState(false);
+  const [selectedManageSite, setSelectedManageSite] = useState<any | null>(null);
+  const [editSiteName, setEditSiteName] = useState("");
+
   const [siteLogoName, setSiteLogoName] = useState("");
   const [siteLogoUri, setSiteLogoUri] = useState<string | null>(null);
   const siteLogoInputRef = useRef<HTMLInputElement | null>(null);
@@ -509,10 +529,21 @@ export default function AdminDashboard() {
       String(item.id).includes(attendanceSearch);
     const shiftMatch =
       attendanceShiftFilter === "All" || item.shift === attendanceShiftFilter;
+    const statusMatch =
+      attendanceStatusFilter === "All" || (item.status || "").toLowerCase() === attendanceStatusFilter.toLowerCase();
     const dateMatch =
       attendanceDateFilter === "" ||
       (item.date && item.date.startsWith(attendanceDateFilter));
-    return searchMatch && shiftMatch && dateMatch;
+      
+    // Tab filter:
+    // IN tab  → show everyone who has clocked IN (marked_at), including absent synthetic rows
+    // OUT tab → show only workers who have been clocked OUT (out_marked_at is set)
+    const tabMatch =
+      attendanceTab === "IN"
+        ? (item.status || "").toLowerCase() === "absent" || !!item.marked_at
+        : !!item.out_marked_at;
+        
+    return searchMatch && shiftMatch && statusMatch && dateMatch && tabMatch;
   });
 
   // === API HANDLERS ===
@@ -887,52 +918,96 @@ export default function AdminDashboard() {
 
   const handleAddSite = async () => {
     if (!newSiteName.trim()) {
-      Alert.alert("Missing Site Name", "Please enter a site name.");
+      Alert.alert("Missing Name", "Please enter a name.");
       return;
     }
     try {
-      const response = await fetch(`${API_BASE_URL}/worksites`, {
+      let url = `${API_BASE_URL}/worksites`;
+      let body: any = { name: newSiteName.trim() };
+
+      if (drillLevel === 'hospital') {
+        url = `${API_BASE_URL}/hospitals`;
+        body = { name: newSiteName.trim(), worksite_id: currentMainSiteId };
+      } else if (drillLevel === 'subsite') {
+        url = `${API_BASE_URL}/sub-sites`;
+        body = { name: newSiteName.trim(), hospital_id: currentHospitalId };
+      }
+
+      const response = await fetch(url, {
         method: "POST",
         headers: {
           ...(await getAuthHeaders()),
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name: newSiteName.trim() }),
+        body: JSON.stringify(body),
       });
-      if (!response.ok) throw new Error("Failed to add site");
-      const addedSite = await response.json();
-      const siteWithLogo = { ...addedSite, logoUri: siteLogoUri };
-      setManageSites((current: any) => [...current, siteWithLogo]);
-      setWorksites((current: any) => [...current, addedSite]);
+      if (!response.ok) throw new Error("Failed to add");
+      await loadWorksitesData(); // Sync all 3 arrays from DB
       setShowAddSiteModal(false);
       setNewSiteName("");
       setSiteLogoName("");
       setSiteLogoUri(null);
-      setSuccessModalTitle("Site Added Successfully!");
+      setSuccessModalTitle("Added Successfully!");
       setSuccessButtonText("Ok");
       setShowSuccessModal(true);
     } catch (error) {
-      Alert.alert("Error", "Could not add the site.");
+      Alert.alert("Error", "Could not add.");
+    }
+  };
+
+  const handleEditSite = async () => {
+    if (!selectedManageSite) return;
+    if (!editSiteName.trim()) {
+      Alert.alert("Missing Name", "Please enter a name.");
+      return;
+    }
+    try {
+      // Determine endpoint based on what kind of item is selected
+      let url = `${API_BASE_URL}/worksites/${selectedManageSite.id}`;
+      if (selectedManageSite._level === 'hospital') {
+        url = `${API_BASE_URL}/hospitals/${selectedManageSite.id}`;
+      } else if (selectedManageSite._level === 'subsite') {
+        url = `${API_BASE_URL}/sub-sites/${selectedManageSite.id}`;
+      }
+
+      const response = await fetch(url, {
+        method: "PUT",
+        headers: {
+          ...(await getAuthHeaders()),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name: editSiteName.trim() }),
+      });
+      if (!response.ok) throw new Error("Failed to edit");
+      await loadWorksitesData();
+      setShowEditSiteModal(false);
+      setSuccessModalTitle("Updated Successfully!");
+      setSuccessButtonText("Ok");
+      setShowSuccessModal(true);
+    } catch (error) {
+      Alert.alert("Error", "Could not update.");
     }
   };
 
   const handleDeleteSite = async (site: any) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/worksites/${site.id}`, {
+      let url = `${API_BASE_URL}/worksites/${site.id}`;
+      if (site._level === 'hospital') {
+        url = `${API_BASE_URL}/hospitals/${site.id}`;
+      } else if (site._level === 'subsite') {
+        url = `${API_BASE_URL}/sub-sites/${site.id}`;
+      }
+
+      const response = await fetch(url, {
         method: "DELETE",
         headers: await getAuthHeaders(),
       });
       if (!response.ok) throw new Error("Failed to delete");
-      setDeletedSiteName(site.title || site.name);
-      setManageSites((current: any) =>
-        current.filter((item: any) => item.id !== site.id),
-      );
-      setWorksites((current: any) =>
-        current.filter((item: any) => item.id !== site.id),
-      );
+      setDeletedSiteName(site.name);
+      await loadWorksitesData();
       setShowSiteDeletedSuccessModal(true);
     } catch (error) {
-      Alert.alert("Error", "Could not delete the site.");
+      Alert.alert("Error", "Could not delete.");
     }
   };
 
@@ -1052,24 +1127,54 @@ export default function AdminDashboard() {
 
   const loadAttendancesData = async () => {
     try {
-      const data = await AttendancesService.getAttendances();
-      setAttendances(data);
+      if (selectedSiteId && attendanceDateFilter !== "" && attendanceShiftFilter !== "All") {
+        const data = await AttendancesService.getAttendancesWithAbsents({
+          worksiteId: selectedSiteId,
+          date: attendanceDateFilter,
+          shift: attendanceShiftFilter
+        });
+        setAttendances(data);
+      } else {
+        const data = await AttendancesService.getAttendances();
+        setAttendances(data);
+      }
     } catch (error) {
       console.error("Failed to load attendances:", error);
     }
   };
 
+  useEffect(() => {
+    // Only reload if we are actively viewing the attendance screen to prevent unnecessary fetches
+    if (selectedView === "attendance") {
+      loadAttendancesData();
+    }
+  }, [selectedSiteId, attendanceDateFilter, attendanceShiftFilter, selectedView]);
+
   const loadWorksitesData = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/worksites`, {
-        headers: await getAuthHeaders(),
-      });
-      const data = await response.json();
-      const loadedWorksites = Array.isArray(data) ? data : data.data || [];
+      setWorksitesRefreshing(true);
+      const headers = await getAuthHeaders();
+      const [wsRes, hospRes, subRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/worksites`, { headers }),
+        fetch(`${API_BASE_URL}/hospitals`, { headers }),
+        fetch(`${API_BASE_URL}/sub-sites`, { headers }),
+      ]);
+      const wsData = await wsRes.json();
+      const hospData = await hospRes.json();
+      const subData = await subRes.json();
+
+      const loadedWorksites = Array.isArray(wsData) ? wsData : wsData.data || [];
+      const loadedHospitals = Array.isArray(hospData) ? hospData : hospData.data || [];
+      const loadedSubSites = Array.isArray(subData) ? subData : subData.data || [];
+
       setWorksites(loadedWorksites);
-      setManageSites(loadedWorksites);
+      setMainSites(loadedWorksites);
+      setHospitals(loadedHospitals);
+      setSubSites(loadedSubSites);
     } catch (error) {
       console.error("Failed to load worksites:", error);
+    } finally {
+      setWorksitesRefreshing(false);
     }
   };
 
@@ -1170,6 +1275,9 @@ export default function AdminDashboard() {
     } else if (card.title === "Personal") {
       setSelectedView("personalSelection");
     } else if (card.title === "Manage Site") {
+      setDrillLevel('main');
+      setCurrentMainSiteId(null);
+      setCurrentHospitalId(null);
       setSelectedView("manageSite");
     } else {
       Alert.alert(`${card.title}`, `You clicked on ${card.title}`);
@@ -1289,6 +1397,7 @@ export default function AdminDashboard() {
             setSelectedView("dashboard");
             setAttendanceSearch("");
             setAttendanceShiftFilter("All");
+            setAttendanceStatusFilter("All");
             setAttendanceDateFilter("");
           }}
           style={styles.backButton}
@@ -1298,6 +1407,22 @@ export default function AdminDashboard() {
         <ThemedText type="subtitle" style={styles.machineriesTitle}>
           Attendances
         </ThemedText>
+      </View>
+
+      {/* IN / OUT Tab Toggle */}
+      <View style={{ flexDirection: "row", marginBottom: 14, borderRadius: 12, overflow: "hidden", backgroundColor: isDark ? "#1e1e1e" : "#e5e5ea", alignSelf: "flex-start" }}>
+        <Pressable
+          style={[{ paddingVertical: 8, paddingHorizontal: 20 }, attendanceTab === "IN" && { backgroundColor: "#4b4fbf", borderRadius: 10 }]}
+          onPress={() => setAttendanceTab("IN")}
+        >
+          <Text style={{ fontSize: 14, fontWeight: "600", color: attendanceTab === "IN" ? "#ffffff" : (isDark ? "#a0a0a0" : "#555") }}>↩ Clock-IN</Text>
+        </Pressable>
+        <Pressable
+          style={[{ paddingVertical: 8, paddingHorizontal: 20 }, attendanceTab === "OUT" && { backgroundColor: "#4b4fbf", borderRadius: 10 }]}
+          onPress={() => setAttendanceTab("OUT")}
+        >
+          <Text style={{ fontSize: 14, fontWeight: "600", color: attendanceTab === "OUT" ? "#ffffff" : (isDark ? "#a0a0a0" : "#555") }}>↪ Clock-OUT</Text>
+        </Pressable>
       </View>
 
       <View
@@ -1335,6 +1460,23 @@ export default function AdminDashboard() {
           <option value="Morning">Morning</option>
           <option value="Evening">Evening</option>
         </select>
+        <select
+          value={attendanceStatusFilter}
+          onChange={(e: any) => setAttendanceStatusFilter(e.target.value)}
+          style={{
+            backgroundColor: "transparent",
+            color: isDark ? "#ffffff" : "#333",
+            border: `1px solid ${isDark ? "#333" : "#ccc"}`,
+            borderRadius: 8,
+            padding: "8px 12px",
+            fontSize: 14,
+          }}
+        >
+          <option value="All">All Status</option>
+          <option value="present">Present</option>
+          <option value="absent">Absent</option>
+          <option value="late">Late</option>
+        </select>
         <input
           type="date"
           value={attendanceDateFilter}
@@ -1351,6 +1493,14 @@ export default function AdminDashboard() {
         />
       </View>
 
+      {attendanceTab === "IN" && selectedSiteId && attendanceDateFilter !== "" && attendanceShiftFilter !== "All" && (
+        <View style={{ backgroundColor: isDark ? "#2a2000" : "#fffbe6", borderRadius: 8, padding: 10, marginBottom: 10, borderLeftWidth: 3, borderLeftColor: "#faad14" }}>
+          <Text style={{ color: isDark ? "#e6c97a" : "#7a5c00", fontSize: 12 }}>
+            💡 Absent workers (yellow) appear once the shift ends — Morning at 6 PM, Evening at 6 AM next day.
+          </Text>
+        </View>
+      )}
+
       <ScrollView
         style={styles.tableScrollContainer}
         showsVerticalScrollIndicator={true}
@@ -1364,17 +1514,20 @@ export default function AdminDashboard() {
               <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Date</Text>
               <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Shift</Text>
               <Text style={[styles.tableHeaderCell, { flex: 2 }]}>
-                Marked At
+                {attendanceTab === "OUT" ? "Clocked Out" : "Marked At"}
               </Text>
               <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Status</Text>
               <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Actions</Text>
             </View>
 
-            {filteredAttendanceData.map((item, index) => (
+            {filteredAttendanceData.map((item, index) => {
+              const isAbsent = (item.status || "").toLowerCase() === "absent";
+              return (
               <View
-                key={item.id}
+                key={String(item.id)}
                 style={[
                   styles.tableRow,
+                  isAbsent && { backgroundColor: isDark ? "#2a2000" : "#fffbe6" },
                   index !== filteredAttendanceData.length - 1 && {
                     borderBottomWidth: 1,
                     borderBottomColor: "#e5e7eb",
@@ -1392,22 +1545,52 @@ export default function AdminDashboard() {
                   {item.shift}
                 </Text>
                 <Text style={[styles.tableCell, { flex: 2 }]}>
-                  {new Date(item.marked_at).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  {attendanceTab === "OUT"
+                    ? item.out_marked_at
+                      ? new Date(item.out_marked_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                      : "—"
+                    : item.marked_at
+                    ? new Date(item.marked_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                    : "—"}
                 </Text>
-                <Text
-                  style={[
-                    styles.tableCell,
-                    { flex: 2 },
-                    item.status === "present"
-                      ? styles.statusAvailable
-                      : styles.statusFinished,
-                  ]}
-                >
-                  {item.status === "present" ? "Present" : "Absent"}
-                </Text>
+                {(() => {
+                  // OUT tab only: show "Early" if worker left before shift end time
+                  if (attendanceTab === "OUT" && item.out_marked_at) {
+                    const shiftName = (item.shift || "").toLowerCase();
+                    const outTime = new Date(item.out_marked_at);
+                    const outHour = outTime.getHours();
+                    const isEarly =
+                      shiftName === "morning"
+                        ? outHour < 18  // Morning ends 18:00
+                        : outHour < 6;  // Evening ends 06:00
+                    if (isEarly) {
+                      return (
+                        <Text style={[styles.tableCell, { flex: 2, color: "#fa8c16", fontWeight: "600" }]}>
+                          Early
+                        </Text>
+                      );
+                    }
+                  }
+                  // Default: use original status
+                  const s = (item.status || "").toLowerCase();
+                  return (
+                    <Text
+                      style={[
+                        styles.tableCell,
+                        { flex: 2 },
+                        s === "present"
+                          ? { color: "#28a745" }
+                          : s === "late"
+                          ? { color: "#ff4d4f" }
+                          : isAbsent
+                          ? { color: "#faad14" }
+                          : { color: "#ff4d4f" },
+                      ]}
+                    >
+                      {s === "present" ? "Present" : s === "late" ? "Late" : isAbsent ? "Absent" : "Absent"}
+                    </Text>
+                  );
+                })()}
                 <View
                   style={[
                     styles.tableCell,
@@ -1442,7 +1625,8 @@ export default function AdminDashboard() {
                   </Pressable>
                 </View>
               </View>
-            ))}
+            );
+          })}
             {filteredAttendanceData.length === 0 && (
               <View style={styles.emptyRow}>
                 <Text style={styles.emptyText}>
@@ -1696,7 +1880,7 @@ export default function AdminDashboard() {
           </Pressable>
           {showSiteDropdown && (
             <View style={styles.dropdownMenu}>
-              {manageSites.map((site) => (
+              {mainSites.map((site) => (
                 <Pressable
                   key={site.id}
                   style={styles.dropdownItem}
@@ -1872,101 +2056,166 @@ export default function AdminDashboard() {
     </>
   );
 
-  const renderManageSiteView = () => (
+  const renderManageSiteView = () => {
+    // Determine what to display based on drillLevel
+    let displayedSites: any[] = [];
+    let screenTitle = 'Manage Sites';
+    let addLabel = '+ Add Main Site';
+    let levelIcon = '🏗️';
+
+    if (drillLevel === 'main') {
+      displayedSites = mainSites.map(s => ({ ...s, _level: 'main' }));
+      screenTitle = 'Manage Sites';
+      addLabel = '+ Add Main Site';
+      levelIcon = '🏗️';
+    } else if (drillLevel === 'hospital') {
+      const parentSite = mainSites.find(s => Number(s.id) === currentMainSiteId);
+      displayedSites = hospitals
+        .filter(h => Number(h.worksite_id) === currentMainSiteId)
+        .map(h => ({ ...h, _level: 'hospital' }));
+      screenTitle = `${parentSite?.name || 'Site'} › Hospitals`;
+      addLabel = '+ Add Hospital';
+      levelIcon = '🏥';
+    } else if (drillLevel === 'subsite') {
+      const parentHosp = hospitals.find(h => Number(h.id) === currentHospitalId);
+      displayedSites = subSites
+        .filter(s => Number(s.hospital_id) === currentHospitalId)
+        .map(s => ({ ...s, _level: 'subsite' }));
+      screenTitle = `${parentHosp?.name || 'Hospital'} › Sub Sites`;
+      addLabel = '+ Add Sub Site';
+      levelIcon = '📍';
+    }
+
+    const handleBack = () => {
+      if (drillLevel === 'main') {
+        setSelectedView("dashboard");
+      } else if (drillLevel === 'hospital') {
+        setDrillLevel('main');
+        setCurrentMainSiteId(null);
+      } else if (drillLevel === 'subsite') {
+        setDrillLevel('hospital');
+        setCurrentHospitalId(null);
+      }
+    };
+
+    const openAdd = () => {
+      setNewSiteName("");
+      setSiteLogoName("");
+      setSiteLogoUri(null);
+      setShowAddSiteModal(true);
+    };
+
+    const openEdit = (site: any) => {
+      setSelectedManageSite(site);
+      setEditSiteName(site.name || "");
+      setShowEditSiteModal(true);
+    };
+
+    return (
     <View style={styles.manageSiteContainer}>
-      <View
-        style={[
-          styles.headerSection,
-          styles.greetingContainer,
-          {
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-          },
-        ]}
-      >
+      <View style={[styles.headerSection, styles.greetingContainer, { flexDirection: "row", justifyContent: "space-between", alignItems: "center" }]}>
         <ThemedText type="subtitle" style={styles.greeting}>
           Hii {user?.name || "Malith"}, Welcome!
         </ThemedText>
         <Pressable
-          onPress={async () => {
-            await signOut();
-            router.replace("/");
-          }}
-          style={{
-            paddingHorizontal: 12,
-            paddingVertical: 6,
-            backgroundColor: isDark ? "#333" : "#e0e0e0",
-            borderRadius: 8,
-          }}
+          onPress={async () => { await signOut(); router.replace("/"); }}
+          style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: isDark ? "#333" : "#e0e0e0", borderRadius: 8 }}
         >
-          <Text
-            style={{
-              fontSize: 13,
-              fontWeight: "600",
-              color: isDark ? "#fff" : "#000",
-            }}
-          >
-            Sign Out
-          </Text>
+          <Text style={{ fontSize: 13, fontWeight: "600", color: isDark ? "#fff" : "#000" }}>Sign Out</Text>
         </Pressable>
       </View>
 
       <View style={styles.manageSiteHeader}>
-        <Pressable
-          style={styles.backButton}
-          onPress={() => setSelectedView("dashboard")}
-        >
+        <Pressable style={styles.backButton} onPress={handleBack}>
           <Text style={styles.backButtonIcon}>‹</Text>
         </Pressable>
         <ThemedText type="subtitle" style={styles.manageSiteTitle}>
-          Manage Site
+          {screenTitle}
         </ThemedText>
       </View>
 
-      <View style={styles.manageSiteCardsContainer}>
-        {manageSites.map((site) => (
-          <Pressable
-            key={site.id}
-            style={styles.manageSiteCard}
-            onPress={() => router.push(`/dashboard/${site.id}` as any)}
-          >
-            <View style={styles.manageSiteCardTopRow}>
-              <View style={styles.manageSiteLogoWrapper}>
-                {site.logoUri ? (
-                  <Image
-                    source={{ uri: site.logoUri }}
-                    style={{ width: 70, height: 70, borderRadius: 12 }}
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <Text style={styles.manageSiteLogoIcon}>🏗️</Text>
-                )}
+      <ScrollView
+        style={styles.manageSiteList}
+        contentContainerStyle={{ paddingBottom: 40 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={worksitesRefreshing}
+            onRefresh={loadWorksitesData}
+            colors={['#16a34a']}
+            tintColor={isDark ? '#16a34a' : '#16a34a'}
+          />
+        }
+      >
+        <View style={styles.manageSiteCardsContainer}>
+          {displayedSites.map((site) => (
+            <Pressable
+              key={`${site._level}-${site.id}`}
+              style={styles.manageSiteCard}
+              onPress={() => {
+                if (site._level === 'main') {
+                  setCurrentMainSiteId(Number(site.id));
+                  setDrillLevel('hospital');
+                } else if (site._level === 'hospital') {
+                  setCurrentHospitalId(Number(site.id));
+                  setDrillLevel('subsite');
+                }
+                // sub_site cards are not drillable
+              }}
+            >
+              <View style={styles.manageSiteCardTopRow}>
+                <View style={styles.manageSiteLogoWrapper}>
+                  {site.logoUri ? (
+                    <Image source={{ uri: site.logoUri }} style={{ width: 70, height: 70, borderRadius: 12 }} resizeMode="cover" />
+                  ) : (
+                    <Text style={styles.manageSiteLogoIcon}>
+                      {site._level === 'hospital' ? '🏥' : site._level === 'subsite' ? '📍' : '🏗️'}
+                    </Text>
+                  )}
+                </View>
+                <View style={{ flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                  <Pressable style={styles.manageSiteDeleteButton} onPress={() => handleDeleteSite(site)}>
+                    <Text style={styles.manageSiteDeleteIcon}>🗑️</Text>
+                  </Pressable>
+                  <Pressable style={styles.manageSiteDeleteButton} onPress={() => openEdit(site)}>
+                    <Text style={styles.manageSiteDeleteIcon}>✏️</Text>
+                  </Pressable>
+                </View>
               </View>
-              <Pressable
-                style={styles.manageSiteDeleteButton}
-                onPress={() => handleDeleteSite(site)}
-              >
-                <Text style={styles.manageSiteDeleteIcon}>🗑️</Text>
-              </Pressable>
-            </View>
-            <Text style={styles.manageSiteCardLabel}>
-              {site.title || site.name}
-            </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 }}>
+                <Text style={styles.manageSiteCardLabel}>{site.name}</Text>
+                <Text style={{ fontSize: 10, color: isDark ? '#888' : '#aaa', textTransform: 'uppercase' }}>
+                  {site._level === 'hospital' ? 'HOSPITAL' : site._level === 'subsite' ? 'SUB SITE' : 'MAIN SITE'}
+                </Text>
+              </View>
+              {site._level !== 'subsite' && (
+                <Text style={{ fontSize: 11, color: isDark ? '#888' : '#aaa', marginTop: 8, textAlign: 'center' }}>
+                  Tap to manage ›
+                </Text>
+              )}
+            </Pressable>
+          ))}
+
+          <Pressable
+            style={[styles.manageSiteCard, styles.manageSiteAddCard]}
+            onPress={openAdd}
+          >
+            <Text style={styles.manageSiteAddIcon}>+</Text>
+            <Text style={{ marginTop: 8, color: '#16a34a', fontWeight: 'bold' }}>{addLabel}</Text>
           </Pressable>
-        ))}
-
-        <Pressable
-          style={[styles.manageSiteCard, styles.manageSiteAddCard]}
-          onPress={() => setShowAddSiteModal(true)}
-        >
-          <Text style={styles.manageSiteAddIcon}>+</Text>
-        </Pressable>
-      </View>
+        </View>
+      </ScrollView>
     </View>
-  );
+    );
+  };
 
-  const renderAddSiteModal = () => (
+  const renderAddSiteModal = () => {
+    const titleMap = {
+      main: 'Add Main Site',
+      hospital: 'Add Hospital',
+      subsite: 'Add Sub Site',
+    };
+    const iconMap = { main: '🏗️', hospital: '🏥', subsite: '📍' };
+    return (
     <Modal
       visible={showAddSiteModal}
       transparent
@@ -1976,71 +2225,73 @@ export default function AdminDashboard() {
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Add Site</Text>
-            <Pressable
-              onPress={() => setShowAddSiteModal(false)}
-              style={styles.modalClose}
-            >
+            <Text style={styles.modalTitle}>{titleMap[drillLevel]}</Text>
+            <Pressable onPress={() => setShowAddSiteModal(false)} style={styles.modalClose}>
               <Text style={styles.modalCloseText}>✕</Text>
             </Pressable>
           </View>
 
-          <View style={styles.formRow}>
-            <Text style={styles.formLabel}>Site Name</Text>
-            <TextInput
-              value={newSiteName}
-              onChangeText={setNewSiteName}
-              placeholder="Enter site name"
-              placeholderTextColor={isDark ? "#b0b0b0" : "#8a8a8f"}
-              style={styles.formInput}
-            />
+          {/* Type indicator — read only, locked by screen context */}
+          <View style={[styles.formRow, { marginBottom: 8 }]}>
+            <Text style={{ fontSize: 13, color: isDark ? '#aaa' : '#666', textAlign: 'center', flex: 1 }}>
+              {iconMap[drillLevel]}{' '}
+              {drillLevel === 'main' ? 'Will be saved as a Main Site'
+                : drillLevel === 'hospital' ? `Will be saved under ${mainSites.find(s => Number(s.id) === currentMainSiteId)?.name || 'selected site'}`
+                : `Will be saved under ${hospitals.find(h => Number(h.id) === currentHospitalId)?.name || 'selected hospital'}`}
+            </Text>
           </View>
 
           <View style={styles.formRow}>
-            <Text style={styles.formLabel}>Site Logo</Text>
-            <Pressable
-              style={styles.logoUploadButton}
-              onPress={handlePickSiteLogo}
-            >
-              {siteLogoUri ? (
-                <Image
-                  source={{ uri: siteLogoUri }}
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 8,
-                    marginRight: 8,
-                  }}
-                  resizeMode="cover"
-                />
-              ) : null}
-              <Text
-                style={[
-                  styles.logoUploadText,
-                  siteLogoUri ? { fontSize: 12 } : {},
-                ]}
-              >
-                {siteLogoName || "Tap to upload image"}
-              </Text>
-            </Pressable>
-            <input
-              ref={siteLogoInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleSiteLogoFileChange}
-              style={{
-                position: "absolute",
-                opacity: 0,
-                width: 1,
-                height: 1,
-                zIndex: -1,
-                pointerEvents: "none",
-              }}
+            <Text style={styles.formLabel}>Name</Text>
+            <TextInput
+              value={newSiteName}
+              onChangeText={setNewSiteName}
+              placeholder="Enter name"
+              placeholderTextColor={isDark ? "#b0b0b0" : "#8a8a8f"}
+              style={styles.formInput}
+              autoFocus
             />
           </View>
 
           <Pressable onPress={handleAddSite} style={styles.addSiteButton}>
             <Text style={styles.addSiteButtonText}>Add</Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+    );
+  };
+
+  const renderEditSiteModal = () => (
+    <Modal
+      visible={showEditSiteModal}
+      transparent
+      animationType="fade"
+      onRequestClose={() => setShowEditSiteModal(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Rename</Text>
+            <Pressable onPress={() => setShowEditSiteModal(false)} style={styles.modalClose}>
+              <Text style={styles.modalCloseText}>✕</Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.formRow}>
+            <Text style={styles.formLabel}>Name</Text>
+            <TextInput
+              value={editSiteName}
+              onChangeText={setEditSiteName}
+              placeholder="Enter new name"
+              placeholderTextColor={isDark ? "#b0b0b0" : "#8a8a8f"}
+              style={styles.formInput}
+              autoFocus
+            />
+          </View>
+
+          <Pressable onPress={handleEditSite} style={styles.addSiteButton}>
+            <Text style={styles.addSiteButtonText}>Update</Text>
           </Pressable>
         </View>
       </View>
@@ -3882,6 +4133,7 @@ export default function AdminDashboard() {
       {renderPersonalAddModal()}
       {renderPersonalEditModal()}
       {renderAddSiteModal()}
+      {renderEditSiteModal()}
       {renderSiteDeletedModal()}
       {renderSuccessModal()}
       {renderApprovalSuccessModal()}
@@ -4218,7 +4470,7 @@ const createStyles = (isDark: boolean) =>
     modalTitle: {
       fontSize: 20,
       fontWeight: "700",
-      color: "#111",
+      color: isDark ? "#ffffff" : "#111",
     },
     modalClose: {
       position: "absolute",

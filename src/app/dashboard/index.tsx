@@ -59,9 +59,19 @@ const officeStaffTiles = [
     route: "/other-payments",
   },
   {
+    id: "attendances",
+    title: "Attendances",
+    route: "/attendances",
+  },
+  {
     id: "peticash",
     title: "Peticash",
     route: "/peticash",
+  },
+  {
+    id: "template",
+    title: "Template",
+    route: "/template",
   },
 ];
 
@@ -240,13 +250,8 @@ export default function DashboardScreen() {
                     pressed && styles.tilePressed,
                   ]}
                   onPress={() => {
-                    const name = (worksite.name || "").toString().toLowerCase();
-                    if (name.includes("amil")) {
-                      router.push("/dashboard/select-hospitals");
-                      return;
-                    }
-
-                    router.push(`/dashboard/${worksite.id}` as any);
+                    // For main_site, go to select-hospitals
+                    router.push(`/dashboard/select-hospitals?worksiteId=${worksite.id}`);
                   }}
                 >
                   <View
@@ -387,10 +392,12 @@ const styles = StyleSheet.create({
   },
   staffSafeArea: {
     flex: 1,
+    width: "100%",
+    alignSelf: "center",
     paddingHorizontal: Spacing.four,
     paddingTop: 60,
     paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
+    maxWidth: 900,
   },
   staffHeader: {
     flexDirection: "row",

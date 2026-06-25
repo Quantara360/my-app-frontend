@@ -4,6 +4,7 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Spacing, MaxContentWidth, BottomTabInset } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
+import { useGoBack } from "@/hooks/use-go-back";
 
 const nationalHospitalUnits = [
   { id: "accident-ward", title: "Accident Ward" },
@@ -16,6 +17,7 @@ const nationalHospitalUnits = [
 ];
 
 export default function NationalHospitalUnits() {
+  const goBack = useGoBack();
   const params = useLocalSearchParams();
   const router = useRouter();
   const theme = useTheme();
@@ -27,7 +29,7 @@ export default function NationalHospitalUnits() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <Pressable style={styles.backButton} onPress={() => router.back()}>
+          <Pressable style={styles.backButton} onPress={() => goBack()}>
             <ThemedText style={styles.backText}>‹</ThemedText>
           </Pressable>
         </View>
@@ -51,7 +53,7 @@ export default function NationalHospitalUnits() {
                 onPress={() => {
                   router.push({
                     pathname: "/dashboard/site-actions",
-                    params: { siteId: unit.id, worksiteId },
+                    params: { siteId: unit.id, worksiteId, siteName: unit.title },
                   } as any);
                 }}
               >

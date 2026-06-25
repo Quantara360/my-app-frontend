@@ -11,9 +11,11 @@ export interface AttendanceRecord {
   id: string | number;
   worker_id: number;
   worksite_id?: number | null;
+  sub_site_id?: number | null;
   shift: string;
   date: string;
-  marked_at: string;
+  marked_at: string | null;
+  out_marked_at?: string | null;
   status: string;
   method?: string;
   confidence?: number;
@@ -49,6 +51,22 @@ async function getJson<T>(path: string): Promise<T> {
 
 export async function getAttendances(): Promise<AttendanceRecord[]> {
   const result = await getJson<{ data: AttendanceRecord[] }>('attendances');
+  return extractArray(result);
+}
+
+/** Fetch attendances with absent-worker generation (requires worksite_id + date + shift). */
+export async function getAttendancesWithAbsents(params: {
+  worksiteId: number | string;
+  date: string;   // "YYYY-MM-DD"
+  shift: string;  // "Morning" | "Evening"
+}): Promise<AttendanceRecord[]> {
+  const qs = new URLSearchParams({
+    worksite_id: String(params.worksiteId),
+    date: params.date,
+    shift: params.shift,
+    include_absents: '1',
+  }).toString();
+  const result = await getJson<{ data: AttendanceRecord[] }>(`attendances?${qs}`);
   return extractArray(result);
 }
 

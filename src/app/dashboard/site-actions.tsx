@@ -1,9 +1,10 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Pressable, SafeAreaView, StyleSheet, View } from "react-native";
+import { Pressable, SafeAreaView, StyleSheet, View, useColorScheme } from "react-native";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { BottomTabInset, MaxContentWidth, Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
+import { useGoBack } from "@/hooks/use-go-back";
 
 const siteNames: Record<string, string> = {
   apeksha: "Apeksha",
@@ -16,34 +17,36 @@ const actions = [
 ];
 
 export default function SiteActionsPage() {
+  const goBack = useGoBack();
   const params = useLocalSearchParams();
   const router = useRouter();
   const theme = useTheme();
-  const siteId = Array.isArray(params.siteId)
-    ? params.siteId[0]
-    : params.siteId;
-  const worksiteId = Array.isArray(params.worksiteId)
-    ? params.worksiteId[0]
-    : params.worksiteId;
-  const siteLabel = siteId ? (siteNames[siteId] ?? siteId) : "Worksite";
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+  
+  const siteId = Array.isArray(params.siteId) ? params.siteId[0] : params.siteId;
+  const worksiteId = Array.isArray(params.worksiteId) ? params.worksiteId[0] : params.worksiteId;
+  const passedSiteName = Array.isArray(params.siteName) ? params.siteName[0] : params.siteName;
+  
+  const siteLabel = passedSiteName ? passedSiteName : siteId ? (siteNames[siteId] ?? siteId) : "Worksite";
 
   return (
-    <ThemedView style={styles.container}>
-      <View style={styles.background} />
-      <View style={styles.backgroundCircleLarge} />
-      <View style={styles.backgroundCircleSmall} />
+    <ThemedView style={[styles.container, { backgroundColor: isDark ? "#121212" : "#F1E7DF" }]}>
+      <View style={[styles.background, { backgroundColor: isDark ? "#121212" : "#F1E7DF" }]} />
+      <View style={[styles.backgroundCircleLarge, { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(255, 255, 255, 0.65)" }]} />
+      <View style={[styles.backgroundCircleSmall, { backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(255, 255, 255, 0.5)" }]} />
 
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.headerRow}>
           <Pressable
             style={[
               styles.menuButton,
-              { backgroundColor: theme.backgroundElement },
+              { backgroundColor: theme.backgroundElement, borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)" },
             ]}
-            onPress={() => router.back()}
+            onPress={() => goBack()}
             accessibilityLabel="Back"
           >
-            <ThemedText type="subtitle" style={styles.menuText}>
+            <ThemedText type="subtitle" style={[styles.menuText, { color: isDark ? "#fff" : "#000" }]}>
               ←
             </ThemedText>
           </Pressable>
@@ -51,13 +54,13 @@ export default function SiteActionsPage() {
         </View>
 
         <View style={styles.heroSection}>
-          <ThemedText type="smallBold" style={styles.subtitle}>
+          <ThemedText type="smallBold" style={[styles.subtitle, { color: isDark ? "#aaa" : "#5A4A3F" }]}>
             Choose an action
           </ThemedText>
-          <ThemedText type="title" style={styles.title}>
+          <ThemedText type="title" style={[styles.title, { color: isDark ? "#fff" : "#1E1B18" }]}>
             {siteLabel}
           </ThemedText>
-          <ThemedText type="default" style={styles.description}>
+          <ThemedText type="default" style={[styles.description, { color: isDark ? "#ccc" : "#5A4A3F" }]}>
             Select a workflow to continue with attendance or image upload.
           </ThemedText>
         </View>
@@ -75,7 +78,7 @@ export default function SiteActionsPage() {
                 if (action.id === "attendance") {
                   router.push({
                     pathname: "/mark-attendance",
-                    params: { worksiteId: siteId ?? "" },
+                    params: { worksiteId: worksiteId ?? "", subSiteId: siteId ?? "" },
                   } as any);
                   return;
                 }
@@ -87,7 +90,7 @@ export default function SiteActionsPage() {
               }}
             >
               <View style={styles.actionContent}>
-                <ThemedText type="subtitle" style={styles.actionTitle}>
+                <ThemedText type="subtitle" style={[styles.actionTitle, { color: isDark ? "#fff" : "#000" }]}>
                   {action.title}
                 </ThemedText>
               </View>
@@ -104,18 +107,15 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#F1E7DF",
   },
   background: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "#F1E7DF",
   },
   backgroundCircleLarge: {
     position: "absolute",
     width: 420,
     height: 420,
     borderRadius: 210,
-    backgroundColor: "rgba(255, 255, 255, 0.65)",
     top: -160,
     right: -90,
   },
@@ -124,7 +124,6 @@ const styles = StyleSheet.create({
     width: 260,
     height: 260,
     borderRadius: 130,
-    backgroundColor: "rgba(255, 255, 255, 0.5)",
     bottom: -100,
     left: -80,
   },
@@ -155,7 +154,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.08)",
     shadowColor: "#000",
     shadowOpacity: 0.05,
     shadowRadius: 10,
@@ -172,14 +170,11 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   subtitle: {
-    color: "#5A4A3F",
   },
   title: {
     lineHeight: 56,
-    color: "#1E1B18",
   },
   description: {
-    color: "#5A4A3F",
     maxWidth: 420,
   },
   cardList: {

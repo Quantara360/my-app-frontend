@@ -19,6 +19,7 @@ import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/contexts/AuthContext";
 import { API_BASE_URL } from "@/services/authService";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import { useGoBack } from "@/hooks/use-go-back";
 
 function formatDate(d: Date) {
   return d.toLocaleDateString();
@@ -27,7 +28,10 @@ function formatDate(d: Date) {
 export default function FaceRecognition() {
   const theme = useTheme();
   const { token } = useAuth();
-  const { worksiteId, shift } = useLocalSearchParams<{ worksiteId?: string; shift?: string }>();
+  const goBack = useGoBack();
+  const { worksiteId, subSiteId, shift, state } = useLocalSearchParams<{ worksiteId?: string; subSiteId?: string; shift?: string; state?: string }>();
+  console.log('[face-recognition] params:', { worksiteId, subSiteId, shift, state });
+  const currentState = state || "IN";
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [cameraReady, setCameraReady] = useState(false);
   const cameraRef = useRef<CameraView | null>(null);
@@ -49,29 +53,55 @@ export default function FaceRecognition() {
     })();
   }, []);
 
-  // Fetch today's attendances on mount
+  // Fetch today's attendances, then filter fully client-side
   useEffect(() => {
     if (!token) return;
     (async () => {
       try {
         const today = new Date().toISOString().split("T")[0];
-        const res = await fetch(`${API_BASE_URL}/attendances?worksite_id=${worksiteId || ""}&date=${today}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        // Fetch ALL today's records — filter client-side so null sub_site_id records aren't silently dropped
+        const res = await fetch(
+          `${API_BASE_URL}/attendances?date=${today}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
         const data = await res.json();
         if (data.data) {
-          setList(data.data.map((att: any) => ({
+          let records = data.data as any[];
+
+          // Filter by sub_site_id: match the selected sub-site OR records with no sub-site assigned
+          if (subSiteId) {
+            const sid = Number(subSiteId);
+            records = records.filter((att: any) =>
+              att.sub_site_id === sid || att.sub_site_id === null
+            );
+          }
+
+          // Filter by shift client-side (case-insensitive)
+          if (shift) {
+            const shiftNorm = shift.trim().toLowerCase();
+            records = records.filter((att: any) =>
+              (att.shift || "").toLowerCase() === shiftNorm
+            );
+          }
+
+          // OUT screen: only show workers still clocked-IN so supervisor can mark them out
+          if (currentState === "OUT") {
+            records = records.filter((att: any) => !att.out_marked_at);
+          }
+
+          setList(records.map((att: any) => ({
             id: att.id,
             name: att.worker?.name,
             datetime: new Date(att.marked_at).toLocaleString(),
-            site: att.worksite?.name || "—"
+            site: att.sub_site?.name || att.worksite?.name || "\u2014",
+            state: att.out_marked_at ? "OUT" : "IN"
           })));
         }
       } catch (e) {
         console.error("Failed to load attendances:", e);
       }
     })();
-  }, [token, worksiteId]);
+  }, [token, subSiteId, shift, currentState]);
 
   async function capture() {
     if (!cameraRef.current || isProcessing) return;
@@ -100,21 +130,42 @@ export default function FaceRecognition() {
         body: JSON.stringify({ image_base64: dataUri }),
       });
       const recData = await recRes.json();
+      console.log('[recognize] response:', recData);
 
       if (!recData.success) {
-        Alert.alert("Recognition Error", recData.error || "Face service error");
+        Alert.alert("Recognition Error", recData.error || "Face service error. Please try again.");
         setIsProcessing(false);
         return;
       }
 
       if (!recData.matched) {
-        Alert.alert("No Match", "Could not identify any registered worker.");
+        const reason = recData.reason || "";
+        const msg = reason.toLowerCase().includes("no face")
+          ? "No face detected. Please ensure your face is clearly visible and well-lit."
+          : "Could not identify any registered worker. Please try again.";
+        Alert.alert("No Match", msg);
         setIsProcessing(false);
         return;
       }
 
       const today = new Date().toISOString().split("T")[0];
-      const currentShift = (shift as string) || "Morning";
+      // Normalize shift to Title Case (Morning/Evening)
+      const rawShift = (shift as string) || "Morning";
+      const currentShift = rawShift.charAt(0).toUpperCase() + rawShift.slice(1).toLowerCase();
+      // Ensure worksiteId is a number or null (never empty string)
+      const wsId = worksiteId && worksiteId !== "" ? Number(worksiteId) : null;
+
+      const attendancePayload = {
+        worker_id: recData.worker_id,
+        worksite_id: wsId,
+        sub_site_id: subSiteId ? Number(subSiteId) : null,
+        shift: currentShift,
+        date: today,
+        method: "face",
+        confidence: recData.distance,
+        state: currentState.toUpperCase(),
+      };
+      console.log('[attendance] sending payload:', JSON.stringify(attendancePayload));
 
       // Mark attendance
       const attRes = await fetch(`${API_BASE_URL}/attendances`, {
@@ -124,19 +175,14 @@ export default function FaceRecognition() {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        body: JSON.stringify({
-          worker_id: recData.worker_id,
-          worksite_id: worksiteId || null,
-          shift: currentShift,
-          date: today,
-          method: "face",
-          confidence: recData.distance,
-        }),
+        body: JSON.stringify(attendancePayload),
       });
       const attData = await attRes.json();
+      console.log('[attendance] response status:', attRes.status, 'body:', JSON.stringify(attData));
 
       if (!attRes.ok || !attData.success) {
-        Alert.alert("Attendance Error", attData.error || "Failed to mark attendance for this worker.");
+        const errMsg = attData.message || attData.error || JSON.stringify(attData.errors) || "Failed to mark attendance.";
+        Alert.alert("Attendance Error", errMsg);
         setIsProcessing(false);
         return;
       }
@@ -155,7 +201,8 @@ export default function FaceRecognition() {
           id: attData.attendance?.id || s.length + 1,
           name: result.name,
           datetime: new Date().toLocaleString(),
-          site: result.site,
+          site: attData.attendance?.sub_site?.name || result.site,
+          state: currentState.toUpperCase(),
         },
         ...s,
       ]);
@@ -212,7 +259,7 @@ export default function FaceRecognition() {
   return (
     <ThemedView style={styles.container}>
       <View style={styles.headerRow}>
-        <Pressable style={[styles.backButton, { backgroundColor: theme.backgroundElement }]} onPress={() => router.back()}>
+        <Pressable style={[styles.backButton, { backgroundColor: theme.backgroundElement }]} onPress={goBack}>
           <ThemedText style={styles.backText}>Back</ThemedText>
         </Pressable>
       </View>
@@ -284,7 +331,8 @@ export default function FaceRecognition() {
             <View style={styles.tableHeaderRow}>
               <ThemedText type="smallBold" style={{ width: 30 }}>ID</ThemedText>
               <ThemedText type="smallBold" style={{ flex: 1 }}>Name</ThemedText>
-              <ThemedText type="smallBold" style={{ flex: 2 }}>Time & date</ThemedText>
+              <ThemedText type="smallBold" style={{ flex: 1.5 }}>Time & date</ThemedText>
+              <ThemedText type="smallBold" style={{ width: 40 }}>State</ThemedText>
               <ThemedText type="smallBold" style={{ flex: 1.5 }}>Site</ThemedText>
               <View style={{ width: 30 }} />
             </View>
@@ -293,7 +341,8 @@ export default function FaceRecognition() {
             <View style={styles.tableRow}>
               <ThemedText type="small" style={{ width: 30 }}>{item.id}</ThemedText>
               <ThemedText type="small" style={{ flex: 1 }}>{item.name}</ThemedText>
-              <ThemedText type="small" style={{ flex: 2 }}>{item.datetime}</ThemedText>
+              <ThemedText type="small" style={{ flex: 1.5 }}>{item.datetime}</ThemedText>
+              <ThemedText type="small" style={{ width: 40 }}>{item.state || 'IN'}</ThemedText>
               <ThemedText type="small" style={{ flex: 1.5 }}>{item.site}</ThemedText>
               <Pressable style={{ width: 30, alignItems: 'center' }} onPress={() => handleDelete(item.id)}>
                 <ThemedText style={{ color: 'red', fontSize: 16 }}>🗑</ThemedText>

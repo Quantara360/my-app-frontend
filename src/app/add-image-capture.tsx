@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   View,
@@ -8,74 +8,173 @@ import {
   Image,
   Alert,
   ScrollView,
+  Modal,
+  Platform,
+  ActivityIndicator,
 } from "react-native";
-import { Camera, CameraView } from "expo-camera";
-import * as SecureStore from "expo-secure-store";
+import { CameraView } from "expo-camera";
+import * as FileSystem from "expo-file-system";
+import * as MediaLibrary from "expo-media-library";
 import { ThemedView } from "@/components/themed-view";
 import { ThemedText } from "@/components/themed-text";
 import { Spacing, MaxContentWidth, BottomTabInset } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
+import { useAuth } from "@/contexts/AuthContext";
+import { API_BASE_URL } from "@/services/authService";
+import { useGoBack } from "@/hooks/use-go-back";
 
 export default function AddImageCapture() {
+  const goBack = useGoBack();
   const params = useLocalSearchParams();
   const router = useRouter();
   const theme = useTheme();
+  const { token } = useAuth();
   const book = Number(params.book ?? 1);
   const worksiteId = params.worksiteId;
 
-  const [captured, setCaptured] = useState<string[]>([]);
+  // We store full image objects { id: number, image_path: string }
+  const [captured, setCaptured] = useState<any[]>([]);
   const [isTaking, setIsTaking] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
   const cameraRef = useRef<CameraView | null>(null);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        if (!worksiteId) return;
-        const key = `addimage.${worksiteId}.book.${book}`;
-        const json = await SecureStore.getItemAsync(key);
-        if (json) setCaptured(JSON.parse(json));
-      } catch (e) {
-        console.error(e);
-      }
-    };
-    load();
-  }, [book, worksiteId]);
+  // Fullscreen Preview State
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
 
-  const saveCaptured = async (arr: string[]) => {
+  useEffect(() => {
+    loadImages();
+  }, [book, worksiteId, token]);
+
+  const loadImages = async () => {
+    if (!worksiteId || !token) return;
     try {
-      if (!worksiteId) return;
-      const key = `addimage.${worksiteId}.book.${book}`;
-      await SecureStore.setItemAsync(key, JSON.stringify(arr));
+      const response = await fetch(
+        `${API_BASE_URL}/sub-site-images?sub_site_id=${worksiteId}&book_id=${book}`,
+        {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setCaptured(data);
+      }
     } catch (e) {
       console.error(e);
     }
+  };
+
+  const getFullImageUrl = (path: string) => {
+    return `${API_BASE_URL.replace("/api", "")}/storage/${path}`;
   };
 
   const onCapture = async () => {
     if (isTaking) return;
     if (captured.length >= 10) {
-      Alert.alert("Limit reached", "Maximum 10 images per book");
+      Alert.alert("Limit reached", "Maximum 10 images per book within the last 24 hours.");
       return;
     }
+    if (!cameraRef.current || !worksiteId || !token) return;
 
     setIsTaking(true);
     try {
-      const uri = `placeholder://book-${book}-${Date.now()}`;
-      const next = [...captured, uri];
-      setCaptured(next);
-      await saveCaptured(next);
-    } catch (e) {
+      const photo = await cameraRef.current.takePictureAsync({
+        quality: 0.7,
+      });
+
+      if (!photo) throw new Error("No photo captured");
+
+      const formData = new FormData();
+      formData.append("sub_site_id", worksiteId as string);
+      formData.append("book_id", book.toString());
+      if (Platform.OS === "web") {
+        const res = await fetch(photo.uri);
+        const blob = await res.blob();
+        formData.append("photo", blob, `photo_${Date.now()}.jpg`);
+      } else {
+        formData.append("photo", {
+          uri: photo.uri,
+          name: `photo_${Date.now()}.jpg`,
+          type: "image/jpeg",
+        } as any);
+      }
+
+      const response = await fetch(`${API_BASE_URL}/sub-site-images/upload`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+          // don't set Content-Type for FormData
+        },
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCaptured((prev) => [data, ...prev]); // Add to beginning (latest first)
+      } else {
+        const err = await response.json();
+        Alert.alert("Error", err.error || "Failed to upload image");
+      }
+    } catch (e: any) {
       console.error(e);
+      Alert.alert("Error", e.message || "Failed to capture image");
     } finally {
       setIsTaking(false);
     }
   };
 
-  const removeImage = async (index: number) => {
-    const next = captured.filter((_, i) => i !== index);
-    setCaptured(next);
-    await saveCaptured(next);
+  const removeImage = async (id: number) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/sub-site-images/${id}`, {
+        method: "DELETE",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (response.ok) {
+        setCaptured((prev) => prev.filter((img) => img.id !== id));
+        if (previewIndex !== null) setPreviewIndex(null); // close preview if open
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const downloadImage = async (url: string) => {
+    setIsDownloading(true);
+    try {
+      if (Platform.OS === "web") {
+        // Simple web download
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `site_image_${Date.now()}.jpg`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } else {
+        const { status } = await MediaLibrary.requestPermissionsAsync();
+        if (status !== "granted") {
+          Alert.alert("Permission required", "We need permission to save to your gallery");
+          return;
+        }
+
+        const fileUri = `${FileSystem.documentDirectory}${Date.now()}.jpg`;
+        const downloadedFile = await FileSystem.downloadAsync(url, fileUri);
+
+        await MediaLibrary.saveToLibraryAsync(downloadedFile.uri);
+        Alert.alert("Success", "Image saved to gallery");
+      }
+    } catch (error) {
+      console.error("Download failed:", error);
+      Alert.alert("Error", "Failed to download image");
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   return (
@@ -86,11 +185,8 @@ export default function AddImageCapture() {
       >
         <View style={styles.topRow}>
           <Pressable
-            style={[
-              styles.circleButton,
-              { backgroundColor: theme.backgroundElement },
-            ]}
-            onPress={() => router.back()}
+            style={[styles.circleButton, { backgroundColor: theme.backgroundElement }]}
+            onPress={() => goBack()}
           >
             <ThemedText style={styles.iconText}>‹</ThemedText>
           </Pressable>
@@ -110,9 +206,7 @@ export default function AddImageCapture() {
         <View style={styles.cameraWrap}>
           <CameraView
             style={StyleSheet.absoluteFill}
-            ref={(ref) => {
-              cameraRef.current = ref;
-            }}
+            ref={cameraRef}
             onCameraReady={() => setCameraReady(true)}
           />
 
@@ -124,9 +218,13 @@ export default function AddImageCapture() {
 
           {!cameraReady ? (
             <View style={styles.cameraLoadingOverlay} pointerEvents="none">
-              <Text style={styles.cameraPlaceholderText}>
-                Starting camera...
-              </Text>
+              <Text style={styles.cameraPlaceholderText}>Starting camera...</Text>
+            </View>
+          ) : null}
+
+          {isTaking ? (
+            <View style={styles.cameraLoadingOverlay} pointerEvents="none">
+              <ActivityIndicator size="large" color="#1BCF4A" />
             </View>
           ) : null}
         </View>
@@ -139,11 +237,9 @@ export default function AddImageCapture() {
 
         <View style={styles.captureRow}>
           <Pressable
-            style={[
-              styles.captureButton,
-              { backgroundColor: theme.backgroundElement },
-            ]}
+            style={[styles.captureButton, { backgroundColor: theme.backgroundElement }]}
             onPress={onCapture}
+            disabled={isTaking}
           >
             <Image
               source={require("@/assets/images/shutter-camera.png")}
@@ -153,12 +249,7 @@ export default function AddImageCapture() {
         </View>
 
         <View style={styles.thumbContainer}>
-          <View
-            style={[
-              styles.thumbCard,
-              { backgroundColor: theme.backgroundElement },
-            ]}
-          >
+          <View style={[styles.thumbCard, { backgroundColor: theme.backgroundElement }]}>
             <ThemedText type="subtitle" style={styles.thumbTitle}>
               Preview
             </ThemedText>
@@ -166,18 +257,18 @@ export default function AddImageCapture() {
               {Array.from({ length: 10 }).map((_, i) => (
                 <View key={i} style={styles.thumbSlot}>
                   {captured[i] ? (
-                    <>
+                    <Pressable style={styles.thumbTouchable} onPress={() => setPreviewIndex(i)}>
                       <Image
-                        source={{ uri: captured[i] }}
+                        source={{ uri: getFullImageUrl(captured[i].image_path) }}
                         style={styles.thumbImage}
                       />
                       <Pressable
                         style={styles.removeBtn}
-                        onPress={() => removeImage(i)}
+                        onPress={() => removeImage(captured[i].id)}
                       >
                         <Text style={styles.removeX}>✕</Text>
                       </Pressable>
-                    </>
+                    </Pressable>
                   ) : null}
                 </View>
               ))}
@@ -199,6 +290,42 @@ export default function AddImageCapture() {
           </Pressable>
         </View>
       </ScrollView>
+
+      {/* Fullscreen Preview Modal */}
+      <Modal
+        visible={previewIndex !== null}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setPreviewIndex(null)}
+      >
+        {previewIndex !== null && captured[previewIndex] && (
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Pressable style={styles.modalCloseBtn} onPress={() => setPreviewIndex(null)}>
+                <Text style={styles.modalCloseText}>✕</Text>
+              </Pressable>
+            </View>
+            <Image
+              source={{ uri: getFullImageUrl(captured[previewIndex].image_path) }}
+              style={styles.fullscreenImage}
+              resizeMode="contain"
+            />
+            <View style={styles.modalFooter}>
+              <Pressable
+                style={[styles.downloadButton, isDownloading && { opacity: 0.7 }]}
+                onPress={() => downloadImage(getFullImageUrl(captured[previewIndex].image_path))}
+                disabled={isDownloading}
+              >
+                {isDownloading ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.downloadButtonText}>Download</Text>
+                )}
+              </Pressable>
+            </View>
+          </View>
+        )}
+      </Modal>
     </ThemedView>
   );
 }
@@ -245,14 +372,14 @@ const styles = StyleSheet.create({
     maxWidth: MaxContentWidth,
     alignSelf: "center",
     aspectRatio: 3 / 4,
-    backgroundColor: "#fff",
+    backgroundColor: "#000",
     borderRadius: 12,
     overflow: "hidden",
     marginBottom: Spacing.three,
   },
   cameraLoadingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.25)",
+    backgroundColor: "rgba(0,0,0,0.5)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -346,6 +473,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     overflow: "hidden",
   },
+  thumbTouchable: {
+    width: "100%",
+    height: "100%",
+  },
   thumbImage: { width: "100%", height: "100%", resizeMode: "cover" },
   removeBtn: {
     position: "absolute",
@@ -354,11 +485,11 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: "rgba(0,0,0,0.08)",
+    backgroundColor: "rgba(0,0,0,0.6)",
     alignItems: "center",
     justifyContent: "center",
   },
-  removeX: { fontSize: 12, fontWeight: "700" },
+  removeX: { fontSize: 10, fontWeight: "700", color: "#fff" },
   doneRow: {
     alignItems: "center",
     marginBottom: BottomTabInset,
@@ -366,4 +497,52 @@ const styles = StyleSheet.create({
   },
   doneButton: { paddingHorizontal: 28, paddingVertical: 12, borderRadius: 20 },
   doneText: { color: "#fff", fontWeight: "700" },
+
+  /* Modal Styles */
+  modalContainer: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.9)",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    padding: Spacing.four,
+    paddingTop: Spacing.six,
+  },
+  modalCloseBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalCloseText: {
+    color: "#fff",
+    fontSize: 20,
+    fontWeight: "600",
+  },
+  fullscreenImage: {
+    flex: 1,
+    width: "100%",
+  },
+  modalFooter: {
+    padding: Spacing.four,
+    paddingBottom: Spacing.six,
+    alignItems: "center",
+  },
+  downloadButton: {
+    backgroundColor: "#1BCF4A",
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+    borderRadius: 24,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  downloadButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
 });

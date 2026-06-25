@@ -18,8 +18,10 @@ import { BottomTabInset, MaxContentWidth, Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/contexts/AuthContext";
 import { API_BASE_URL } from "@/services/authService";
+import { useGoBack } from "@/hooks/use-go-back";
 
 export default function AddImagePage() {
+  const goBack = useGoBack();
   const router = useRouter();
   const theme = useTheme();
   const { token } = useAuth();
@@ -35,30 +37,35 @@ export default function AddImagePage() {
   const refreshKey = String(params.refresh ?? "");
 
   useEffect(() => {
-    const loadStored = async () => {
+    const loadImages = async () => {
+      if (!worksiteId || !token) return;
       try {
-        const loaded: Record<number, string | null> = {
-          1: null,
-          2: null,
-          3: null,
-        };
-        for (let i = 1; i <= 3; i++) {
-          const key = `addimage.${worksiteId}.book.${i}`;
-          const json = await SecureStore.getItemAsync(key);
-          if (json) {
-            const arr: string[] = JSON.parse(json);
-            // take first image preview for card
-            if (arr.length > 0) loaded[i] = arr[0];
+        const response = await fetch(`${API_BASE_URL}/sub-site-images?sub_site_id=${worksiteId}`, {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const loaded: Record<number, string | null> = { 1: null, 2: null, 3: null };
+          
+          // Group by book_id and take the first one
+          for (let i = 1; i <= 3; i++) {
+            const bookImages = data.filter((img: any) => img.book_id === i);
+            if (bookImages.length > 0) {
+              loaded[i] = `${API_BASE_URL.replace("/api", "")}/storage/${bookImages[0].image_path}`;
+            }
           }
+          setImages(loaded);
         }
-        setImages(loaded);
       } catch (e) {
         console.error(e);
       }
     };
 
-    loadStored();
-  }, [worksiteId, refreshKey]);
+    loadImages();
+  }, [worksiteId, refreshKey, token]);
   const [images, setImages] = useState<Record<number, string | null>>({
     1: null,
     2: null,
@@ -93,7 +100,7 @@ export default function AddImagePage() {
               styles.menuButton,
               { backgroundColor: theme.backgroundElement },
             ]}
-            onPress={() => router.back()}
+            onPress={() => goBack()}
             accessibilityLabel="Back"
           >
             <ThemedText type="subtitle" style={styles.menuText}>
@@ -198,7 +205,7 @@ export default function AddImagePage() {
                 style={styles.modalOkButton}
                 onPress={() => {
                   setShowSuccess(false);
-                  router.back();
+                  goBack();
                 }}
               >
                 <Text style={styles.modalOkText}>Ok</Text>
@@ -449,7 +456,6 @@ const styles = StyleSheet.create({
     fontSize: 28,
     lineHeight: 28,
     textAlign: "center",
-    color: "#000",
     fontWeight: "600",
   },
   cardImage: {

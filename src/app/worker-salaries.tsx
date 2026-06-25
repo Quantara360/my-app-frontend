@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+﻿import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Modal, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -9,6 +9,7 @@ import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { API_BASE_URL } from '@/services/authService';
 import { useAuth } from '@/contexts/AuthContext';
+import { useGoBack } from "@/hooks/use-go-back";
 
 type Worksite = {
   id: number;
@@ -51,6 +52,7 @@ const normalizeSalary = (salary: any): WorkerSalary => ({
 });
 
 export default function WorkerSalariesPage() {
+  const goBack = useGoBack();
   const router = useRouter();
   const theme = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -232,7 +234,7 @@ export default function WorkerSalariesPage() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.headerRow}>
-          <Pressable style={[styles.backButton, { backgroundColor: theme.backgroundSelected }]} onPress={() => router.back()}>
+          <Pressable style={[styles.backButton, { backgroundColor: theme.backgroundSelected }]} onPress={() => goBack()}>
             <ThemedText type="smallBold">←</ThemedText>
           </Pressable>
           <ThemedText type="title" style={styles.pageTitle}>

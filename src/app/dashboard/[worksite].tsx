@@ -6,6 +6,7 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { BottomTabInset, MaxContentWidth, Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
+import { useGoBack } from "@/hooks/use-go-back";
 import { API_BASE_URL } from "@/services/authService";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -17,6 +18,7 @@ const worksiteActions = [
 export default function WorksitePage() {
   const params = useLocalSearchParams();
   const router = useRouter();
+  const goBack = useGoBack();
   const theme = useTheme();
   const { token } = useAuth();
   const worksiteId = Number(params.worksite);
@@ -60,7 +62,7 @@ export default function WorksitePage() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <Pressable style={styles.backButton} onPress={() => router.back()}>
+          <Pressable style={styles.backButton} onPress={goBack}>
             <ThemedText style={styles.backText}>Back</ThemedText>
           </Pressable>
         </View>

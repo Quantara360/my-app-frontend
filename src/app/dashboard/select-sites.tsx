@@ -5,22 +5,54 @@ import { ThemedView } from "@/components/themed-view";
 import { Spacing, MaxContentWidth, BottomTabInset } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 
-const sites = [
-  { id: "apeksha", title: "Apeksha" },
-  { id: "razavi", title: "Razavi" },
-];
+import { useEffect, useState } from "react";
+import { API_BASE_URL } from "@/services/authService";
+import { useAuth } from "@/contexts/AuthContext";
+import { useGoBack } from "@/hooks/use-go-back";
+
+interface Site {
+  id: number;
+  name: string;
+}
 
 export default function SelectSites() {
+  const goBack = useGoBack();
   const params = useLocalSearchParams();
   const router = useRouter();
   const theme = useTheme();
-  const worksiteId = Number(params.worksiteId);
+  const { token } = useAuth();
+  const [sites, setSites] = useState<Site[]>([]);
+  // worksiteId is the real main worksite (e.g. 3 or 4)
+  // hospitalId is the hospital within that worksite (used to filter sub-sites)
+  const worksiteId = Array.isArray(params.worksiteId) ? params.worksiteId[0] : params.worksiteId;
+  const hospitalId = Array.isArray(params.hospitalId) ? params.hospitalId[0] : (params.hospitalId || worksiteId);
+
+  useEffect(() => {
+    if (!token || !hospitalId) return;
+    async function loadSites() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/sub-sites?hospital_id=${hospitalId}`, {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setSites(Array.isArray(data) ? data : data.data || []);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
+    loadSites();
+  }, [token, hospitalId]);
 
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <Pressable style={styles.backButton} onPress={() => router.back()}>
+          <Pressable style={styles.backButton} onPress={() => goBack()}>
             <ThemedText style={styles.backText}>‹</ThemedText>
           </Pressable>
         </View>
@@ -44,12 +76,13 @@ export default function SelectSites() {
                 onPress={() => {
                   router.push({
                     pathname: "/dashboard/site-actions",
-                    params: { siteId: site.id, worksiteId },
+                    // siteId = sub-site ID, worksiteId = real main worksite ID
+                    params: { siteId: site.id, worksiteId, siteName: site.name },
                   } as any);
                 }}
               >
                 <ThemedText type="subtitle" style={styles.cardText}>
-                  {site.title}
+                  {site.name}
                 </ThemedText>
               </Pressable>
             ))}

@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+﻿import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
@@ -8,6 +8,7 @@ import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { API_BASE_URL } from '@/services/authService';
 import { useAuth } from '@/contexts/AuthContext';
+import { useGoBack } from "@/hooks/use-go-back";
 
 type Worksite = {
   id: number;
@@ -49,6 +50,7 @@ const initialFormState = {
 };
 
 export default function AssetsPage() {
+  const goBack = useGoBack();
   const router = useRouter();
   const theme = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -227,7 +229,7 @@ export default function AssetsPage() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.headerRow}>
-          <Pressable style={[styles.backButton, { backgroundColor: theme.backgroundSelected }]} onPress={() => router.back()}>
+          <Pressable style={[styles.backButton, { backgroundColor: theme.backgroundSelected }]} onPress={() => goBack()}>
             <ThemedText type="smallBold">←</ThemedText>
           </Pressable>
           <ThemedText type="title" style={styles.pageTitle}>

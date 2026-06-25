@@ -22,6 +22,9 @@ type Chemical = {
   storage_location?: string;
   worksite_id?: number | null;
   worksite?: Worksite;
+  tender_requirements?: string;
+  monthly_purchases?: string;
+  balance?: string;
 };
 
 const initialFormState = {
@@ -30,6 +33,9 @@ const initialFormState = {
   hazard_level: 'low',
   storage_location: '',
   worksite_id: null as number | null,
+  tender_requirements: '',
+  monthly_purchases: '',
+  balance: '',
 };
 
 const normalizeChemical = (chemical: any): Chemical => ({
@@ -40,6 +46,9 @@ const normalizeChemical = (chemical: any): Chemical => ({
   storage_location: chemical.storage_location ? String(chemical.storage_location) : undefined,
   worksite_id: chemical.worksite_id ? Number(chemical.worksite_id) : null,
   worksite: chemical.worksite,
+  tender_requirements: chemical.tender_requirements ? String(chemical.tender_requirements) : undefined,
+  monthly_purchases: chemical.monthly_purchases ? String(chemical.monthly_purchases) : undefined,
+  balance: chemical.balance ? String(chemical.balance) : undefined,
 });
 
 export default function ChemicalsPage() {
@@ -124,6 +133,9 @@ export default function ChemicalsPage() {
       hazard_level: chemical.hazard_level,
       storage_location: chemical.storage_location ?? '',
       worksite_id: chemical.worksite_id ?? null,
+      tender_requirements: chemical.tender_requirements ?? '',
+      monthly_purchases: chemical.monthly_purchases ?? '',
+      balance: chemical.balance ?? '',
     });
     setFormOpen(true);
   };
@@ -141,6 +153,9 @@ export default function ChemicalsPage() {
       hazard_level: formValues.hazard_level,
       storage_location: formValues.storage_location || null,
       worksite_id: formValues.worksite_id,
+      tender_requirements: formValues.tender_requirements || null,
+      monthly_purchases: formValues.monthly_purchases || null,
+      balance: formValues.balance || null,
     };
 
     const method = isEditing ? 'PUT' : 'POST';
@@ -344,6 +359,24 @@ export default function ChemicalsPage() {
                   value={formValues.storage_location}
                   onChangeText={(value) => setFormValues((prev) => ({ ...prev, storage_location: value }))}
                 />
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="Tender Requirements"
+                  value={formValues.tender_requirements}
+                  onChangeText={(value) => setFormValues((prev) => ({ ...prev, tender_requirements: value }))}
+                />
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="Monthly Purchases"
+                  value={formValues.monthly_purchases}
+                  onChangeText={(value) => setFormValues((prev) => ({ ...prev, monthly_purchases: value }))}
+                />
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="Balance"
+                  value={formValues.balance}
+                  onChangeText={(value) => setFormValues((prev) => ({ ...prev, balance: value }))}
+                />
                 <View style={styles.fieldRow}>
                   <Text style={styles.fieldLabel}>Hazard Level</Text>
                   <View style={styles.statusList}>
@@ -406,6 +439,18 @@ export default function ChemicalsPage() {
                     <View style={styles.detailRow}>
                       <ThemedText type="smallBold" style={styles.detailLabel}>Storage Location</ThemedText>
                       <ThemedText>{selectedViewItem.storage_location ?? 'N/A'}</ThemedText>
+                    </View>
+                    <View style={styles.detailRow}>
+                      <ThemedText type="smallBold" style={styles.detailLabel}>Tender Requirements</ThemedText>
+                      <ThemedText>{selectedViewItem.tender_requirements ?? 'N/A'}</ThemedText>
+                    </View>
+                    <View style={styles.detailRow}>
+                      <ThemedText type="smallBold" style={styles.detailLabel}>Monthly Purchases</ThemedText>
+                      <ThemedText>{selectedViewItem.monthly_purchases ?? 'N/A'}</ThemedText>
+                    </View>
+                    <View style={styles.detailRow}>
+                      <ThemedText type="smallBold" style={styles.detailLabel}>Balance</ThemedText>
+                      <ThemedText>{selectedViewItem.balance ?? 'N/A'}</ThemedText>
                     </View>
                   </>
                 )}

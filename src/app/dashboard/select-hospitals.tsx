@@ -5,25 +5,53 @@ import { ThemedView } from "@/components/themed-view";
 import { Spacing, MaxContentWidth, BottomTabInset } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 
-const hospitals = [
-  { id: "apeksha", title: "Apeksha\nHospital" },
-  { id: "castle", title: "Castle\nWomen's\nHospital" },
-  { id: "national", title: "National\nHospital" },
-];
+import { useEffect, useState } from "react";
+import { API_BASE_URL } from "@/services/authService";
+import { useAuth } from "@/contexts/AuthContext";
+import { useGoBack } from "@/hooks/use-go-back";
+
+interface Hospital {
+  id: number;
+  name: string;
+}
 
 export default function SelectHospitals() {
+  const goBack = useGoBack();
   const params = useLocalSearchParams();
   const router = useRouter();
   const theme = useTheme();
+  const { token } = useAuth();
+  const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const worksiteId = Array.isArray(params.worksiteId)
     ? params.worksiteId[0]
     : params.worksiteId;
+
+  useEffect(() => {
+    if (!token || !worksiteId) return;
+    async function loadHospitals() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/hospitals?worksite_id=${worksiteId}`, {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setHospitals(Array.isArray(data) ? data : data.data || []);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
+    loadHospitals();
+  }, [token, worksiteId]);
 
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <Pressable style={styles.backButton} onPress={() => router.back()}>
+          <Pressable style={styles.backButton} onPress={() => goBack()}>
             <ThemedText style={styles.backText}>‹</ThemedText>
           </Pressable>
         </View>
@@ -45,33 +73,15 @@ export default function SelectHospitals() {
                   pressed && styles.cardPressed,
                 ]}
                 onPress={() => {
-                  if (h.id === "apeksha") {
-                    router.push(
-                      `/dashboard/select-sites?worksiteId=${encodeURIComponent(
-                        worksiteId ?? "",
-                      )}`,
-                    );
-                    return;
-                  }
-
-                  if (h.id === "national") {
-                    router.push(
-                      `/dashboard/national-hospital-units?worksiteId=${encodeURIComponent(
-                        worksiteId ?? "",
-                      )}`,
-                    );
-                    return;
-                  }
-
-                  // For Castle and other hospitals, go straight to site actions
-                  router.push({
-                    pathname: "/dashboard/site-actions",
-                    params: { siteId: h.id, worksiteId },
-                  } as any);
+                  // Pass the REAL worksite ID AND the hospital ID separately
+                  // so the attendance screen always uses the correct worksite
+                  router.push(
+                    `/dashboard/select-sites?worksiteId=${worksiteId}&hospitalId=${h.id}`
+                  );
                 }}
               >
                 <ThemedText type="subtitle" style={styles.cardText}>
-                  {h.title}
+                  {h.name}
                 </ThemedText>
               </Pressable>
             ))}

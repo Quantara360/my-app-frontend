@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Alert, Modal, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -9,6 +9,7 @@ import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { API_BASE_URL } from '@/services/authService';
 import { useAuth } from '@/contexts/AuthContext';
+import { useGoBack } from "@/hooks/use-go-back";
 
 type Worksite = {
   id: number;
@@ -44,6 +45,7 @@ const normalizeMachinery = (machinery: any): Machinery => ({
 });
 
 export default function MachineriesPage() {
+  const goBack = useGoBack();
   const router = useRouter();
   const theme = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -116,7 +118,7 @@ export default function MachineriesPage() {
 
   const handleGoBack = () => {
     if (router.canGoBack?.()) {
-      router.back();
+      goBack();
     } else {
       router.replace('/dashboard');
     }
