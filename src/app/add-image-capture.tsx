@@ -42,6 +42,38 @@ export default function AddImageCapture() {
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
 
+  // Web-only: ref to the <video> element that holds the live camera stream
+  const webVideoRef = useRef<HTMLVideoElement | null>(null);
+  const webStreamRef = useRef<MediaStream | null>(null);
+
+  // On web, start the camera stream into webVideoRef as soon as the component mounts
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false,
+        });
+        if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
+        webStreamRef.current = stream;
+        if (webVideoRef.current) {
+          webVideoRef.current.srcObject = stream;
+          webVideoRef.current.play().catch(() => {});
+        }
+        setCameraReady(true);
+      } catch (e) {
+        console.error('Web camera init error:', e);
+      }
+    })();
+    return () => {
+      cancelled = true;
+      webStreamRef.current?.getTracks().forEach(t => t.stop());
+      webStreamRef.current = null;
+    };
+  }, []);
+
   useEffect(() => {
     loadImages();
   }, [book, worksiteId, token]);
@@ -117,43 +149,24 @@ export default function AddImageCapture() {
     if (Platform.OS === 'web') {
       setIsTaking(true);
       try {
-        // Find the video element rendered by CameraView (expo-camera on web)
-        let videoEl: HTMLVideoElement | null = document.querySelector('video');
-
-        // If no video element found (camera not streaming), open a stream ourselves
-        let ownStream: MediaStream | null = null;
-        if (!videoEl || videoEl.readyState < 2) {
-          ownStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'environment' },
-          });
-          videoEl = document.createElement('video');
-          videoEl.srcObject = ownStream;
-          videoEl.setAttribute('playsinline', 'true');
-          videoEl.muted = true;
-          await videoEl.play();
-          // Wait for dimensions
-          await new Promise<void>((resolve) => {
-            if (videoEl!.videoWidth > 0) { resolve(); return; }
-            videoEl!.onloadedmetadata = () => resolve();
-            setTimeout(resolve, 1500);
-          });
+        // Use the persistent video element that is already streaming from getUserMedia
+        const videoEl = webVideoRef.current;
+        if (!videoEl || videoEl.readyState < 2 || videoEl.videoWidth === 0) {
+          throw new Error('Camera is not ready yet. Please wait a moment and try again.');
         }
 
         const canvas = document.createElement('canvas');
-        canvas.width = videoEl.videoWidth || 640;
-        canvas.height = videoEl.videoHeight || 480;
+        canvas.width = videoEl.videoWidth;
+        canvas.height = videoEl.videoHeight;
         const ctx = canvas.getContext('2d');
-        ctx?.drawImage(videoEl, 0, 0);
-
-        // Stop own stream if we created it
-        if (ownStream) ownStream.getTracks().forEach(t => t.stop());
+        ctx!.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
 
         // Convert canvas to Blob
         const blob = await new Promise<Blob>((resolve, reject) => {
           canvas.toBlob((b) => {
             if (b) resolve(b);
-            else reject(new Error('Failed to create blob'));
-          }, 'image/jpeg', 0.8);
+            else reject(new Error('Failed to create image blob'));
+          }, 'image/jpeg', 0.85);
         });
 
         const formData = new FormData();
@@ -305,11 +318,37 @@ export default function AddImageCapture() {
         </View>
 
         <View style={styles.cameraWrap}>
-          <CameraView
-            style={StyleSheet.absoluteFill}
-            ref={cameraRef}
-            onCameraReady={() => setCameraReady(true)}
-          />
+          {Platform.OS === 'web' ? (
+            // On web, CameraView doesn't produce a capturable stream.
+            // Use a native <video> element fed by getUserMedia instead.
+            <video
+              ref={(el) => {
+                webVideoRef.current = el;
+                // If stream is already available, attach it
+                if (el && webStreamRef.current && !el.srcObject) {
+                  el.srcObject = webStreamRef.current;
+                  el.play().catch(() => {});
+                }
+              }}
+              autoPlay
+              playsInline
+              muted
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+              } as any}
+            />
+          ) : (
+            <CameraView
+              style={StyleSheet.absoluteFill}
+              ref={cameraRef}
+              onCameraReady={() => setCameraReady(true)}
+            />
+          )}
 
           <View style={styles.overlayCenter} pointerEvents="none">
             <View style={styles.outerFrame}>
