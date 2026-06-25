@@ -108,9 +108,28 @@ export default function FaceRecognition() {
     const video = document.querySelector('video');
     if (!video) throw new Error('Camera video element not found');
 
+    if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+      await new Promise<void>((resolve) => {
+        const cleanup = () => {
+          video.removeEventListener('loadeddata', onReady);
+          video.removeEventListener('canplay', onReady);
+        };
+        const onReady = () => {
+          cleanup();
+          resolve();
+        };
+        video.addEventListener('loadeddata', onReady);
+        video.addEventListener('canplay', onReady);
+        setTimeout(() => {
+          cleanup();
+          resolve();
+        }, 500);
+      });
+    }
+
     const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Unable to get canvas drawing context');
 
