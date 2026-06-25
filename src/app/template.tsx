@@ -71,7 +71,7 @@ function formatDate(dateStr?: string): string {
 
 function getPhotoUrl(worker: Worker): string | null {
   if (!worker.face_photo_path) return null;
-  return `${API_BASE_URL.replace("/api", "")}/storage/${worker.face_photo_path}`;
+  return `https://api.abeysone.cloud/storage/${worker.face_photo_path}`;
 }
 
 import { Asset } from 'expo-asset';
