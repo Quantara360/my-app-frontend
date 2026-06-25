@@ -46,14 +46,16 @@ export default function AddImageCapture() {
   const webVideoRef = useRef<HTMLVideoElement | null>(null);
   const webStreamRef = useRef<MediaStream | null>(null);
 
-  // On web, start the camera stream into webVideoRef as soon as the component mounts
+  // On web, imperatively create a <video> element and inject it into the
+  // camera container div. This bypasses React Native Web's JSX rendering
+  // quirks with raw HTML elements and guarantees a real HTMLVideoElement.
   useEffect(() => {
     if (Platform.OS !== 'web') return;
     let cancelled = false;
+    let injectedVideo: HTMLVideoElement | null = null;
 
     const startWebCamera = async () => {
       try {
-        // Use 'ideal' so it falls back gracefully on desktop (front cam only)
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: { ideal: 'environment' } },
           audio: false,
@@ -61,24 +63,35 @@ export default function AddImageCapture() {
         if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
         webStreamRef.current = stream;
 
-        const videoEl = webVideoRef.current;
-        if (!videoEl) return;
+        // Find the container by its nativeID (maps to the HTML id attribute)
+        const container = document.getElementById('web-camera-container');
+        if (!container || cancelled) return;
 
+        // Create video element entirely in JS — reliable ref, real DOM element
+        const videoEl = document.createElement('video');
         videoEl.srcObject = stream;
+        videoEl.autoplay = true;
+        videoEl.playsInline = true;
+        videoEl.muted = true;
+        videoEl.setAttribute('playsinline', 'true');
+        videoEl.style.cssText =
+          'position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:0;';
 
-        // Wait for metadata (dimensions available)
-        await new Promise<void>((resolve, reject) => {
+        container.appendChild(videoEl);
+        injectedVideo = videoEl;
+        webVideoRef.current = videoEl;
+
+        // Wait for metadata so we have real dimensions
+        await new Promise<void>((resolve) => {
           if (videoEl.readyState >= 1) { resolve(); return; }
           videoEl.onloadedmetadata = () => resolve();
-          videoEl.onerror = () => reject(new Error('Video error'));
           setTimeout(resolve, 3000);
         });
 
         if (cancelled) return;
-
         await videoEl.play();
 
-        // Mark ready only after the video is actually playing
+        // Wait for first frame to be rendering
         await new Promise<void>((resolve) => {
           if (!videoEl.paused) { resolve(); return; }
           videoEl.onplaying = () => resolve();
@@ -87,7 +100,7 @@ export default function AddImageCapture() {
 
         if (!cancelled) setCameraReady(true);
       } catch (e: any) {
-        if (!cancelled) console.error('Web camera init error:', e);
+        if (!cancelled) console.error('Web camera error:', e);
       }
     };
 
@@ -97,6 +110,8 @@ export default function AddImageCapture() {
       cancelled = true;
       webStreamRef.current?.getTracks().forEach(t => t.stop());
       webStreamRef.current = null;
+      if (injectedVideo?.parentNode) injectedVideo.parentNode.removeChild(injectedVideo);
+      webVideoRef.current = null;
     };
   }, []);
 
@@ -321,32 +336,9 @@ export default function AddImageCapture() {
           <View style={styles.circlePlaceholder} />
         </View>
 
-        <View style={styles.cameraWrap}>
-          {Platform.OS === 'web' ? (
-            // On web, CameraView doesn't produce a capturable stream.
-            // Use a native <video> element fed by getUserMedia instead.
-            <video
-              ref={(el) => {
-                webVideoRef.current = el;
-                // If stream is already available, attach it
-                if (el && webStreamRef.current && !el.srcObject) {
-                  el.srcObject = webStreamRef.current;
-                  el.play().catch(() => {});
-                }
-              }}
-              autoPlay
-              playsInline
-              muted
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-              } as any}
-            />
-          ) : (
+        <View style={styles.cameraWrap} nativeID="web-camera-container">
+          {/* On web: <video> is injected imperatively by useEffect into this container */}
+          {Platform.OS !== 'web' && (
             <CameraView
               style={StyleSheet.absoluteFill}
               ref={cameraRef}
