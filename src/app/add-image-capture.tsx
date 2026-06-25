@@ -50,23 +50,49 @@ export default function AddImageCapture() {
   useEffect(() => {
     if (Platform.OS !== 'web') return;
     let cancelled = false;
-    (async () => {
+
+    const startWebCamera = async () => {
       try {
+        // Use 'ideal' so it falls back gracefully on desktop (front cam only)
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+          video: { facingMode: { ideal: 'environment' } },
           audio: false,
         });
         if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
         webStreamRef.current = stream;
-        if (webVideoRef.current) {
-          webVideoRef.current.srcObject = stream;
-          webVideoRef.current.play().catch(() => {});
-        }
-        setCameraReady(true);
-      } catch (e) {
-        console.error('Web camera init error:', e);
+
+        const videoEl = webVideoRef.current;
+        if (!videoEl) return;
+
+        videoEl.srcObject = stream;
+
+        // Wait for metadata (dimensions available)
+        await new Promise<void>((resolve, reject) => {
+          if (videoEl.readyState >= 1) { resolve(); return; }
+          videoEl.onloadedmetadata = () => resolve();
+          videoEl.onerror = () => reject(new Error('Video error'));
+          setTimeout(resolve, 3000);
+        });
+
+        if (cancelled) return;
+
+        await videoEl.play();
+
+        // Mark ready only after the video is actually playing
+        await new Promise<void>((resolve) => {
+          if (!videoEl.paused) { resolve(); return; }
+          videoEl.onplaying = () => resolve();
+          setTimeout(resolve, 1000);
+        });
+
+        if (!cancelled) setCameraReady(true);
+      } catch (e: any) {
+        if (!cancelled) console.error('Web camera init error:', e);
       }
-    })();
+    };
+
+    startWebCamera();
+
     return () => {
       cancelled = true;
       webStreamRef.current?.getTracks().forEach(t => t.stop());
@@ -103,40 +129,16 @@ export default function AddImageCapture() {
     return `${API_BASE_URL.replace("/api", "")}/storage/${path}`;
   };
 
-  const captureWebPhoto = async () => {
-    try {
-      // Get camera stream directly from browser
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
-      });
-      
-      const video = document.createElement('video');
-      video.srcObject = stream;
-      video.setAttribute('playsinline', 'true');
-      await video.play();
-
-      // Wait for video to have dimensions
-      await new Promise<void>((resolve) => {
-        if (video.videoWidth > 0) { resolve(); return; }
-        video.onloadedmetadata = () => resolve();
-        setTimeout(resolve, 1000);
-      });
-
-      const canvas = document.createElement('canvas');
-      canvas.width = video.videoWidth || 640;
-      canvas.height = video.videoHeight || 480;
-      const ctx = canvas.getContext('2d');
-      ctx?.drawImage(video, 0, 0);
-
-      // Stop stream tracks
-      stream.getTracks().forEach(t => t.stop());
-
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-      return { uri: dataUrl };
-    } catch (e: any) {
-      throw new Error('Failed to capture: ' + e.message);
-    }
-  };
+  // Helper: waits for an actual decoded frame before we draw to canvas.
+  // Uses requestVideoFrameCallback (Chrome/Edge) or double-rAF (Firefox).
+  const waitForFrame = (video: HTMLVideoElement): Promise<void> =>
+    new Promise((resolve) => {
+      if ('requestVideoFrameCallback' in video) {
+        (video as any).requestVideoFrameCallback(() => resolve());
+      } else {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      }
+    });
 
   const onCapture = async () => {
     if (isTaking) return;
@@ -149,17 +151,19 @@ export default function AddImageCapture() {
     if (Platform.OS === 'web') {
       setIsTaking(true);
       try {
-        // Use the persistent video element that is already streaming from getUserMedia
         const videoEl = webVideoRef.current;
-        if (!videoEl || videoEl.readyState < 2 || videoEl.videoWidth === 0) {
+        if (!videoEl || videoEl.videoWidth === 0) {
           throw new Error('Camera is not ready yet. Please wait a moment and try again.');
         }
+
+        // Wait for a real decoded frame — avoids transparent/black images
+        await waitForFrame(videoEl);
 
         const canvas = document.createElement('canvas');
         canvas.width = videoEl.videoWidth;
         canvas.height = videoEl.videoHeight;
-        const ctx = canvas.getContext('2d');
-        ctx!.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
 
         // Convert canvas to Blob
         const blob = await new Promise<Blob>((resolve, reject) => {
