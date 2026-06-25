@@ -107,6 +107,10 @@ export default function AddImageCapture() {
   };
 
   const onCapture = async () => {
+    console.log('Platform.OS:', Platform.OS);
+    console.log('onCapture called');
+    alert('Platform: ' + Platform.OS);
+
     if (Platform.OS === 'web') {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
