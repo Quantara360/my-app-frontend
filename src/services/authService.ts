@@ -4,7 +4,7 @@ import Constants from 'expo-constants';
 import * as SecureStore from 'expo-secure-store';
 
 // Production API base URL
-export const API_BASE_URL = 'https://abeysone.cloud/api';
+export const API_BASE_URL = 'https://api.abeysone.cloud/api';
 
 export type AuthUser = {
   id: number;
