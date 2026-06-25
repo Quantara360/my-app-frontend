@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   View,
@@ -107,40 +107,86 @@ export default function AddImageCapture() {
   };
 
   const onCapture = async () => {
-    console.log('Platform.OS:', Platform.OS);
-    console.log('onCapture called');
-    alert('Platform: ' + Platform.OS);
-
-    if (Platform.OS === 'web') {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        const track = stream.getVideoTracks()[0];
-        const imageCapture = new (window as any).ImageCapture(track);
-        const bitmap = await imageCapture.grabFrame();
-        
-        const canvas = document.createElement('canvas');
-        canvas.width = bitmap.width;
-        canvas.height = bitmap.height;
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(bitmap, 0, 0);
-        track.stop();
-        
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-        console.log('Captured dataUrl length:', dataUrl.length);
-        console.log('First 100 chars:', dataUrl.substring(0, 100));
-        // setPhotoUri(dataUrl); // uncomment after testing
-      } catch (e) {
-        console.error('Capture error:', e);
-      }
-      return;
-    }
-
     if (isTaking) return;
     if (captured.length >= 10) {
       Alert.alert("Limit reached", "Maximum 10 images per book within the last 24 hours.");
       return;
     }
-    if (!cameraRef.current || !worksiteId || !token) return;
+    if (!worksiteId || !token) return;
+
+    if (Platform.OS === 'web') {
+      setIsTaking(true);
+      try {
+        // Find the video element rendered by CameraView (expo-camera on web)
+        let videoEl: HTMLVideoElement | null = document.querySelector('video');
+
+        // If no video element found (camera not streaming), open a stream ourselves
+        let ownStream: MediaStream | null = null;
+        if (!videoEl || videoEl.readyState < 2) {
+          ownStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment' },
+          });
+          videoEl = document.createElement('video');
+          videoEl.srcObject = ownStream;
+          videoEl.setAttribute('playsinline', 'true');
+          videoEl.muted = true;
+          await videoEl.play();
+          // Wait for dimensions
+          await new Promise<void>((resolve) => {
+            if (videoEl!.videoWidth > 0) { resolve(); return; }
+            videoEl!.onloadedmetadata = () => resolve();
+            setTimeout(resolve, 1500);
+          });
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = videoEl.videoWidth || 640;
+        canvas.height = videoEl.videoHeight || 480;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(videoEl, 0, 0);
+
+        // Stop own stream if we created it
+        if (ownStream) ownStream.getTracks().forEach(t => t.stop());
+
+        // Convert canvas to Blob
+        const blob = await new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob((b) => {
+            if (b) resolve(b);
+            else reject(new Error('Failed to create blob'));
+          }, 'image/jpeg', 0.8);
+        });
+
+        const formData = new FormData();
+        formData.append('sub_site_id', worksiteId as string);
+        formData.append('book_id', book.toString());
+        formData.append('photo', blob, `photo_${Date.now()}.jpg`);
+
+        const response = await fetch(`${API_BASE_URL}/sub-site-images/upload`, {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setCaptured((prev) => [data, ...prev]);
+        } else {
+          const err = await response.json().catch(() => ({}));
+          Alert.alert('Error', err.error || 'Failed to upload image');
+        }
+      } catch (e: any) {
+        console.error('Web capture error:', e);
+        Alert.alert('Error', e.message || 'Failed to capture image');
+      } finally {
+        setIsTaking(false);
+      }
+      return;
+    }
+
+    if (!cameraRef.current) return;
 
     setIsTaking(true);
     try {
