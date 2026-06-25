@@ -166,48 +166,87 @@ export default function AddImageCapture() {
     if (Platform.OS === 'web') {
       setIsTaking(true);
       try {
-        const videoEl = webVideoRef.current;
-        if (!videoEl || videoEl.videoWidth === 0) {
-          throw new Error('Camera is not ready yet. Please wait a moment and try again.');
+        // Use the stored stream directly — do NOT rely on the DOM-injected display video.
+        // Create a fresh hidden video element appended to document.body so the
+        // browser always decodes real frames (avoids black/blank canvas).
+        const stream = webStreamRef.current;
+        if (!stream || stream.getVideoTracks().length === 0) {
+          throw new Error('Camera is not available. Please reload and allow camera access.');
         }
 
-        // Wait for a real decoded frame — avoids transparent/black images
-        await waitForFrame(videoEl);
+        const track = stream.getVideoTracks()[0];
+        if (track.readyState !== 'live') {
+          throw new Error('Camera track ended. Please reload the page.');
+        }
 
-        const canvas = document.createElement('canvas');
-        canvas.width = videoEl.videoWidth;
-        canvas.height = videoEl.videoHeight;
-        const ctx = canvas.getContext('2d')!;
-        ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+        // Create an off-screen video element on document.body
+        const captureVid = document.createElement('video');
+        captureVid.srcObject = new MediaStream([track]);
+        captureVid.muted = true;
+        captureVid.playsInline = true;
+        captureVid.setAttribute('playsinline', 'true');
+        // Position off-screen so it never appears but still decodes
+        captureVid.style.cssText =
+          'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;';
+        document.body.appendChild(captureVid);
 
-        // Convert canvas to Blob
-        const blob = await new Promise<Blob>((resolve, reject) => {
-          canvas.toBlob((b) => {
-            if (b) resolve(b);
-            else reject(new Error('Failed to create image blob'));
-          }, 'image/jpeg', 0.85);
-        });
+        try {
+          await captureVid.play();
 
-        const formData = new FormData();
-        formData.append('sub_site_id', worksiteId as string);
-        formData.append('book_id', book.toString());
-        formData.append('photo', blob, `photo_${Date.now()}.jpg`);
+          // Wait until the browser has actual frame data (HAVE_FUTURE_DATA or better)
+          await new Promise<void>((resolve) => {
+            if (captureVid.readyState >= 3) { resolve(); return; }
+            captureVid.addEventListener('canplay', () => resolve(), { once: true });
+            setTimeout(resolve, 4000); // max 4s timeout
+          });
 
-        const response = await fetch(`${API_BASE_URL}/sub-site-images/upload`, {
-          method: 'POST',
-          headers: {
-            Accept: 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        });
+          // Extra warmup — camera auto-exposure needs a moment
+          await new Promise<void>((resolve) => setTimeout(resolve, 600));
 
-        if (response.ok) {
-          const data = await response.json();
-          setCaptured((prev) => [data, ...prev]);
-        } else {
-          const err = await response.json().catch(() => ({}));
-          Alert.alert('Error', err.error || 'Failed to upload image');
+          if (captureVid.videoWidth === 0 || captureVid.videoHeight === 0) {
+            throw new Error('Camera did not produce a valid frame. Please try again.');
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = captureVid.videoWidth;
+          canvas.height = captureVid.videoHeight;
+          const ctx = canvas.getContext('2d')!;
+          ctx.drawImage(captureVid, 0, 0, canvas.width, canvas.height);
+
+          // Convert canvas to Blob
+          const blob = await new Promise<Blob>((resolve, reject) => {
+            canvas.toBlob((b) => {
+              if (b) resolve(b);
+              else reject(new Error('Failed to create image blob'));
+            }, 'image/jpeg', 0.85);
+          });
+
+          const formData = new FormData();
+          formData.append('sub_site_id', worksiteId as string);
+          formData.append('book_id', book.toString());
+          formData.append('photo', blob, `photo_${Date.now()}.jpg`);
+
+          const response = await fetch(`${API_BASE_URL}/sub-site-images/upload`, {
+            method: 'POST',
+            headers: {
+              Accept: 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: formData,
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            setCaptured((prev) => [data, ...prev]);
+          } else {
+            const err = await response.json().catch(() => ({}));
+            Alert.alert('Error', err.error || 'Failed to upload image');
+          }
+        } finally {
+          // Always clean up the off-screen video
+          captureVid.pause();
+          captureVid.srcObject = null;
+          if (captureVid.parentNode) captureVid.parentNode.removeChild(captureVid);
         }
       } catch (e: any) {
         console.error('Web capture error:', e);
