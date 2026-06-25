@@ -7,6 +7,7 @@ import {
   FlatList,
   Image,
   Linking,
+  Platform,
   Pressable,
   StyleSheet,
   View,
@@ -103,14 +104,31 @@ export default function FaceRecognition() {
     })();
   }, [token, subSiteId, shift, currentState]);
 
+  const captureWebPhoto = async () => {
+    const video = document.querySelector('video');
+    if (!video) throw new Error('Camera video element not found');
+
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Unable to get canvas drawing context');
+
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+    return { uri: dataUrl, base64: dataUrl.split(',')[1] };
+  };
+
   async function capture() {
     if (!cameraRef.current || isProcessing) return;
     try {
       setIsProcessing(true);
-      const photo = await cameraRef.current.takePictureAsync({
-        quality: 0.7,
-        base64: true,
-      });
+      const photo = Platform.OS === 'web'
+        ? await captureWebPhoto()
+        : await cameraRef.current.takePictureAsync({
+            quality: 0.7,
+            base64: true,
+          });
       if (!photo || !photo.base64) return;
       setPhotoUri(photo.uri);
 

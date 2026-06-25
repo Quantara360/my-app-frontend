@@ -71,6 +71,21 @@ export default function AddImageCapture() {
     return `${API_BASE_URL.replace("/api", "")}/storage/${path}`;
   };
 
+  const captureWebPhoto = async () => {
+    const video = document.querySelector('video');
+    if (!video) throw new Error('Camera video element not found');
+
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Unable to get canvas drawing context');
+
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+    return { uri: dataUrl };
+  };
+
   const onCapture = async () => {
     if (isTaking) return;
     if (captured.length >= 10) {
@@ -81,9 +96,9 @@ export default function AddImageCapture() {
 
     setIsTaking(true);
     try {
-      const photo = await cameraRef.current.takePictureAsync({
-        quality: 0.7,
-      });
+      const photo = Platform.OS === 'web'
+        ? await captureWebPhoto()
+        : await cameraRef.current.takePictureAsync({ quality: 0.7 });
 
       if (!photo) throw new Error("No photo captured");
 

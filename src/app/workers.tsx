@@ -204,7 +204,19 @@ export default function WorkersPage() {
     }
 
     try {
-      const photo = await cameraRef.current.takePictureAsync({ quality: 0.6, base64: false });
+      const photo = Platform.OS === 'web'
+        ? (() => {
+            const video = document.querySelector('video');
+            if (!video) throw new Error('Camera video element not found');
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) throw new Error('Unable to get canvas drawing context');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            return { uri: canvas.toDataURL('image/jpeg', 0.6) };
+          })()
+        : await cameraRef.current.takePictureAsync({ quality: 0.6, base64: false });
       setPhotoUri(photo.uri);
       setFaceProgress(80);
     } catch (error) {

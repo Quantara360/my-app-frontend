@@ -116,6 +116,8 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 60,
     left: Spacing.four,
+    zIndex: 10,
+    elevation: 10,
   },
   backButton: {
     paddingVertical: Spacing.two,
@@ -127,6 +129,8 @@ const styles = StyleSheet.create({
   },
   backText: {
     fontWeight: "700",
+    fontSize: 24,
+    lineHeight: 24,
   },
   heroSection: {
     alignItems: "center",
@@ -158,7 +162,7 @@ const styles = StyleSheet.create({
     elevation: 6,
     alignItems: "center",
     justifyContent: "center",
-    minHeight: 100,
+    minHeight: 120,
   },
   centerContent: {
     flex: 1,
@@ -172,8 +176,8 @@ const styles = StyleSheet.create({
   },
   cardText: {
     textAlign: "center",
-    fontSize: 28,
-    lineHeight: 36,
+    fontSize: 30,
+    lineHeight: 38,
     fontWeight: "600",
   },
 });
