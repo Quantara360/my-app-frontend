@@ -72,37 +72,38 @@ export default function AddImageCapture() {
   };
 
   const captureWebPhoto = async () => {
-    const video = document.querySelector('video');
-    if (!video) throw new Error('Camera video element not found');
-
-    if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
-      await new Promise<void>((resolve) => {
-        const cleanup = () => {
-          video.removeEventListener('loadeddata', onReady);
-          video.removeEventListener('canplay', onReady);
-        };
-        const onReady = () => {
-          cleanup();
-          resolve();
-        };
-        video.addEventListener('loadeddata', onReady);
-        video.addEventListener('canplay', onReady);
-        setTimeout(() => {
-          cleanup();
-          resolve();
-        }, 500);
+    try {
+      // Get camera stream directly from browser
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
       });
+      
+      const video = document.createElement('video');
+      video.srcObject = stream;
+      video.setAttribute('playsinline', 'true');
+      await video.play();
+
+      // Wait for video to have dimensions
+      await new Promise<void>((resolve) => {
+        if (video.videoWidth > 0) { resolve(); return; }
+        video.onloadedmetadata = () => resolve();
+        setTimeout(resolve, 1000);
+      });
+
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      const ctx = canvas.getContext('2d');
+      ctx?.drawImage(video, 0, 0);
+
+      // Stop stream tracks
+      stream.getTracks().forEach(t => t.stop());
+
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      return { uri: dataUrl };
+    } catch (e: any) {
+      throw new Error('Failed to capture: ' + e.message);
     }
-
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 480;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error('Unable to get canvas drawing context');
-
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-    return { uri: dataUrl };
   };
 
   const onCapture = async () => {
