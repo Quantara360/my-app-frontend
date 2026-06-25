@@ -107,6 +107,30 @@ export default function AddImageCapture() {
   };
 
   const onCapture = async () => {
+    if (Platform.OS === 'web') {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const track = stream.getVideoTracks()[0];
+        const imageCapture = new (window as any).ImageCapture(track);
+        const bitmap = await imageCapture.grabFrame();
+        
+        const canvas = document.createElement('canvas');
+        canvas.width = bitmap.width;
+        canvas.height = bitmap.height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(bitmap, 0, 0);
+        track.stop();
+        
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        console.log('Captured dataUrl length:', dataUrl.length);
+        console.log('First 100 chars:', dataUrl.substring(0, 100));
+        // setPhotoUri(dataUrl); // uncomment after testing
+      } catch (e) {
+        console.error('Capture error:', e);
+      }
+      return;
+    }
+
     if (isTaking) return;
     if (captured.length >= 10) {
       Alert.alert("Limit reached", "Maximum 10 images per book within the last 24 hours.");
@@ -116,26 +140,18 @@ export default function AddImageCapture() {
 
     setIsTaking(true);
     try {
-      const photo = Platform.OS === 'web'
-        ? await captureWebPhoto()
-        : await cameraRef.current.takePictureAsync({ quality: 0.7 });
+      const photo = await cameraRef.current.takePictureAsync({ quality: 0.7 });
 
       if (!photo) throw new Error("No photo captured");
 
       const formData = new FormData();
       formData.append("sub_site_id", worksiteId as string);
       formData.append("book_id", book.toString());
-      if (Platform.OS === "web") {
-        const res = await fetch(photo.uri);
-        const blob = await res.blob();
-        formData.append("photo", blob, `photo_${Date.now()}.jpg`);
-      } else {
-        formData.append("photo", {
-          uri: photo.uri,
-          name: `photo_${Date.now()}.jpg`,
-          type: "image/jpeg",
-        } as any);
-      }
+      formData.append("photo", {
+        uri: photo.uri,
+        name: `photo_${Date.now()}.jpg`,
+        type: "image/jpeg",
+      } as any);
 
       const response = await fetch(`${API_BASE_URL}/sub-site-images/upload`, {
         method: "POST",
