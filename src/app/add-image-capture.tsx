@@ -75,9 +75,11 @@ export default function AddImageCapture() {
         videoEl.muted = true;
         videoEl.setAttribute('playsinline', 'true');
         videoEl.style.cssText =
-          'position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:0;';
+          'position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:0;transform:translateZ(0);-webkit-transform:translateZ(0);';
+        videoEl.disablePictureInPicture = true;
+        (videoEl as any).playsInline = true;
 
-        container.appendChild(videoEl);
+        container.insertBefore(videoEl, container.firstChild);
         injectedVideo = videoEl;
         webVideoRef.current = videoEl;
 
@@ -141,7 +143,7 @@ export default function AddImageCapture() {
   };
 
   const getFullImageUrl = (path: string) => {
-    return `${API_BASE_URL.replace("/api", "")}/storage/${path}`;
+    return `${API_BASE_URL.replace(/\/api$/, "")}/storage/${path}`;
   };
 
   // Helper: waits for an actual decoded frame before we draw to canvas.
@@ -169,49 +171,24 @@ export default function AddImageCapture() {
         // Use the stored stream directly — do NOT rely on the DOM-injected display video.
         // Create a fresh hidden video element appended to document.body so the
         // browser always decodes real frames (avoids black/blank canvas).
-        const stream = webStreamRef.current;
-        if (!stream || stream.getVideoTracks().length === 0) {
-          throw new Error('Camera is not available. Please reload and allow camera access.');
+        // Use the already-playing display video directly
+        const video = webVideoRef.current;
+        if (!video) throw new Error('Camera is not ready.');
+        if (video.videoWidth === 0 || video.videoHeight === 0) {
+          throw new Error('Camera did not produce a valid frame. Please try again.');
         }
 
-        const track = stream.getVideoTracks()[0];
-        if (track.readyState !== 'live') {
-          throw new Error('Camera track ended. Please reload the page.');
-        }
-
-        // Create an off-screen video element on document.body
-        const captureVid = document.createElement('video');
-        captureVid.srcObject = new MediaStream([track]);
-        captureVid.muted = true;
-        captureVid.playsInline = true;
-        captureVid.setAttribute('playsinline', 'true');
-        // Position off-screen so it never appears but still decodes
-        captureVid.style.cssText =
-          'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;';
-        document.body.appendChild(captureVid);
+        // Extra warmup — camera auto-exposure needs a moment
+        await new Promise<void>((resolve) => setTimeout(resolve, 1500));
 
         try {
-          await captureVid.play();
-
-          // Wait until the browser has actual frame data (HAVE_FUTURE_DATA or better)
-          await new Promise<void>((resolve) => {
-            if (captureVid.readyState >= 3) { resolve(); return; }
-            captureVid.addEventListener('canplay', () => resolve(), { once: true });
-            setTimeout(resolve, 4000); // max 4s timeout
-          });
-
-          // Extra warmup — camera auto-exposure needs a moment
-          await new Promise<void>((resolve) => setTimeout(resolve, 600));
-
-          if (captureVid.videoWidth === 0 || captureVid.videoHeight === 0) {
-            throw new Error('Camera did not produce a valid frame. Please try again.');
-          }
-
+          const bitmap = await createImageBitmap(video);
           const canvas = document.createElement('canvas');
-          canvas.width = captureVid.videoWidth;
-          canvas.height = captureVid.videoHeight;
+          canvas.width = bitmap.width;
+          canvas.height = bitmap.height;
           const ctx = canvas.getContext('2d')!;
-          ctx.drawImage(captureVid, 0, 0, canvas.width, canvas.height);
+          ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+          bitmap.close();
 
           // Convert canvas to Blob
           const blob = await new Promise<Blob>((resolve, reject) => {
@@ -243,10 +220,7 @@ export default function AddImageCapture() {
             Alert.alert('Error', err.error || 'Failed to upload image');
           }
         } finally {
-          // Always clean up the off-screen video
-          captureVid.pause();
-          captureVid.srcObject = null;
-          if (captureVid.parentNode) captureVid.parentNode.removeChild(captureVid);
+          // Using display video directly - no cleanup needed
         }
       } catch (e: any) {
         console.error('Web capture error:', e);
