@@ -36,6 +36,7 @@ export default function FaceRecognition() {
   const currentState = state || "IN";
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [cameraReady, setCameraReady] = useState(false);
+  const [cameraFacing, setCameraFacing] = useState<"front" | "back">("front");
   const cameraRef = useRef<CameraView | null>(null);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -326,6 +327,9 @@ export default function FaceRecognition() {
             Please hold your face towards the camera steadily...
           </ThemedText>
         </View>
+        <Pressable style={styles.flipButton} onPress={() => setCameraFacing(prev => prev === 'front' ? 'back' : 'front')}>
+          <ThemedText style={styles.flipText}>🔄</ThemedText>
+        </Pressable>
       </View>
 
       <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}> 
@@ -340,6 +344,7 @@ export default function FaceRecognition() {
               ref={cameraRef}
               onCameraReady={() => setCameraReady(true)}
               ratio="4:3"
+              facing={cameraFacing}
             />
           )}
           {!photoUri && !cameraReady && (
@@ -481,6 +486,18 @@ const styles = StyleSheet.create({
   headerText: {
     flex: 1,
     marginRight: Spacing.two,
+  },
+  flipButton: {
+    padding: Spacing.two,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  flipText: {
+    fontSize: 18,
   },
   card: {
     width: "100%",

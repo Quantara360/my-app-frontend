@@ -65,6 +65,7 @@ export default function WorkersPage() {
   const [faceRecognitionOpen, setFaceRecognitionOpen] = useState(false);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [cameraReady, setCameraReady] = useState(false);
+  const [cameraFacing, setCameraFacing] = useState<"front" | "back">("front");
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [photoBase64, setPhotoBase64] = useState<string | null>(null);
   const [isVerifyingFace, setIsVerifyingFace] = useState(false);
@@ -779,9 +780,14 @@ export default function WorkersPage() {
             <View style={styles.faceCard}>
               <View style={styles.faceHeader}>
                 <Text style={styles.faceTitle}>Set Face Recognition</Text>
-                <Pressable onPress={closeFaceRecognition} style={styles.faceCloseButton}>
-                  <Text style={styles.faceCloseText}>✕</Text>
-                </Pressable>
+                <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+                  <Pressable onPress={() => setCameraFacing(prev => prev === 'front' ? 'back' : 'front')} style={styles.faceCloseButton}>
+                    <Text style={styles.faceCloseText}>🔄</Text>
+                  </Pressable>
+                  <Pressable onPress={closeFaceRecognition} style={styles.faceCloseButton}>
+                    <Text style={styles.faceCloseText}>✕</Text>
+                  </Pressable>
+                </View>
               </View>
 
               <Text style={styles.faceSubtitle}>Keep Your eyes open</Text>
@@ -803,6 +809,7 @@ export default function WorkersPage() {
                         }}
                         onCameraReady={() => setCameraReady(true)}
                         ratio="4:3"
+                        facing={cameraFacing}
                       >
                         {!cameraReady && (
                           <View style={styles.cameraLoadingOverlay}>
