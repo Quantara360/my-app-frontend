@@ -42,6 +42,7 @@ export default function RegisterScreen() {
   const router = useRouter();
   const theme = useTheme();
   const [userName, setUserName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -51,17 +52,25 @@ export default function RegisterScreen() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
 
+  const validateUsername = (u: string) => {
+    // Only letters, numbers, underscores, hyphens; 3–30 chars
+    return /^[a-zA-Z0-9_-]{3,30}$/.test(u.trim());
+  };
+
   const isUserNameValid = validateUserName(userName);
+  const isUsernameValid = validateUsername(username);
   const isEmailValid = validateEmail(email);
   const isPasswordValid = validatePassword(password);
   const isPasswordMatchValid = validatePasswordMatch(password, confirmPassword);
 
   const canSubmit =
     userName.trim().length > 0 &&
+    username.trim().length > 0 &&
     email.trim().length > 0 &&
     password.trim().length > 0 &&
     confirmPassword.trim().length > 0 &&
     isUserNameValid &&
+    isUsernameValid &&
     isEmailValid &&
     isPasswordValid &&
     isPasswordMatchValid;
@@ -103,20 +112,39 @@ export default function RegisterScreen() {
           </View>
 
           <View style={styles.field}>
-            <Text style={[styles.label, { color: theme.textSecondary }]}>User Name</Text>
+            <Text style={[styles.label, { color: theme.textSecondary }]}>Full Name</Text>
             <TextInput
               value={userName}
               onChangeText={setUserName}
-              placeholder="Enter your user name"
+              placeholder="Enter your full name"
               placeholderTextColor={theme.textSecondary}
               style={[styles.input, !isUserNameValid && styles.inputError, { backgroundColor: theme.background, borderColor: theme.backgroundSelected, color: theme.text }]}
-              autoCapitalize="none"
+              autoCapitalize="words"
               keyboardType="default"
               returnKeyType="next"
             />
             {!isUserNameValid && userName.length > 0 && (
               <Text style={styles.errorText}>
-                Username must be at least 3 characters and contain letters
+                Name must be at least 3 characters and contain letters
+              </Text>
+            )}
+          </View>
+
+          <View style={styles.field}>
+            <Text style={[styles.label, { color: theme.textSecondary }]}>Username</Text>
+            <TextInput
+              value={username}
+              onChangeText={setUsername}
+              placeholder="e.g. john_doe (no spaces)"
+              placeholderTextColor={theme.textSecondary}
+              style={[styles.input, !isUsernameValid && username.length > 0 && styles.inputError, { backgroundColor: theme.background, borderColor: theme.backgroundSelected, color: theme.text }]}
+              autoCapitalize="none"
+              keyboardType="default"
+              returnKeyType="next"
+            />
+            {!isUsernameValid && username.length > 0 && (
+              <Text style={styles.errorText}>
+                3–30 chars, letters/numbers/underscores/hyphens only
               </Text>
             )}
           </View>
@@ -218,6 +246,7 @@ export default function RegisterScreen() {
               try {
                 await registerWithApi({
                   name: userName,
+                  username,
                   email,
                   password,
                   role,

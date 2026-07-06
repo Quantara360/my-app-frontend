@@ -9,6 +9,7 @@ export const API_BASE_URL = 'https://api.abeysone.cloud/api';
 export type AuthUser = {
   id: number;
   name: string;
+  username: string;
   email: string;
   role: UserRole;
 };
@@ -83,7 +84,7 @@ async function postJson<T>(path: string, payload: Record<string, unknown>): Prom
 }
 
 export async function loginWithApi(params: {
-  email: string;
+  username: string;
   password: string;
 }): Promise<{ user: AuthUser; access_token: string }> {
   const result = await postJson<{ user: AuthUser; access_token: string }>('login', params);
@@ -92,6 +93,7 @@ export async function loginWithApi(params: {
 
 export async function registerWithApi(params: {
   name: string;
+  username: string;
   email: string;
   password: string;
   role: UserRole;

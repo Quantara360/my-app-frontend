@@ -6,7 +6,7 @@ const ACCESS_TOKEN_KEY = 'auth_token';
 const AUTH_USER_KEY = 'auth_user';
 
 export type SignInParams = {
-  email: string;
+  username: string;
   password: string;
   remember?: boolean;
 };
@@ -106,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function signIn(params: SignInParams) {
-    const result = await loginWithApi({ email: params.email, password: params.password });
+    const result = await loginWithApi({ username: params.username, password: params.password });
     setUser(result.user);
     setToken(result.access_token);
     setInMemoryToken(result.access_token);

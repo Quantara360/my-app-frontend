@@ -19,7 +19,7 @@ export default function LoginScreen() {
   const router = useRouter();
   const theme = useTheme();
   const { user, signIn } = useAuth();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -35,14 +35,14 @@ export default function LoginScreen() {
     }
   }, [user, router]);
 
-  const canSubmit = email.trim().length > 0 && password.trim().length > 0;
+  const canSubmit = username.trim().length > 0 && password.trim().length > 0;
 
   async function handleLogin() {
     if (!canSubmit) return;
     setAuthError(null);
 
     try {
-      const result = await signIn({ email, password, remember: rememberMe });
+      const result = await signIn({ username, password, remember: rememberMe });
       router.replace(getLandingRoute(result.user.role) as any);
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : "Unable to sign in");
@@ -63,15 +63,15 @@ export default function LoginScreen() {
             <Text style={[styles.title, { color: theme.text }]}>Login</Text>
 
           <View style={styles.field}>
-            <Text style={[styles.label, { color: theme.textSecondary }]}>Email</Text>
+            <Text style={[styles.label, { color: theme.textSecondary }]}>Username</Text>
             <TextInput
-              value={email}
-              onChangeText={setEmail}
-              placeholder="Enter your email"
+              value={username}
+              onChangeText={setUsername}
+              placeholder="Enter your username"
               placeholderTextColor={theme.textSecondary}
               style={[styles.input, { backgroundColor: theme.background, borderColor: theme.backgroundSelected, color: theme.text }]}
               autoCapitalize="none"
-              keyboardType="email-address"
+              keyboardType="default"
               returnKeyType="next"
             />
           </View>
