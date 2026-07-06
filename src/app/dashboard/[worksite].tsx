@@ -116,14 +116,6 @@ export default function WorksitePage() {
                   }
                 }}
               >
-                <View style={styles.imagePlaceholder}>
-                  <ThemedText
-                    type="small"
-                    style={[styles.imageLabel, { color: theme.textSecondary }]}
-                  >
-                    Image
-                  </ThemedText>
-                </View>
                 <View style={styles.tileContent}>
                   <ThemedText type="subtitle" style={styles.tileTitle}>
                     {action.title}
@@ -215,7 +207,6 @@ const styles = StyleSheet.create({
   },
   tile: {
     flexDirection: "row",
-    gap: Spacing.four,
     borderRadius: 28,
     paddingVertical: Spacing.five,
     paddingHorizontal: Spacing.four,
@@ -225,28 +216,17 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     elevation: 6,
     alignItems: "center",
-    justifyContent: "flex-start",
+    justifyContent: "center",
   },
   tilePressed: {
     opacity: 0.85,
   },
-  imagePlaceholder: {
-    width: 84,
-    height: 84,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.6)",
+  tileContent: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
   },
-  imageLabel: {
-    color: "#60646C",
-    textTransform: "uppercase",
-  },
-  tileContent: {
-    flex: 1,
-    alignItems: "flex-start",
-  },
   tileTitle: {
-    textAlign: "left",
+    textAlign: "center",
   },
 });

@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Pressable, SafeAreaView, StyleSheet, View } from "react-native";
+import { Platform, Pressable, SafeAreaView, StyleSheet, View } from "react-native";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Spacing, MaxContentWidth, BottomTabInset } from "@/constants/theme";
@@ -34,35 +34,33 @@ export default function NationalHospitalUnits() {
           </Pressable>
         </View>
 
-        <View style={styles.centerContent}>
-          <View style={styles.heroSection}>
-            <ThemedText type="title" style={styles.title}>
-              Select Sites
-            </ThemedText>
-          </View>
+        <View style={styles.heroSection}>
+          <ThemedText type="title" style={styles.title}>
+            Select Sites
+          </ThemedText>
+        </View>
 
-          <View style={styles.list}>
-            {nationalHospitalUnits.map((unit) => (
-              <Pressable
-                key={unit.id}
-                style={({ pressed }) => [
-                  styles.card,
-                  { backgroundColor: theme.backgroundElement },
-                  pressed && styles.cardPressed,
-                ]}
-                onPress={() => {
-                  router.push({
-                    pathname: "/dashboard/site-actions",
-                    params: { siteId: unit.id, worksiteId, siteName: unit.title },
-                  } as any);
-                }}
-              >
-                <ThemedText type="subtitle" style={styles.cardText}>
-                  {unit.title}
-                </ThemedText>
-              </Pressable>
-            ))}
-          </View>
+        <View style={styles.list}>
+          {nationalHospitalUnits.map((unit) => (
+            <Pressable
+              key={unit.id}
+              style={({ pressed }) => [
+                styles.card,
+                { backgroundColor: theme.backgroundElement },
+                pressed && styles.cardPressed,
+              ]}
+              onPress={() => {
+                router.push({
+                  pathname: "/dashboard/site-actions",
+                  params: { siteId: unit.id, worksiteId, siteName: unit.title },
+                } as any);
+              }}
+            >
+              <ThemedText type="subtitle" style={styles.cardText}>
+                {unit.title}
+              </ThemedText>
+            </Pressable>
+          ))}
         </View>
       </SafeAreaView>
     </ThemedView>
@@ -72,14 +70,12 @@ export default function NationalHospitalUnits() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
     flexDirection: "row",
   },
   safeArea: {
     flex: 1,
     paddingHorizontal: Spacing.four,
-    paddingTop: 30,
-    gap: Spacing.two,
+    paddingTop: 60,
     paddingBottom: BottomTabInset + Spacing.two,
     maxWidth: MaxContentWidth,
     width: '100%',
@@ -89,42 +85,47 @@ const styles = StyleSheet.create({
     width: "100%",
     flexDirection: "row",
     justifyContent: "flex-start",
-    marginTop: Spacing.six,
     marginBottom: Spacing.three,
   },
   backButton: {
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.three,
-    borderRadius: 20,
-    backgroundColor: "rgba(0,0,0,0.05)",
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    marginLeft: 4,
+    marginTop: Platform.select({ web: 20, default: 50 }),
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 1,
     borderColor: "rgba(0,0,0,0.1)",
+    backgroundColor: "rgba(0,0,0,0.05)",
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
   backText: {
     fontWeight: "700",
-  },
-  centerContent: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    width: "100%",
+    fontSize: 24,
+    lineHeight: 28,
   },
   heroSection: {
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: Spacing.four,
-    gap: Spacing.two,
+    marginTop: 34,
+    marginBottom: Spacing.four,
   },
   title: {
     textAlign: "center",
     fontSize: 24,
   },
   list: {
-    gap: Spacing.one,
-    marginTop: Spacing.one,
+    gap: Spacing.two,
     width: "100%",
     maxWidth: 420,
-    paddingHorizontal: Spacing.three,
+    alignSelf: "center",
+    paddingHorizontal: Spacing.two,
   },
   card: {
     borderRadius: 16,
