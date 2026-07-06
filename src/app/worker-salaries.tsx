@@ -1,6 +1,6 @@
-﻿import { useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Modal, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -10,6 +10,8 @@ import { useTheme } from '@/hooks/use-theme';
 import { API_BASE_URL } from '@/services/authService';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGoBack } from "@/hooks/use-go-back";
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 
 type Worksite = {
   id: number;
@@ -77,6 +79,13 @@ export default function WorkerSalariesPage() {
   const [sitePickerOpen, setSitePickerOpen] = useState(false);
   const [filterPickerOpen, setFilterPickerOpen] = useState(false);
 
+  // ── Attendance Excel Download state ────────────────────────────────────────
+  const [downloadModalOpen, setDownloadModalOpen] = useState(false);
+  const [downloadMonth, setDownloadMonth] = useState<Date>(new Date());
+  const [showMonthPicker, setShowMonthPicker] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const webMonthInputRef = useRef<HTMLInputElement | null>(null);
+
   useEffect(() => {
     if (!token) return;
 
@@ -127,6 +136,110 @@ export default function WorkerSalariesPage() {
       return matchesSearch && matchesSite;
     });
   }, [salaries, search, siteFilter]);
+
+  // ── Attendance Excel Download helpers ──────────────────────────────────────
+  const getDaysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
+
+  const padDatePart = (n: number) => String(n).padStart(2, '0');
+
+  const fetchAttendanceForMonth = async (year: number, month: number, shift: 'Morning' | 'Evening') => {
+    const daysCount = getDaysInMonth(year, month);
+    const authHeader = { Authorization: `Bearer ${token}`, Accept: 'application/json' };
+    const workerMap: Record<number, { name: string; days: Record<string, number> }> = {};
+
+    for (let d = 1; d <= daysCount; d++) {
+      const dateStr = `${year}-${padDatePart(month + 1)}-${padDatePart(d)}`;
+      try {
+        const qs = new URLSearchParams({ date: dateStr, shift, include_absents: '0' }).toString();
+        const resp = await fetch(`${API_BASE_URL}/attendances?${qs}`, { headers: authHeader });
+        if (!resp.ok) continue;
+        const json = await resp.json();
+        const records: any[] = Array.isArray(json) ? json : json.data || [];
+        records.forEach((rec: any) => {
+          const wid = rec.worker_id;
+          const wname = rec.worker?.name ?? `Worker #${wid}`;
+          if (!workerMap[wid]) workerMap[wid] = { name: wname, days: {} };
+          // present/late = 1, absent = 0
+          workerMap[wid].days[dateStr] = rec.status === 'absent' ? 0 : 1;
+        });
+      } catch (_) { /* skip day on error */ }
+    }
+
+    return { workerMap, daysCount, year, month };
+  };
+
+  const buildCsv = (
+    workerMap: Record<number, { name: string; days: Record<string, number> }>,
+    year: number,
+    month: number,
+    daysCount: number,
+    shift: 'Morning' | 'Evening',
+  ) => {
+    const monthName = new Date(year, month, 1).toLocaleString('default', { month: 'long' });
+    const dayHeaders = Array.from({ length: daysCount }, (_, i) => String(i + 1)).join(',');
+    const header = `No,Worker Name,${dayHeaders},Present,Absent`;
+
+    const rows = Object.entries(workerMap).map(([, { name, days }], idx) => {
+      let presentCount = 0;
+      const dayCells = Array.from({ length: daysCount }, (_, i) => {
+        const dateStr = `${year}-${padDatePart(month + 1)}-${padDatePart(i + 1)}`;
+        const val = days[dateStr] ?? 0;
+        if (val === 1) presentCount++;
+        return val;
+      });
+      const absentCount = daysCount - presentCount;
+      return `${idx + 1},"${name}",${dayCells.join(',')},${presentCount},${absentCount}`;
+    });
+
+    const shiftLabel = shift === 'Morning' ? 'Day Shift' : 'Night Shift';
+    const titleRow = `Workers Attendance - ${shiftLabel} - ${monthName} ${year}`;
+    return [titleRow, header, ...rows].join('\n');
+  };
+
+  const handleDownloadAttendance = async (shift: 'Morning' | 'Evening') => {
+    if (!token) return;
+    setIsDownloading(true);
+    try {
+      const year = downloadMonth.getFullYear();
+      const month = downloadMonth.getMonth();
+      const { workerMap, daysCount } = await fetchAttendanceForMonth(year, month, shift);
+
+      if (Object.keys(workerMap).length === 0) {
+        Alert.alert('No Data', `No ${shift === 'Morning' ? 'day' : 'night'} shift attendance found for the selected month.`);
+        setIsDownloading(false);
+        return;
+      }
+
+      const csvContent = buildCsv(workerMap, year, month, daysCount, shift);
+      const monthName = downloadMonth.toLocaleString('default', { month: 'long' });
+      const shiftLabel = shift === 'Morning' ? 'Day' : 'Night';
+      const fileName = `Attendance_${shiftLabel}_${monthName}_${year}.csv`;
+
+      if (Platform.OS === 'web') {
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        link.click();
+        URL.revokeObjectURL(url);
+      } else {
+        const fileUri = `${FileSystem.cacheDirectory}${fileName}`;
+        await FileSystem.writeAsStringAsync(fileUri, csvContent, { encoding: FileSystem.EncodingType.UTF8 });
+        const canShare = await Sharing.isAvailableAsync();
+        if (canShare) {
+          await Sharing.shareAsync(fileUri, { mimeType: 'text/csv', UTI: 'public.comma-separated-values-text' });
+        } else {
+          Alert.alert('Sharing not available on this device.');
+        }
+      }
+    } catch (err) {
+      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to generate attendance sheet.');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+  // ──────────────────────────────────────────────────────────────────────────
 
   const openAddSalary = () => {
     setSelectedSalary(null);
@@ -252,21 +365,28 @@ export default function WorkerSalariesPage() {
               </Pressable>
               {filterPickerOpen && (
                 <View style={[styles.statusOptions, { position: 'absolute', top: 40, left: 0, right: 0, zIndex: 20 }]}>
-                    <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled={true}> 
-                  <Pressable style={styles.statusOption} onPress={() => { setSiteFilter(null); setFilterPickerOpen(false); }}>
-                    <Text style={styles.statusOptionText} numberOfLines={1}>All Sites</Text>
-                  </Pressable>
-                  {worksites.map((site) => (
-                    <Pressable key={site.id} style={styles.statusOption} onPress={() => { setSiteFilter(site.id); setFilterPickerOpen(false); }}>
-                      <Text style={styles.statusOptionText} numberOfLines={1}>{site.name}</Text>
+                  <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled={true}>
+                    <Pressable style={styles.statusOption} onPress={() => { setSiteFilter(null); setFilterPickerOpen(false); }}>
+                      <Text style={styles.statusOptionText} numberOfLines={1}>All Sites</Text>
                     </Pressable>
-                  ))}
-                
-                    </ScrollView>
-                  </View>
+                    {worksites.map((site) => (
+                      <Pressable key={site.id} style={styles.statusOption} onPress={() => { setSiteFilter(site.id); setFilterPickerOpen(false); }}>
+                        <Text style={styles.statusOptionText} numberOfLines={1}>{site.name}</Text>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                </View>
               )}
             </View>
-            
+
+            {/* 📊 Excel Download Button */}
+            <Pressable
+              style={[styles.addButton, { backgroundColor: '#10b981' }]}
+              onPress={() => setDownloadModalOpen(true)}
+            >
+              <ThemedText type="smallBold" style={{ color: '#fff' }}>📊 Excel</ThemedText>
+            </Pressable>
+
             <Pressable style={[styles.addButton, { backgroundColor: theme.backgroundSelected }]} onPress={openAddSalary}>
               <ThemedText type="smallBold">+ Add</ThemedText>
             </Pressable>
@@ -275,50 +395,50 @@ export default function WorkerSalariesPage() {
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View style={{ minWidth: '100%' }}>
               <View style={styles.tableHeader}>
-            <Text style={[styles.columnHeader, { width: 60, minWidth: 60, flex: 0 }]}>ID</Text>
-            <Text style={[styles.columnHeader, { width: 150, minWidth: 150, flex: 0 }]}>Worker</Text>
-            <Text style={[styles.columnHeader, { width: 120, minWidth: 120, flex: 0 }]}>Site</Text>
-            <Text style={[styles.columnHeader, { width: 120, minWidth: 120, flex: 0 }]}>Salary</Text>
-            <Text style={[styles.columnHeader, { width: 120, minWidth: 120, flex: 0 }]}>Type</Text>
-            <Text style={[styles.columnHeader, { width: 120, minWidth: 120, flex: 0 }]}>Date</Text>
-            <Text style={styles.columnHeaderRight}>Actions</Text>
-          </View>
-
-          <ScrollView style={styles.tableBody} showsVerticalScrollIndicator={false}>
-            {filteredSalaries.map((salary) => (
-              <View key={salary.id} style={styles.tableRow}>
-                <Text style={[styles.rowCell, { width: 60, minWidth: 60, flex: 0 }]} numberOfLines={1}>
-                  {salary.id}
-                </Text>
-                <Text style={[styles.rowCell, { width: 150, minWidth: 150, flex: 0 }]} numberOfLines={1}>
-                  {salary.worker?.name ?? 'Unknown'}
-                </Text>
-                <Text style={[styles.rowCell, { width: 120, minWidth: 120, flex: 0 }]} numberOfLines={1}>
-                  {salary.worksite?.name ?? 'Unassigned'}
-                </Text>
-                <Text style={[styles.rowCell, { width: 120, minWidth: 120, flex: 0 }]} numberOfLines={1}>
-                  {salary.salary}
-                </Text>
-                <Text style={[styles.rowCell, { width: 120, minWidth: 120, flex: 0 }]} numberOfLines={1}>
-                  {salary.type}
-                </Text>
-                <Text style={[styles.rowCell, { width: 120, minWidth: 120, flex: 0 }]} numberOfLines={1}>
-                  {salary.date}
-                </Text>
-                <View style={styles.actionsColumn}>
-                  <Pressable style={styles.actionButtonIcon} onPress={() => { setSelectedViewItem(salary); setViewDetailsOpen(true); }}>
-                    <Text style={styles.actionIcon}>👁</Text>
-                  </Pressable>
-                  <Pressable style={styles.actionButtonIcon} onPress={() => openEditSalary(salary)}>
-                    <Text style={styles.actionIcon}>✎</Text>
-                  </Pressable>
-                  <Pressable style={styles.actionButtonIconDelete} onPress={() => handleDeleteSalary(salary.id)}>
-                    <Text style={styles.actionIcon}>🗑</Text>
-                  </Pressable>
-                </View>
+                <Text style={[styles.columnHeader, { width: 60, minWidth: 60, flex: 0 }]}>ID</Text>
+                <Text style={[styles.columnHeader, { width: 150, minWidth: 150, flex: 0 }]}>Worker</Text>
+                <Text style={[styles.columnHeader, { width: 120, minWidth: 120, flex: 0 }]}>Site</Text>
+                <Text style={[styles.columnHeader, { width: 120, minWidth: 120, flex: 0 }]}>Salary</Text>
+                <Text style={[styles.columnHeader, { width: 120, minWidth: 120, flex: 0 }]}>Type</Text>
+                <Text style={[styles.columnHeader, { width: 120, minWidth: 120, flex: 0 }]}>Date</Text>
+                <Text style={styles.columnHeaderRight}>Actions</Text>
               </View>
-            ))}
-          </ScrollView>
+
+              <ScrollView style={styles.tableBody} showsVerticalScrollIndicator={false}>
+                {filteredSalaries.map((salary) => (
+                  <View key={salary.id} style={styles.tableRow}>
+                    <Text style={[styles.rowCell, { width: 60, minWidth: 60, flex: 0 }]} numberOfLines={1}>
+                      {salary.id}
+                    </Text>
+                    <Text style={[styles.rowCell, { width: 150, minWidth: 150, flex: 0 }]} numberOfLines={1}>
+                      {salary.worker?.name ?? 'Unknown'}
+                    </Text>
+                    <Text style={[styles.rowCell, { width: 120, minWidth: 120, flex: 0 }]} numberOfLines={1}>
+                      {salary.worksite?.name ?? 'Unassigned'}
+                    </Text>
+                    <Text style={[styles.rowCell, { width: 120, minWidth: 120, flex: 0 }]} numberOfLines={1}>
+                      {salary.salary}
+                    </Text>
+                    <Text style={[styles.rowCell, { width: 120, minWidth: 120, flex: 0 }]} numberOfLines={1}>
+                      {salary.type}
+                    </Text>
+                    <Text style={[styles.rowCell, { width: 120, minWidth: 120, flex: 0 }]} numberOfLines={1}>
+                      {salary.date}
+                    </Text>
+                    <View style={styles.actionsColumn}>
+                      <Pressable style={styles.actionButtonIcon} onPress={() => { setSelectedViewItem(salary); setViewDetailsOpen(true); }}>
+                        <Text style={styles.actionIcon}>👁</Text>
+                      </Pressable>
+                      <Pressable style={styles.actionButtonIcon} onPress={() => openEditSalary(salary)}>
+                        <Text style={styles.actionIcon}>✎</Text>
+                      </Pressable>
+                      <Pressable style={styles.actionButtonIconDelete} onPress={() => handleDeleteSalary(salary.id)}>
+                        <Text style={styles.actionIcon}>🗑</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                ))}
+              </ScrollView>
             </View>
           </ScrollView>
         </View>
@@ -373,22 +493,21 @@ export default function WorkerSalariesPage() {
                   </Pressable>
                   {sitePickerOpen && (
                     <View style={[styles.statusOptions, { position: 'absolute', top: 75, left: 0, right: 0, zIndex: 100 }]}>
-                    <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled={true}>
-                      {worksites.map((site) => (
-                        <Pressable
-                          key={site.id}
-                          style={styles.statusOption}
-                          onPress={() => {
-                            setFormValues((prev) => ({ ...prev, worksite_id: site.id }));
-                            setSitePickerOpen(false);
-                          }}
-                        >
-                          <Text style={styles.statusOptionText} numberOfLines={1}>{site.name}</Text>
-                        </Pressable>
-                      ))}
-                    
-                    </ScrollView>
-                  </View>
+                      <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled={true}>
+                        {worksites.map((site) => (
+                          <Pressable
+                            key={site.id}
+                            style={styles.statusOption}
+                            onPress={() => {
+                              setFormValues((prev) => ({ ...prev, worksite_id: site.id }));
+                              setSitePickerOpen(false);
+                            }}
+                          >
+                            <Text style={styles.statusOptionText} numberOfLines={1}>{site.name}</Text>
+                          </Pressable>
+                        ))}
+                      </ScrollView>
+                    </View>
                   )}
                 </View>
 
@@ -505,6 +624,7 @@ export default function WorkerSalariesPage() {
             </View>
           </View>
         )}
+
         <Modal visible={viewDetailsOpen} transparent animationType="fade" onRequestClose={() => setViewDetailsOpen(false)}>
           <View style={styles.modalOverlay}>
             <View style={[styles.modalContent, { backgroundColor: theme.background }]}>
@@ -549,6 +669,115 @@ export default function WorkerSalariesPage() {
           </View>
         </Modal>
 
+        {/* ── Attendance Download Modal ───────────────────────────────────────── */}
+        <Modal
+          visible={downloadModalOpen}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setDownloadModalOpen(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { backgroundColor: theme.backgroundElement, padding: Spacing.four }]}>
+              <View style={styles.modalHeader}>
+                <ThemedText type="title">Download Attendance</ThemedText>
+                <Pressable onPress={() => setDownloadModalOpen(false)}>
+                  <Text style={[styles.modalCloseButton, { color: theme.text }]}>✕</Text>
+                </Pressable>
+              </View>
+
+              <View style={{ marginTop: Spacing.three, gap: Spacing.three }}>
+                <Text style={[styles.fieldLabel, { color: theme.text }]}>Select Month</Text>
+
+                {Platform.OS === 'web' ? (
+                  <View>
+                    <Pressable
+                      style={[styles.pill, { backgroundColor: theme.background, alignSelf: 'flex-start' }]}
+                      onPress={() => {
+                        webMonthInputRef.current?.showPicker?.();
+                        webMonthInputRef.current?.click();
+                      }}
+                    >
+                      <Text style={[styles.pillText, { color: theme.text }]}>
+                        {downloadMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                      </Text>
+                    </Pressable>
+                    {/* @ts-ignore */}
+                    <input
+                      ref={webMonthInputRef}
+                      type="month"
+                      value={`${downloadMonth.getFullYear()}-${padDatePart(downloadMonth.getMonth() + 1)}`}
+                      onChange={(e: any) => {
+                        const val = e.currentTarget.value; // "YYYY-MM"
+                        if (val) {
+                          const [y, m] = val.split('-').map(Number);
+                          setDownloadMonth(new Date(y, m - 1, 1));
+                        }
+                      }}
+                      style={{
+                        position: 'absolute',
+                        opacity: 0,
+                        width: 1,
+                        height: 1,
+                        zIndex: -1,
+                        pointerEvents: 'none',
+                      }}
+                    />
+                  </View>
+                ) : (
+                  <>
+                    <Pressable
+                      style={[styles.pill, { backgroundColor: theme.background, alignSelf: 'flex-start' }]}
+                      onPress={() => setShowMonthPicker(true)}
+                    >
+                      <Text style={[styles.pillText, { color: theme.text }]}>
+                        {downloadMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                      </Text>
+                    </Pressable>
+                    {showMonthPicker && (
+                      <DateTimePicker
+                        value={downloadMonth}
+                        mode="date"
+                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                        onChange={(_event, selectedDate) => {
+                          setShowMonthPicker(Platform.OS === 'ios');
+                          if (selectedDate) {
+                            // Snap to first day of the selected month
+                            setDownloadMonth(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
+                          }
+                        }}
+                      />
+                    )}
+                  </>
+                )}
+
+                <Text style={[styles.fieldLabel, { color: theme.text, marginTop: Spacing.two }]}>Select Shift to Download</Text>
+
+                {isDownloading ? (
+                  <View style={{ alignItems: 'center', paddingVertical: Spacing.four }}>
+                    <ActivityIndicator size="large" color="#10b981" />
+                    <Text style={{ color: theme.text, marginTop: Spacing.two }}>Generating attendance sheet...</Text>
+                  </View>
+                ) : (
+                  <View style={{ gap: Spacing.two }}>
+                    <Pressable
+                      style={[styles.saveButton, { backgroundColor: '#0ea5e9', marginTop: 0 }]}
+                      onPress={() => handleDownloadAttendance('Morning')}
+                    >
+                      <Text style={styles.saveText}>☀️ Day Shift (Morning)</Text>
+                    </Pressable>
+                    <Pressable
+                      style={[styles.saveButton, { backgroundColor: '#6366f1', marginTop: 0 }]}
+                      onPress={() => handleDownloadAttendance('Evening')}
+                    >
+                      <Text style={styles.saveText}>🌙 Night Shift (Evening)</Text>
+                    </Pressable>
+                  </View>
+                )}
+              </View>
+            </View>
+          </View>
+        </Modal>
+
         <SuccessModal
           visible={!!successMessage}
           title={successMessage ?? ''}
@@ -570,9 +799,9 @@ const createStyles = (theme: ReturnType<typeof useTheme>) =>
     safeArea: {
       flex: 1,
       gap: Spacing.three,
-    width: '100%',
-    maxWidth: MaxContentWidth,
-    alignSelf: 'center',
+      width: '100%',
+      maxWidth: MaxContentWidth,
+      alignSelf: 'center',
     },
     headerRow: {
       flexDirection: 'row',
@@ -603,16 +832,17 @@ const createStyles = (theme: ReturnType<typeof useTheme>) =>
     },
     topControls: {
       flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: Spacing.three,
-    flexWrap: 'wrap',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: Spacing.three,
+      flexWrap: 'wrap',
     },
     addButton: {
       paddingVertical: Spacing.two,
       paddingHorizontal: Spacing.four,
       borderRadius: 24,
       minWidth: 80,
+      alignItems: 'center',
     },
     searchInput: {
       flex: 1,
@@ -642,12 +872,12 @@ const createStyles = (theme: ReturnType<typeof useTheme>) =>
       fontSize: 13,
     },
     columnHeaderRight: {
-    minWidth: 120,
-    textAlign: 'center',
-    fontWeight: '700',
-    color: theme.text,
-    fontSize: 13,
-  },
+      minWidth: 120,
+      textAlign: 'center',
+      fontWeight: '700',
+      color: theme.text,
+      fontSize: 13,
+    },
     tableBody: {
       marginTop: Spacing.two,
       maxHeight: 340,
@@ -667,14 +897,12 @@ const createStyles = (theme: ReturnType<typeof useTheme>) =>
       color: theme.text,
       fontSize: 13,
     },
-      
-    
     actionsColumn: {
-    minWidth: 120,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: Spacing.one,
-  },
+      minWidth: 120,
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: Spacing.one,
+    },
     actionButtonIcon: {
       width: 24,
       height: 24,

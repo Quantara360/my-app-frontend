@@ -88,38 +88,38 @@ export default function SelectSites() {
           </Pressable>
         </View>
 
-        <View style={styles.centerContent}>
+        <View style={styles.heroSection}>
           <ThemedText type="title" style={styles.title}>
             Select Sites
           </ThemedText>
-
-          <ScrollView
-            style={styles.listScroll}
-            contentContainerStyle={styles.list}
-            showsVerticalScrollIndicator={false}
-          >
-            {sites.map((site) => (
-              <Pressable
-                key={site.id}
-                style={({ pressed }) => [
-                  styles.card,
-                  { backgroundColor: theme.backgroundElement },
-                  pressed && styles.cardPressed,
-                ]}
-                onPress={() => {
-                  router.push({
-                    pathname: "/dashboard/site-actions",
-                    params: { siteId: site.id, worksiteId, siteName: site.name },
-                  } as any);
-                }}
-              >
-                <ThemedText type="subtitle" style={styles.cardText}>
-                  {site.name}
-                </ThemedText>
-              </Pressable>
-            ))}
-          </ScrollView>
         </View>
+
+        <ScrollView
+          style={{ flex: 1, width: "100%" }}
+          contentContainerStyle={styles.centerContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {sites.map((site) => (
+            <Pressable
+              key={site.id}
+              style={({ pressed }) => [
+                styles.card,
+                { backgroundColor: theme.backgroundElement },
+                pressed && styles.cardPressed,
+              ]}
+              onPress={() => {
+                router.push({
+                  pathname: "/dashboard/site-actions",
+                  params: { siteId: site.id, worksiteId, siteName: site.name },
+                } as any);
+              }}
+            >
+              <ThemedText type="subtitle" style={styles.cardText}>
+                {site.name}
+              </ThemedText>
+            </Pressable>
+          ))}
+        </ScrollView>
       </SafeAreaView>
     </ThemedView>
   );
@@ -188,16 +188,19 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   centerContent: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: "center",
     alignItems: "center",
     width: "100%",
-    paddingTop: Spacing.six,
+    paddingBottom: Spacing.four,
+    gap: 12,
+    flexDirection: "column",
   },
   heroSection: {
     alignItems: "center",
     justifyContent: "center",
     marginBottom: Spacing.four,
+    paddingTop: 120,
   },
   title: {
     textAlign: "center",

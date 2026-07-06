@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import {
   Pressable,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -57,7 +58,7 @@ export default function LoginScreen() {
       </View>
 
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.formContainer}>
+        <ScrollView contentContainerStyle={styles.formContainer} keyboardShouldPersistTaps="handled">
           <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}> 
             <Text style={[styles.title, { color: theme.text }]}>Login</Text>
 
@@ -134,7 +135,7 @@ export default function LoginScreen() {
             </Link>
           </View>
         </View>
-        </View>
+        </ScrollView>
       </SafeAreaView>
     </View>
   );
@@ -143,7 +144,6 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   page: {
     flex: 1,
-    overflow: 'hidden',
   },
   backgroundLayerBackground: {},
   circle: {
@@ -177,24 +177,22 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 44,
-    maxWidth: MaxContentWidth,
-    alignSelf: 'center',
-    overflow: 'hidden',
+    paddingHorizontal: 20,
+  maxWidth: MaxContentWidth,
+  alignSelf: 'center',
   },
   formContainer: {
-    flex: 1,
+    flexGrow: 1,
     width: "100%",
     justifyContent: "center",
-    alignItems: "center",
+    gap: 18,
     paddingVertical: 24,
   },
   card: {
     width: "100%",
-    maxWidth: 460,
-    alignSelf: "center",
+    maxWidth: 520,
     borderRadius: 30,
-    padding: 28,
+    padding: 24,
     shadowColor: "#000",
     shadowOpacity: 0.08,
     shadowRadius: 20,

@@ -923,7 +923,7 @@ export default function AdminDashboard() {
     }
     try {
       let url = `${API_BASE_URL}/worksites`;
-      let body: any = { name: newSiteName.trim() };
+      let body: any = { name: newSiteName.trim(), logo_base64: siteLogoUri };
 
       if (drillLevel === 'hospital') {
         url = `${API_BASE_URL}/hospitals`;
@@ -970,13 +970,18 @@ export default function AdminDashboard() {
         url = `${API_BASE_URL}/sub-sites/${selectedManageSite.id}`;
       }
 
+      let body: any = { name: editSiteName.trim() };
+      if (selectedManageSite._level === 'main') {
+        body.logo_base64 = siteLogoUri;
+      }
+
       const response = await fetch(url, {
         method: "PUT",
         headers: {
           ...(await getAuthHeaders()),
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name: editSiteName.trim() }),
+        body: JSON.stringify(body),
       });
       if (!response.ok) throw new Error("Failed to edit");
       await loadWorksitesData();
@@ -2164,8 +2169,8 @@ export default function AdminDashboard() {
             >
               <View style={styles.manageSiteCardTopRow}>
                 <View style={styles.manageSiteLogoWrapper}>
-                  {site.logoUri ? (
-                    <Image source={{ uri: site.logoUri }} style={{ width: 70, height: 70, borderRadius: 12 }} resizeMode="cover" />
+                  {site.logo ? (
+                    <Image source={{ uri: site.logo.startsWith('http') ? site.logo : `${API_BASE_URL.replace('/api', '')}${site.logo}` }} style={{ width: 70, height: 70, borderRadius: 12 }} resizeMode="cover" />
                   ) : (
                     <Text style={styles.manageSiteLogoIcon}>
                       {site._level === 'hospital' ? '🏥' : site._level === 'subsite' ? '📍' : '🏗️'}
@@ -2253,6 +2258,29 @@ export default function AdminDashboard() {
             />
           </View>
 
+          {drillLevel === 'main' && (
+            <View style={styles.formRow}>
+              <Text style={styles.formLabel}>Logo (Optional)</Text>
+              <Pressable
+                onPress={handlePickSiteLogo}
+                style={[styles.formInput, { alignItems: 'center', justifyContent: 'center', padding: 12, borderStyle: 'dashed', borderWidth: 1 }]}
+              >
+                {siteLogoUri ? (
+                  <Image source={{ uri: siteLogoUri }} style={{ width: 100, height: 100, borderRadius: 8 }} />
+                ) : (
+                  <Text style={{ color: isDark ? '#aaa' : '#666' }}>Tap to select an image</Text>
+                )}
+              </Pressable>
+              <input
+                type="file"
+                ref={siteLogoInputRef as any}
+                style={{ display: 'none' }}
+                accept="image/*"
+                onChange={handleSiteLogoFileChange}
+              />
+            </View>
+          )}
+
           <Pressable onPress={handleAddSite} style={styles.addSiteButton}>
             <Text style={styles.addSiteButtonText}>Add</Text>
           </Pressable>
@@ -2289,6 +2317,29 @@ export default function AdminDashboard() {
               autoFocus
             />
           </View>
+
+          {selectedManageSite?._level === 'main' && (
+            <View style={styles.formRow}>
+              <Text style={styles.formLabel}>Logo (Optional)</Text>
+              <Pressable
+                onPress={handlePickSiteLogo}
+                style={[styles.formInput, { alignItems: 'center', justifyContent: 'center', padding: 12, borderStyle: 'dashed', borderWidth: 1 }]}
+              >
+                {siteLogoUri || selectedManageSite?.logo ? (
+                  <Image source={{ uri: siteLogoUri || (selectedManageSite.logo.startsWith('http') ? selectedManageSite.logo : `${API_BASE_URL.replace('/api', '')}${selectedManageSite.logo}`) }} style={{ width: 100, height: 100, borderRadius: 8 }} />
+                ) : (
+                  <Text style={{ color: isDark ? '#aaa' : '#666' }}>Tap to select an image</Text>
+                )}
+              </Pressable>
+              <input
+                type="file"
+                ref={siteLogoInputRef as any}
+                style={{ display: 'none' }}
+                accept="image/*"
+                onChange={handleSiteLogoFileChange}
+              />
+            </View>
+          )}
 
           <Pressable onPress={handleEditSite} style={styles.addSiteButton}>
             <Text style={styles.addSiteButtonText}>Update</Text>

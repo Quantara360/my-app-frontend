@@ -12,6 +12,7 @@ import {
   StyleSheet,
   View,
   Modal,
+  useColorScheme,
 } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
@@ -29,6 +30,8 @@ function formatDate(d: Date) {
 
 export default function FaceRecognition() {
   const theme = useTheme();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
   const { token } = useAuth();
   const goBack = useGoBack();
   const { worksiteId, subSiteId, shift, state } = useLocalSearchParams<{ worksiteId?: string; subSiteId?: string; shift?: string; state?: string }>();
@@ -315,6 +318,9 @@ export default function FaceRecognition() {
 
   return (
     <ThemedView style={styles.container}>
+      <View style={[styles.background, { backgroundColor: isDark ? "#121212" : "#F1E7DF" }]} />
+      <View style={[styles.backgroundCircleLarge, { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(255, 255, 255, 0.65)" }]} />
+      <View style={[styles.backgroundCircleSmall, { backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(255, 255, 255, 0.5)" }]} />
       <View style={styles.headerRow}>
         <Pressable style={[styles.backButton, { backgroundColor: theme.backgroundElement, borderColor: "rgba(128,128,128,0.2)" }]} onPress={goBack} accessibilityLabel="Back">
           <ThemedText type="subtitle" style={styles.backText}>←</ThemedText>
@@ -458,6 +464,25 @@ export default function FaceRecognition() {
 }
 
 const styles = StyleSheet.create({
+  background: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  backgroundCircleLarge: {
+    position: "absolute",
+    width: Platform.select({ web: 280, default: 420 }),
+    height: Platform.select({ web: 280, default: 420 }),
+    borderRadius: Platform.select({ web: 140, default: 210 }),
+    top: -160,
+    right: -90,
+  },
+  backgroundCircleSmall: {
+    position: "absolute",
+    width: Platform.select({ web: 180, default: 260 }),
+    height: Platform.select({ web: 180, default: 260 }),
+    borderRadius: Platform.select({ web: 90, default: 130 }),
+    bottom: -100,
+    left: -80,
+  },
   container: {
     flex: 1,
     padding: Spacing.four,

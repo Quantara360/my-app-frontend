@@ -1,6 +1,6 @@
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Redirect, useRouter } from "expo-router";
-import {  Platform, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import {  Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View, Image } from 'react-native';
 import { useEffect, useState } from "react";
 
 import { ThemedText } from "@/components/themed-text";
@@ -253,16 +253,24 @@ export default function DashboardScreen() {
                   <View
                     style={[
                       styles.imagePlaceholder,
-                      { backgroundColor: theme.background },
+                      { backgroundColor: theme.background, overflow: 'hidden' },
                     ]}
                   >
-                    <ThemedText
-                      type="small"
-                      themeColor="textSecondary"
-                      style={styles.imageLabel}
-                    >
-                      Image
-                    </ThemedText>
+                    {worksite.logo ? (
+                      <Image 
+                        source={{ uri: worksite.logo.startsWith('http') ? worksite.logo : `${API_BASE_URL.replace('/api', '')}${worksite.logo}` }}
+                        style={{ width: '100%', height: '100%' }}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <ThemedText
+                        type="small"
+                        themeColor="textSecondary"
+                        style={styles.imageLabel}
+                      >
+                        Image
+                      </ThemedText>
+                    )}
                   </View>
                   <View style={styles.tileText}>
                     <ThemedText type="subtitle" style={styles.tileTitle}>

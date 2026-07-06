@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Platform, Pressable, SafeAreaView, StyleSheet, View } from "react-native";
+import { Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, View } from "react-native";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Spacing, MaxContentWidth, BottomTabInset } from "@/constants/theme";
@@ -40,28 +40,35 @@ export default function NationalHospitalUnits() {
           </ThemedText>
         </View>
 
-        <View style={styles.list}>
-          {nationalHospitalUnits.map((unit) => (
-            <Pressable
-              key={unit.id}
-              style={({ pressed }) => [
-                styles.card,
-                { backgroundColor: theme.backgroundElement },
-                pressed && styles.cardPressed,
-              ]}
-              onPress={() => {
-                router.push({
-                  pathname: "/dashboard/site-actions",
-                  params: { siteId: unit.id, worksiteId, siteName: unit.title },
-                } as any);
-              }}
-            >
-              <ThemedText type="subtitle" style={styles.cardText}>
-                {unit.title}
-              </ThemedText>
-            </Pressable>
-          ))}
-        </View>
+        <ScrollView 
+          style={{ flex: 1, width: "100%" }} 
+          contentContainerStyle={styles.centerContent}
+          showsVerticalScrollIndicator={false}
+        >
+
+          <View style={styles.list}>
+            {nationalHospitalUnits.map((unit) => (
+              <Pressable
+                key={unit.id}
+                style={({ pressed }) => [
+                  styles.card,
+                  { backgroundColor: theme.backgroundElement },
+                  pressed && styles.cardPressed,
+                ]}
+                onPress={() => {
+                  router.push({
+                    pathname: "/dashboard/site-actions",
+                    params: { siteId: unit.id, worksiteId, siteName: unit.title },
+                  } as any);
+                }}
+              >
+                <ThemedText type="subtitle" style={styles.cardText}>
+                  {unit.title}
+                </ThemedText>
+              </Pressable>
+            ))}
+          </View>
+        </ScrollView>
       </SafeAreaView>
     </ThemedView>
   );
@@ -109,6 +116,13 @@ const styles = StyleSheet.create({
     fontSize: 24,
     lineHeight: 28,
   },
+  centerContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    width: "100%",
+    paddingBottom: Spacing.four,
+  },
   heroSection: {
     alignItems: "center",
     justifyContent: "center",
@@ -121,7 +135,8 @@ const styles = StyleSheet.create({
     fontSize: 24,
   },
   list: {
-    gap: Spacing.two,
+    gap: 12,
+    flexDirection: "column",
     width: "100%",
     maxWidth: 420,
     alignSelf: "center",
