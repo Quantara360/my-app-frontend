@@ -24,12 +24,12 @@ export default function SiteActionsPage() {
   const theme = useTheme();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
-  
+
   const siteId = Array.isArray(params.siteId) ? params.siteId[0] : params.siteId;
   const worksiteId = Array.isArray(params.worksiteId) ? params.worksiteId[0] : params.worksiteId;
   const hospitalId = Array.isArray(params.hospitalId) ? params.hospitalId[0] : params.hospitalId;
   const passedSiteName = Array.isArray(params.siteName) ? params.siteName[0] : params.siteName;
-  
+
   const siteLabel = passedSiteName ? passedSiteName : siteId ? (siteNames[siteId] ?? siteId) : "Worksite";
 
   return (
@@ -111,6 +111,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    overflow: 'hidden',
   },
   background: {
     ...StyleSheet.absoluteFillObject,
@@ -138,6 +139,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     paddingTop: 20,
     paddingBottom: BottomTabInset + Spacing.three,
+    overflow: 'hidden',
   },
   headerRow: {
     width: "100%",
@@ -173,14 +175,18 @@ const styles = StyleSheet.create({
     marginTop: Spacing.two,
     paddingHorizontal: Spacing.three,
     gap: Spacing.two,
+    alignItems: "center",
   },
   subtitle: {
+    textAlign: "center",
   },
   title: {
     lineHeight: Platform.select({ web: 40, default: 56 }),
+    textAlign: "center",
   },
   description: {
     maxWidth: 420,
+    textAlign: "center",
   },
   cardList: {
     marginTop: Spacing.four,

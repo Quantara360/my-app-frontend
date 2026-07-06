@@ -1,6 +1,6 @@
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Redirect, useRouter } from "expo-router";
-import {  Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {  Platform, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import { useEffect, useState } from "react";
 
 import { ThemedText } from "@/components/themed-text";
@@ -121,9 +121,8 @@ export default function DashboardScreen() {
         style={[styles.staffContainer, { backgroundColor: theme.background }]}
       >
         <SafeAreaView style={styles.staffSafeArea}>
-          <ScrollView
-            contentContainerStyle={styles.staffScroll}
-            keyboardShouldPersistTaps="handled"
+          <View
+            style={styles.staffScroll}
           >
             <View style={styles.staffHeader}>
               <View style={{ flex: 1, paddingRight: 10 }}>
@@ -190,7 +189,7 @@ export default function DashboardScreen() {
                 ))}
               </View>
             </View>
-          </ScrollView>
+          </View>
         </SafeAreaView>
       </View>
     );
@@ -203,11 +202,8 @@ export default function DashboardScreen() {
       <View style={[styles.backgroundCircleSmall, { backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(255, 255, 255, 0.5)" }]} />
 
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
+        <View
+          style={[styles.scrollContent, { flex: 1 }]}
         >
           <View style={styles.topRightControls}>
             <Pressable
@@ -284,7 +280,7 @@ export default function DashboardScreen() {
               ))
             )}
           </View>
-        </ScrollView>
+        </View>
       </SafeAreaView>
     </ThemedView>
   );
@@ -295,6 +291,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     flexDirection: "row",
+    overflow: 'hidden',
   },
   background: {
     ...StyleSheet.absoluteFillObject,
@@ -324,16 +321,18 @@ const styles = StyleSheet.create({
     maxWidth: MaxContentWidth,
     width: '100%',
     alignSelf: 'center',
+    overflow: 'hidden',
   },
   scrollContent: {
-    flexGrow: 1,
+    flex: 1,
     alignItems: "stretch",
     paddingHorizontal: Spacing.four,
     paddingBottom: BottomTabInset + Spacing.four,
     gap: Spacing.three,
+    overflow: 'hidden',
   },
   staffScroll: {
-    flexGrow: 1,
+    flex: 1,
     width: "100%",
     paddingHorizontal: Spacing.four,
     paddingBottom: BottomTabInset + Spacing.four,

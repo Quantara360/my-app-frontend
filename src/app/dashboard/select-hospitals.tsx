@@ -129,6 +129,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.four,
+    overflow: 'hidden',
   },
   background: {
     ...StyleSheet.absoluteFillObject,
@@ -158,6 +159,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: Spacing.three,
     paddingBottom: BottomTabInset + Spacing.three,
+    overflow: 'hidden',
   },
   header: {
     width: "100%",
@@ -221,6 +223,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: "100%",
     paddingTop: Spacing.six,
+    overflow: 'hidden',
   },
   cardPressed: {
     opacity: 0.85,

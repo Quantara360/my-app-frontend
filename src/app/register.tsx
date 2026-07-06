@@ -4,7 +4,6 @@ import {
   Modal,
   Pressable,
   SafeAreaView,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -84,7 +83,7 @@ export default function RegisterScreen() {
       </View>
 
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.formContainer} keyboardShouldPersistTaps="handled">
+        <View style={styles.formContainer}>
           <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}> 
             <Text style={[styles.title, { color: theme.text }]}>Register</Text>
 
@@ -296,7 +295,7 @@ export default function RegisterScreen() {
             </Pressable>
           </Link>
         </View>
-        </ScrollView>
+        </View>
       </SafeAreaView>
     </View>
   );
@@ -343,7 +342,7 @@ const styles = StyleSheet.create({
   alignSelf: 'center',
   },
   formContainer: {
-    flexGrow: 1,
+    flex: 1,
     width: "100%",
     justifyContent: "center",
     gap: 18,

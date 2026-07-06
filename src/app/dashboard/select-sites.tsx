@@ -1,6 +1,6 @@
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ActivityIndicator, Platform, Pressable, SafeAreaView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, View } from 'react-native';
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Spacing, MaxContentWidth, BottomTabInset } from "@/constants/theme";
@@ -89,13 +89,15 @@ export default function SelectSites() {
         </View>
 
         <View style={styles.centerContent}>
-          <View style={styles.heroSection}>
-            <ThemedText type="title" style={styles.title}>
-              Select Sites
-            </ThemedText>
-          </View>
+          <ThemedText type="title" style={styles.title}>
+            Select Sites
+          </ThemedText>
 
-          <View style={styles.list}>
+          <ScrollView
+            style={styles.listScroll}
+            contentContainerStyle={styles.list}
+            showsVerticalScrollIndicator={false}
+          >
             {sites.map((site) => (
               <Pressable
                 key={site.id}
@@ -107,7 +109,6 @@ export default function SelectSites() {
                 onPress={() => {
                   router.push({
                     pathname: "/dashboard/site-actions",
-                    // siteId = sub-site ID, worksiteId = real main worksite ID
                     params: { siteId: site.id, worksiteId, siteName: site.name },
                   } as any);
                 }}
@@ -117,7 +118,7 @@ export default function SelectSites() {
                 </ThemedText>
               </Pressable>
             ))}
-          </View>
+          </ScrollView>
         </View>
       </SafeAreaView>
     </ThemedView>
@@ -131,6 +132,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.four,
+    overflow: 'hidden',
   },
   background: {
     ...StyleSheet.absoluteFillObject,
@@ -160,6 +162,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: Spacing.three,
     paddingBottom: BottomTabInset + Spacing.three,
+    overflow: 'hidden',
   },
   header: {
     width: "100%",
@@ -194,21 +197,27 @@ const styles = StyleSheet.create({
   heroSection: {
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
     marginBottom: Spacing.four,
   },
   title: {
     textAlign: "center",
     fontSize: Platform.select({ web: 28, default: 38 }),
     fontWeight: "700",
+    marginBottom: Spacing.four,
+  },
+  listScroll: {
+    flexGrow: 0,
+    flexShrink: 1,
+    width: "100%",
   },
   list: {
     gap: Spacing.three,
     width: "100%",
     maxWidth: 380,
     alignSelf: "center",
+    alignItems: "center",
     paddingHorizontal: Spacing.three,
+    paddingBottom: Spacing.two,
   },
   card: {
     borderRadius: 20,

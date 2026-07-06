@@ -25,9 +25,8 @@ export default function AddImagePage() {
 
   const [workers, setWorkers] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [showMenu, setShowMenu] = useState(false);
   const [failedImages, setFailedImages] = useState<Record<number, boolean>>({});
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const refreshKey = String(params.refresh ?? "");
 
@@ -44,7 +43,7 @@ export default function AddImagePage() {
         if (response.ok) {
           const data = await response.json();
           const loaded: Record<number, string | null> = { 1: null, 2: null, 3: null };
-          
+
           // Group by book_id and take the first one
           for (let i = 1; i <= 3; i++) {
             const bookImages = data.filter((img: any) => img.book_id === i);
@@ -86,6 +85,12 @@ export default function AddImagePage() {
     } as any);
   };
 
+  const bookNames: Record<number, string> = {
+    1: "Hospital Book",
+    2: "Attendance Book",
+    3: "Other Documents",
+  };
+
   return (
     <ThemedView style={styles.container}>
       <View style={[styles.background, { backgroundColor: isDark ? "#121212" : "#F1E7DF" }]} />
@@ -106,40 +111,7 @@ export default function AddImagePage() {
               ←
             </ThemedText>
           </Pressable>
-
-          <Pressable
-            style={[
-              styles.menuCircle,
-              { backgroundColor: theme.backgroundElement },
-            ]}
-            onPress={() => setShowMenu((prev) => !prev)}
-          >
-            <ThemedText type="subtitle" style={styles.menuText}>
-              ☰
-            </ThemedText>
-          </Pressable>
         </View>
-
-        {showMenu ? (
-          <View
-            style={[
-              styles.menuDropdown,
-              { backgroundColor: theme.backgroundElement },
-            ]}
-          >
-            <Pressable
-              style={styles.menuDropdownItem}
-              onPress={() => {
-                setShowMenu(false);
-                router.replace("/login");
-              }}
-            >
-              <Text style={[styles.menuDropdownText, { color: theme.text }]}>
-                Logout
-              </Text>
-            </Pressable>
-          </View>
-        ) : null}
 
         <View style={styles.headerTitleRow}>
           <ThemedText type="title" style={styles.title}>
@@ -168,7 +140,7 @@ export default function AddImagePage() {
                 />
               ) : (
                 <ThemedText type="subtitle" style={styles.bigCardText}>
-                  {`Book ${i}`}
+                  {bookNames[i]}
                 </ThemedText>
               )}
             </Pressable>
@@ -406,7 +378,6 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
     elevation: 4,
-    marginLeft: 2,
   },
   menuText: {
     fontSize: 18,

@@ -316,8 +316,8 @@ export default function FaceRecognition() {
   return (
     <ThemedView style={styles.container}>
       <View style={styles.headerRow}>
-        <Pressable style={[styles.backButton, { backgroundColor: theme.backgroundElement }]} onPress={goBack}>
-          <ThemedText style={styles.backText}>Back</ThemedText>
+        <Pressable style={[styles.backButton, { backgroundColor: theme.backgroundElement, borderColor: "rgba(128,128,128,0.2)" }]} onPress={goBack} accessibilityLabel="Back">
+          <ThemedText type="subtitle" style={styles.backText}>←</ThemedText>
         </Pressable>
       </View>
       <View style={styles.titleRow}>
@@ -390,23 +390,29 @@ export default function FaceRecognition() {
           keyExtractor={(i) => String(i.id)}
           ListHeaderComponent={() => (
             <View style={styles.tableHeaderRow}>
-              <ThemedText type="smallBold" style={{ width: 30 }}>ID</ThemedText>
-              <ThemedText type="smallBold" style={{ flex: 1 }}>Name</ThemedText>
-              <ThemedText type="smallBold" style={{ flex: 1.5 }}>Time & date</ThemedText>
-              <ThemedText type="smallBold" style={{ width: 40 }}>State</ThemedText>
-              <ThemedText type="smallBold" style={{ flex: 1.5 }}>Site</ThemedText>
-              <View style={{ width: 30 }} />
+              <ThemedText type="smallBold" style={styles.colId}>ID</ThemedText>
+              <ThemedText type="smallBold" style={styles.colName}>Name</ThemedText>
+              <ThemedText type="smallBold" style={styles.colTime}>Time & Date</ThemedText>
+              <ThemedText type="smallBold" style={styles.colState}>State</ThemedText>
+              <ThemedText type="smallBold" style={styles.colSite}>Site</ThemedText>
+              <View style={styles.colAction} />
             </View>
           )}
           renderItem={({ item }) => (
             <View style={styles.tableRow}>
-              <ThemedText type="small" style={{ width: 30 }}>{item.id}</ThemedText>
-              <ThemedText type="small" style={{ flex: 1 }}>{item.name}</ThemedText>
-              <ThemedText type="small" style={{ flex: 1.5 }}>{item.datetime}</ThemedText>
-              <ThemedText type="small" style={{ width: 40 }}>{item.state || 'IN'}</ThemedText>
-              <ThemedText type="small" style={{ flex: 1.5 }}>{item.site}</ThemedText>
-              <Pressable style={{ width: 30, alignItems: 'center' }} onPress={() => handleDelete(item.id)}>
-                <ThemedText style={{ color: 'red', fontSize: 16 }}>🗑</ThemedText>
+              <ThemedText type="small" style={[styles.colId, styles.cellText]} numberOfLines={1}>{item.id}</ThemedText>
+              <ThemedText type="small" style={[styles.colName, styles.cellText]} numberOfLines={1}>{item.name}</ThemedText>
+              <ThemedText type="small" style={[styles.colTime, styles.cellText]} numberOfLines={2}>{item.datetime}</ThemedText>
+              <View style={[styles.colState, { alignItems: 'center' }]}>
+                <View style={[styles.stateBadge, { backgroundColor: item.state === 'OUT' ? '#ff6b6b22' : '#28a74522' }]}>
+                  <ThemedText type="small" style={[styles.cellText, { color: item.state === 'OUT' ? '#c0392b' : '#1e8449', fontWeight: '700', fontSize: 10 }]} numberOfLines={1}>
+                    {item.state || 'IN'}
+                  </ThemedText>
+                </View>
+              </View>
+              <ThemedText type="small" style={[styles.colSite, styles.cellText]} numberOfLines={2}>{item.site}</ThemedText>
+              <Pressable style={styles.colAction} onPress={() => handleDelete(item.id)}>
+                <ThemedText style={{ color: '#e74c3c', fontSize: 14 }}>🗑</ThemedText>
               </Pressable>
             </View>
           )}
@@ -474,18 +480,28 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.two,
   },
   backButton: {
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.three,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    marginLeft: 15,
+    marginTop: Platform.select({ web: 20, default: 65 }),
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
   backText: {
-    fontWeight: "700",
+    fontSize: 22,
+    lineHeight: 24,
   },
   headerText: {
     flex: 1,
     marginRight: Spacing.two,
+    alignItems: "center",
   },
   flipButton: {
     padding: Spacing.two,
@@ -574,20 +590,75 @@ const styles = StyleSheet.create({
   tableWrap: {
     width: "100%",
     marginTop: Spacing.three,
+    borderRadius: 12,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.08)",
   },
   tableHeaderRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 8,
-    paddingHorizontal: 6,
+    alignItems: "center",
+    backgroundColor: "#4b4fbf",
+    paddingVertical: 10,
+    paddingHorizontal: 8,
   },
   tableRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 8,
-    paddingHorizontal: 6,
+    alignItems: "center",
+    paddingVertical: 9,
+    paddingHorizontal: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    borderBottomColor: "rgba(0,0,0,0.06)",
+    backgroundColor: "transparent",
+  },
+  colId: {
+    width: 28,
+    color: "#fff",
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  colName: {
+    flex: 1.2,
+    paddingRight: 4,
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#fff",
+  },
+  colTime: {
+    flex: 1.6,
+    paddingRight: 4,
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#fff",
+  },
+  colState: {
+    width: 38,
+    marginRight: 8,
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#fff",
+  },
+  colSite: {
+    flex: 1.2,
+    paddingRight: 4,
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#fff",
+  },
+  colAction: {
+    width: 26,
+    alignItems: "center",
+  },
+  cellText: {
+    fontSize: 11,
+    lineHeight: 15,
+  },
+  stateBadge: {
+    borderRadius: 8,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   bottomButton: {
     marginTop: Spacing.three,
