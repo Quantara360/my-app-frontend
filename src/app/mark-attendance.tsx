@@ -1,3 +1,4 @@
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { BottomTabInset, MaxContentWidth, Spacing } from "@/constants/theme";
@@ -5,22 +6,12 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { Camera } from "expo-camera";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
-import {
-  Alert,
-  Linking,
-  Platform,
-  Pressable,
-  SafeAreaView,
-  StyleSheet,
-  View,
-  ScrollView,
-  Text,
-} from "react-native";
+import { Alert, Linking, Platform, Pressable, SafeAreaView, StyleSheet, View, ScrollView, Text } from 'react-native';
 import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/contexts/AuthContext";
 import { API_BASE_URL } from "@/services/authService";
 import { useGoBack } from "@/hooks/use-go-back";
-import { useColorScheme } from "react-native";
+import {  } from "react-native";
 
 export default function MarkAttendance() {
   const router = useRouter();
@@ -31,7 +22,6 @@ export default function MarkAttendance() {
   const { worksiteId, subSiteId, shift: paramShift, state: paramState } = useLocalSearchParams<{ worksiteId?: string; subSiteId?: string; shift?: string; state?: string }>();
   console.log('[mark-attendance] params:', { worksiteId, subSiteId, paramShift, paramState });
   const { token } = useAuth();
-  const [state, setState] = useState(paramState || "IN");
   const [date, setDate] = useState(new Date());
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -42,13 +32,37 @@ export default function MarkAttendance() {
   }, []);
 
   const hour = currentTime.getHours();
+  const minute = currentTime.getMinutes();
   const shift = (hour >= 6 && hour < 18) ? "Morning" : "Evening";
 
   let isLate = false;
-  if (shift === "Morning" && hour >= 7 && hour < 18) {
-      isLate = true;
-  } else if (shift === "Evening" && (hour >= 19 || hour < 6)) {
-      isLate = true;
+  let isEarlyOut = false;
+  let derivedState = "IN";
+
+  if (shift === "Morning") {
+    if (hour >= 12 && hour < 18) {
+      derivedState = "OUT";
+      if (hour < 17 || (hour === 17 && minute < 30)) {
+        isEarlyOut = true;
+      }
+    } else {
+      derivedState = "IN";
+      if (hour >= 7 && hour < 12) {
+        isLate = true;
+      }
+    }
+  } else {
+    if (hour >= 0 && hour < 6) {
+      derivedState = "OUT";
+      if (hour < 5 || (hour === 5 && minute < 30)) {
+        isEarlyOut = true;
+      }
+    } else {
+      derivedState = "IN";
+      if (hour >= 19 && hour <= 23) {
+        isLate = true;
+      }
+    }
   }
 
   const [workers, setWorkers] = useState<any[]>([]);
@@ -95,6 +109,10 @@ export default function MarkAttendance() {
 
   return (
     <ThemedView style={styles.container}>
+      <View style={[styles.background, { backgroundColor: isDark ? "#121212" : "#F1E7DF" }]} />
+      <View style={[styles.backgroundCircleLarge, { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(255, 255, 255, 0.65)" }]} />
+      <View style={[styles.backgroundCircleSmall, { backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(255, 255, 255, 0.5)" }]} />
+
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.headerRow}>
           <ThemedText type="title" style={styles.title}>
@@ -107,6 +125,11 @@ export default function MarkAttendance() {
             {isLate && (
               <ThemedText type="subtitle" style={{ color: "red", marginBottom: 10, textAlign: "center", fontWeight: "bold" }}>
                 Late Attendance
+              </ThemedText>
+            )}
+            {isEarlyOut && (
+              <ThemedText type="subtitle" style={{ color: "orange", marginBottom: 10, textAlign: "center", fontWeight: "bold" }}>
+                Early Out
               </ThemedText>
             )}
             <ThemedText type="subtitle" style={[styles.cardTitle, { backgroundColor: theme.background }]}>
@@ -132,14 +155,11 @@ export default function MarkAttendance() {
 
             <View style={styles.formRow}>
               <ThemedText type="small">State:</ThemedText>
-              <Pressable
-                style={[styles.pill, { backgroundColor: theme.background }]}
-                onPress={() =>
-                  setState((s) => (s === "IN" ? "OUT" : "IN"))
-                }
+              <View
+                style={[styles.pillDisabled, { backgroundColor: theme.background }]}
               >
-                <ThemedText type="small">{state}</ThemedText>
-              </Pressable>
+                <ThemedText type="small">{derivedState}</ThemedText>
+              </View>
             </View>
 
             {showDatePicker && (
@@ -200,7 +220,7 @@ export default function MarkAttendance() {
                         worksiteId: String(worksiteId || ""),
                         subSiteId: String(subSiteId || ""),
                         shift,
-                        state,
+                        state: derivedState,
                       },
                     });
                   } else {
@@ -237,6 +257,26 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: Platform.OS === "web" ? "row" : "column",
   },
+  background: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  backgroundCircleLarge: {
+    position: "absolute",
+    width: Platform.select({ web: 280, default: 420 }),
+    height: Platform.select({ web: 280, default: 420 }),
+    borderRadius: Platform.select({ web: 140, default: 210 }),
+    top: -160,
+    right: -90,
+  },
+  backgroundCircleSmall: {
+    position: "absolute",
+    width: Platform.select({ web: 180, default: 260 }),
+    height: Platform.select({ web: 180, default: 260 }),
+    borderRadius: Platform.select({ web: 90, default: 130 }),
+    bottom: -100,
+    left: -80,
+  },
+
   safeArea: {
     flex: 1,
     paddingHorizontal: Spacing.four,

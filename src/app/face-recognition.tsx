@@ -430,7 +430,12 @@ export default function FaceRecognition() {
             </View>
             <View style={styles.modalBody}>
               <ThemedText style={[styles.modalMessage, Platform.OS === 'web' && { wordBreak: 'break-word' } as any]}>{modalMessage}</ThemedText>
-              <Pressable style={styles.modalButton} onPress={() => setModalVisible(false)}>
+              <Pressable style={styles.modalButton} onPress={() => {
+                setModalVisible(false);
+                if (modalType === 'success') {
+                  setRecognized({ name: "", year: "", date: "", site: "" });
+                }
+              }}>
                 <ThemedText style={styles.modalButtonText}>OK</ThemedText>
               </Pressable>
             </View>

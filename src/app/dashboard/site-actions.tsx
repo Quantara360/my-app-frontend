@@ -1,5 +1,6 @@
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Platform, Pressable, SafeAreaView, StyleSheet, View, useColorScheme } from "react-native";
+import { Platform, Pressable, SafeAreaView, StyleSheet, View } from 'react-native';
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { BottomTabInset, MaxContentWidth, Spacing } from "@/constants/theme";
@@ -26,6 +27,7 @@ export default function SiteActionsPage() {
   
   const siteId = Array.isArray(params.siteId) ? params.siteId[0] : params.siteId;
   const worksiteId = Array.isArray(params.worksiteId) ? params.worksiteId[0] : params.worksiteId;
+  const hospitalId = Array.isArray(params.hospitalId) ? params.hospitalId[0] : params.hospitalId;
   const passedSiteName = Array.isArray(params.siteName) ? params.siteName[0] : params.siteName;
   
   const siteLabel = passedSiteName ? passedSiteName : siteId ? (siteNames[siteId] ?? siteId) : "Worksite";
@@ -83,9 +85,11 @@ export default function SiteActionsPage() {
                   return;
                 }
 
+                // For add-image: siteId (sub-site) → hospitalId → worksiteId
+                // This ensures each level has its own image scope
                 router.push({
                   pathname: "/add-image",
-                  params: { worksiteId: siteId ?? "" },
+                  params: { worksiteId: siteId ?? hospitalId ?? worksiteId ?? "" },
                 } as any);
               }}
             >
@@ -147,6 +151,7 @@ const styles = StyleSheet.create({
     height: 44,
   },
   menuButton: {
+    marginLeft: 15,
     width: 44,
     height: 44,
     borderRadius: 22,

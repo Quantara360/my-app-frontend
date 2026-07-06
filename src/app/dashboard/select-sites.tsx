@@ -1,5 +1,6 @@
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Platform, Pressable, SafeAreaView, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Platform, Pressable, SafeAreaView, StyleSheet, View } from 'react-native';
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Spacing, MaxContentWidth, BottomTabInset } from "@/constants/theme";
@@ -20,15 +21,21 @@ export default function SelectSites() {
   const params = useLocalSearchParams();
   const router = useRouter();
   const theme = useTheme();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
   const { token } = useAuth();
   const [sites, setSites] = useState<Site[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   // worksiteId is the real main worksite (e.g. 3 or 4)
   // hospitalId is the hospital within that worksite (used to filter sub-sites)
   const worksiteId = Array.isArray(params.worksiteId) ? params.worksiteId[0] : params.worksiteId;
   const hospitalId = Array.isArray(params.hospitalId) ? params.hospitalId[0] : (params.hospitalId || worksiteId);
 
   useEffect(() => {
-    if (!token || !hospitalId) return;
+    if (!token || !hospitalId) {
+      setIsLoading(false);
+      return;
+    }
     async function loadSites() {
       try {
         const response = await fetch(`${API_BASE_URL}/sub-sites?hospital_id=${hospitalId}`, {
@@ -39,17 +46,41 @@ export default function SelectSites() {
         });
         if (response.ok) {
           const data = await response.json();
-          setSites(Array.isArray(data) ? data : data.data || []);
+          const list: Site[] = Array.isArray(data) ? data : data.data || [];
+          if (list.length === 0) {
+            // No sub-sites for this hospital — skip straight to site-actions
+            // Pass hospitalId so add-image can scope images per hospital
+            router.replace({
+              pathname: "/dashboard/site-actions",
+              params: { worksiteId: worksiteId ?? "", hospitalId: hospitalId ?? "" },
+            } as any);
+            return;
+          }
+          setSites(list);
         }
       } catch (error) {
         console.error(error);
+      } finally {
+        setIsLoading(false);
       }
     }
     loadSites();
   }, [token, hospitalId]);
 
+  if (isLoading) {
+    return (
+      <ThemedView style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+        <ActivityIndicator size="large" color={theme.text} />
+      </ThemedView>
+    );
+  }
+
   return (
     <ThemedView style={styles.container}>
+      <View style={[styles.background, { backgroundColor: isDark ? "#121212" : "#F1E7DF" }]} />
+      <View style={[styles.backgroundCircleLarge, { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(255, 255, 255, 0.65)" }]} />
+      <View style={[styles.backgroundCircleSmall, { backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(255, 255, 255, 0.5)" }]} />
+
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <Pressable style={styles.backButton} onPress={() => goBack()}>
@@ -101,6 +132,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.four,
   },
+  background: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  backgroundCircleLarge: {
+    position: "absolute",
+    width: Platform.select({ web: 280, default: 420 }),
+    height: Platform.select({ web: 280, default: 420 }),
+    borderRadius: Platform.select({ web: 140, default: 210 }),
+    top: -160,
+    right: -90,
+  },
+  backgroundCircleSmall: {
+    position: "absolute",
+    width: Platform.select({ web: 180, default: 260 }),
+    height: Platform.select({ web: 180, default: 260 }),
+    borderRadius: Platform.select({ web: 90, default: 130 }),
+    bottom: -100,
+    left: -80,
+  },
+
   safeArea: {
     flex: 1,
     width: "100%",

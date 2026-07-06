@@ -1,14 +1,7 @@
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState, useEffect } from "react";
-import {
-  Modal,
-  Pressable,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  View,
-  Image,
-} from "react-native";
+import { Platform, Modal, Pressable, SafeAreaView, StyleSheet, Text, View, Image } from 'react-native';
 import * as ImagePicker from "expo-image-picker";
 import * as SecureStore from "expo-secure-store";
 
@@ -24,6 +17,8 @@ export default function AddImagePage() {
   const goBack = useGoBack();
   const router = useRouter();
   const theme = useTheme();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
   const { token } = useAuth();
   const params = useLocalSearchParams();
   const worksiteId = params.worksiteId;
@@ -93,6 +88,10 @@ export default function AddImagePage() {
 
   return (
     <ThemedView style={styles.container}>
+      <View style={[styles.background, { backgroundColor: isDark ? "#121212" : "#F1E7DF" }]} />
+      <View style={[styles.backgroundCircleLarge, { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(255, 255, 255, 0.65)" }]} />
+      <View style={[styles.backgroundCircleSmall, { backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(255, 255, 255, 0.5)" }]} />
+
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.headerRow}>
           <Pressable
@@ -226,6 +225,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.four,
   },
+  background: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  backgroundCircleLarge: {
+    position: "absolute",
+    width: Platform.select({ web: 280, default: 420 }),
+    height: Platform.select({ web: 280, default: 420 }),
+    borderRadius: Platform.select({ web: 140, default: 210 }),
+    top: -160,
+    right: -90,
+  },
+  backgroundCircleSmall: {
+    position: "absolute",
+    width: Platform.select({ web: 180, default: 260 }),
+    height: Platform.select({ web: 180, default: 260 }),
+    borderRadius: Platform.select({ web: 90, default: 130 }),
+    bottom: -100,
+    left: -80,
+  },
+
   safeArea: {
     flex: 1,
     width: "100%",
@@ -374,6 +393,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.two,
   },
   menuButton: {
+    marginLeft: 15,
     width: 44,
     height: 44,
     borderRadius: 22,
