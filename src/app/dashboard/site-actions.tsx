@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Pressable, SafeAreaView, StyleSheet, View, useColorScheme } from "react-native";
+import { Platform, Pressable, SafeAreaView, StyleSheet, View, useColorScheme } from "react-native";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { BottomTabInset, MaxContentWidth, Spacing } from "@/constants/theme";
@@ -113,17 +113,17 @@ const styles = StyleSheet.create({
   },
   backgroundCircleLarge: {
     position: "absolute",
-    width: 420,
-    height: 420,
-    borderRadius: 210,
+    width: Platform.select({ web: 280, default: 420 }),
+    height: Platform.select({ web: 280, default: 420 }),
+    borderRadius: Platform.select({ web: 140, default: 210 }),
     top: -160,
     right: -90,
   },
   backgroundCircleSmall: {
     position: "absolute",
-    width: 260,
-    height: 260,
-    borderRadius: 130,
+    width: Platform.select({ web: 180, default: 260 }),
+    height: Platform.select({ web: 180, default: 260 }),
+    borderRadius: Platform.select({ web: 90, default: 130 }),
     bottom: -100,
     left: -80,
   },
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    marginTop: 65,
+    marginTop: Platform.select({ web: 20, default: 65 }),
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
@@ -166,13 +166,13 @@ const styles = StyleSheet.create({
   },
   heroSection: {
     marginTop: Spacing.two,
-    paddingHorizontal: Spacing.two,
+    paddingHorizontal: Spacing.three,
     gap: Spacing.two,
   },
   subtitle: {
   },
   title: {
-    lineHeight: 56,
+    lineHeight: Platform.select({ web: 40, default: 56 }),
   },
   description: {
     maxWidth: 420,
@@ -180,6 +180,7 @@ const styles = StyleSheet.create({
   cardList: {
     marginTop: Spacing.four,
     gap: Spacing.three,
+    paddingHorizontal: Spacing.three,
   },
   actionCard: {
     borderRadius: 28,

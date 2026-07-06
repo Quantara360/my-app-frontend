@@ -54,11 +54,17 @@
 }
 
 /* Basic utilities using the variables */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 html, body, #root {
   height: 100%;
   background-color: var(--color-background);
   color: var(--color-text);
   font-family: var(--font-display);
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
 }
 
 .container {

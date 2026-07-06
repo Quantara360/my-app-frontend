@@ -87,8 +87,8 @@ export default function MarkAttendance() {
         </View>
 
         <View style={styles.cardWrap}>
-          <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}> 
-            <ThemedText type="subtitle" style={[styles.cardTitle, { backgroundColor: theme.background }]}> 
+          <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}>
+            <ThemedText type="subtitle" style={[styles.cardTitle, { backgroundColor: theme.background }]}>
               Enter Details
             </ThemedText>
 
@@ -143,7 +143,7 @@ export default function MarkAttendance() {
                     {workers.map(worker => {
                       const isSelected = selectedWorkers.has(worker.id);
                       return (
-                        <Pressable 
+                        <Pressable
                           key={worker.id}
                           style={[
                             styles.workerItem,
@@ -229,8 +229,8 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
     paddingBottom: BottomTabInset + Spacing.three,
     maxWidth: MaxContentWidth,
-  width: '100%',
-  alignSelf: 'center',
+    width: '100%',
+    alignSelf: 'center',
   },
   headerRow: {
     width: "100%",
@@ -244,6 +244,7 @@ const styles = StyleSheet.create({
   cardWrap: {
     width: "100%",
     alignItems: "center",
+    paddingHorizontal: Spacing.three,
   },
   card: {
     width: "92%",

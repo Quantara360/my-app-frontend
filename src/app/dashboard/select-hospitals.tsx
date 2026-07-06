@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Pressable, SafeAreaView, StyleSheet, View } from "react-native";
+import { Platform, Pressable, SafeAreaView, StyleSheet, View } from "react-native";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Spacing, MaxContentWidth, BottomTabInset } from "@/constants/theme";
@@ -149,6 +149,7 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 380,
     alignSelf: "center",
+    paddingHorizontal: Spacing.three,
   },
   card: {
     borderRadius: 20,
@@ -162,7 +163,7 @@ const styles = StyleSheet.create({
     elevation: 6,
     alignItems: "center",
     justifyContent: "center",
-    minHeight: 120,
+    minHeight: Platform.select({ web: 80, default: 120 }),
   },
   centerContent: {
     flex: 1,
@@ -176,8 +177,8 @@ const styles = StyleSheet.create({
   },
   cardText: {
     textAlign: "center",
-    fontSize: 30,
-    lineHeight: 38,
+    fontSize: Platform.select({ web: 20, default: 30 }),
+    lineHeight: Platform.select({ web: 28, default: 38 }),
     fontWeight: "600",
   },
 });

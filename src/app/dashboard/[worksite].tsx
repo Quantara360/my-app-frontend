@@ -143,11 +143,13 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
-    paddingHorizontal: Spacing.four,
     paddingTop: 60,
+    paddingHorizontal: Spacing.four,
     gap: Spacing.three,
     paddingBottom: BottomTabInset + Spacing.three,
     maxWidth: MaxContentWidth,
+    width: '100%',
+    alignSelf: 'center',
   },
   header: {
     width: "100%",
@@ -182,6 +184,7 @@ const styles = StyleSheet.create({
   tileGrid: {
     gap: Spacing.three,
     marginTop: Spacing.two,
+    paddingHorizontal: Spacing.three,
   },
   tile: {
     flexDirection: "row",

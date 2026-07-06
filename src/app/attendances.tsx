@@ -337,6 +337,9 @@ const createStyles = (isDark: boolean) =>
       padding: Spacing.four,
       paddingBottom: BottomTabInset,
       backgroundColor: isDark ? "#121212" : "#f5f5f5",
+      maxWidth: 900,
+      width: '100%',
+      alignSelf: 'center',
     },
     header: {
       flexDirection: "row",
@@ -400,7 +403,8 @@ const createStyles = (isDark: boolean) =>
       backgroundColor: isDark ? "#1e1e1e" : "#e0e0e0",
       borderRadius: 12,
       paddingHorizontal: 12,
-      minWidth: 200,
+      minWidth: 160,
+      flex: 1,
     },
     searchIcon: { marginRight: 8, fontSize: 16 },
     searchInput: {

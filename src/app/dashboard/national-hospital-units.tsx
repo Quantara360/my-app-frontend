@@ -82,6 +82,8 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     paddingBottom: BottomTabInset + Spacing.two,
     maxWidth: MaxContentWidth,
+    width: '100%',
+    alignSelf: 'center',
   },
   header: {
     width: "100%",
@@ -122,6 +124,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.one,
     width: "100%",
     maxWidth: 420,
+    paddingHorizontal: Spacing.three,
   },
   card: {
     borderRadius: 16,

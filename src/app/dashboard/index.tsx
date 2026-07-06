@@ -1,5 +1,6 @@
 import { Redirect, useRouter } from "expo-router";
 import {
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -204,7 +205,7 @@ export default function DashboardScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView
-          style={{ flex: 1, width: "100%" }}
+          style={{ flex: 1 }}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
@@ -298,21 +299,24 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
-    paddingHorizontal: Spacing.four,
     paddingTop: 60,
     gap: Spacing.three,
     paddingBottom: BottomTabInset + Spacing.three,
     maxWidth: MaxContentWidth,
+    width: '100%',
+    alignSelf: 'center',
   },
   scrollContent: {
     flexGrow: 1,
     alignItems: "stretch",
+    paddingHorizontal: Spacing.four,
     paddingBottom: BottomTabInset + Spacing.four,
     gap: Spacing.three,
   },
   staffScroll: {
     flexGrow: 1,
     width: "100%",
+    paddingHorizontal: Spacing.four,
     paddingBottom: BottomTabInset + Spacing.four,
     gap: Spacing.three,
   },
@@ -394,7 +398,6 @@ const styles = StyleSheet.create({
     flex: 1,
     width: "100%",
     alignSelf: "center",
-    paddingHorizontal: Spacing.four,
     paddingTop: 60,
     paddingBottom: BottomTabInset + Spacing.three,
     maxWidth: 900,
@@ -407,15 +410,15 @@ const styles = StyleSheet.create({
   },
   staffGreeting: {
     color: "#475569",
-    fontSize: 34,
+    fontSize: Platform.select({ web: 22, default: 34 }),
     fontWeight: "800",
-    lineHeight: 42,
+    lineHeight: Platform.select({ web: 28, default: 42 }),
   },
   staffWelcome: {
     color: "#0F172A",
-    fontSize: 36,
+    fontSize: Platform.select({ web: 24, default: 36 }),
     fontWeight: "900",
-    lineHeight: 44,
+    lineHeight: Platform.select({ web: 32, default: 44 }),
   },
   staffMenuButton: {
     paddingVertical: Spacing.two,
