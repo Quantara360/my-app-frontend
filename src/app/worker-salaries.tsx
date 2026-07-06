@@ -150,7 +150,7 @@ export default function WorkerSalariesPage() {
     for (let d = 1; d <= daysCount; d++) {
       const dateStr = `${year}-${padDatePart(month + 1)}-${padDatePart(d)}`;
       try {
-        const qs = new URLSearchParams({ date: dateStr, shift, include_absents: '0' }).toString();
+        const qs = new URLSearchParams({ date: dateStr, shift, include_absents: '1' }).toString();
         const resp = await fetch(`${API_BASE_URL}/attendances?${qs}`, { headers: authHeader });
         if (!resp.ok) continue;
         const json = await resp.json();

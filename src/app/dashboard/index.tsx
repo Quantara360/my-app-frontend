@@ -258,7 +258,7 @@ export default function DashboardScreen() {
                   >
                     {worksite.logo ? (
                       <Image 
-                        source={{ uri: worksite.logo.startsWith('http') ? worksite.logo : `${API_BASE_URL.replace('/api', '')}${worksite.logo}` }}
+                        source={{ uri: worksite.logo.startsWith('http') ? worksite.logo : `${API_BASE_URL.replace('/api', '')}${worksite.logo.includes('/') ? (worksite.logo.startsWith('/') ? worksite.logo : '/' + worksite.logo) : '/storage/worksites/' + worksite.logo}` }}
                         style={{ width: '100%', height: '100%' }}
                         resizeMode="cover"
                       />
