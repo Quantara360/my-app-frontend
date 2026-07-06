@@ -1,5 +1,7 @@
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 import {
   ActivityIndicator,
   Modal,
@@ -167,8 +169,91 @@ function printCard(worker: Worker) {
   if (win) { win.document.write(html); win.document.close(); }
 }
 
+async function downloadPdfCard(worker: Worker) {
+  const photoUrl = getPhotoUrl(worker);
+  const dateStr = formatDate(worker.join_date);
+  const templateAsset = Asset.fromModule(require("../../assets/images/id_card_template_clean.png"));
+  await templateAsset.downloadAsync();
+  const templateUri = templateAsset.localUri || templateAsset.uri;
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <title>ID Card \u2013 ${worker.name}</title>
+  <style>
+    @page { size: 975px 643px; margin: 0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { width: 975px; height: 643px; overflow: hidden; }
+    .card { position: relative; width: 975px; height: 643px; }
+    .bg { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .photo { position: absolute; left: 53px; top: 156px; width: 240px; height: 348px; object-fit: cover; border: 2px solid #111; }
+    .photo-placeholder { position: absolute; left: 53px; top: 156px; width: 240px; height: 348px; background: #ccc; display: flex; align-items: center; justify-content: center; font-size: 60px; }
+    .date { position: absolute; left: 52px; top: 535px; font-size: 20px; font-weight: 700; color: #111; font-family: Arial, sans-serif; }
+    .label { font-size: 26px; font-weight: 700; color: #111; font-family: 'Arial Black', Arial, sans-serif; position: absolute; left: 340px; }
+    .colon { font-size: 26px; font-weight: 700; color: #111; font-family: 'Arial Black', Arial, sans-serif; position: absolute; left: 550px; }
+    .val { font-size: 26px; font-weight: 700; color: #111; font-family: Arial, sans-serif; position: absolute; left: 580px; }
+    .header-site { position: absolute; left: 245px; top: 24px; right: 20px; font-size: 50px; font-weight: 900; font-family: 'Arial Black', Arial, sans-serif; text-transform: uppercase; white-space: nowrap; overflow: hidden; }
+    .row1 { top: 210px; } .row2 { top: 287px; } .row3 { top: 363px; }
+    @media print { * { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <img class="bg" src="${templateUri}" />
+    ${photoUrl ? `<img class="photo" src="${photoUrl}" />` : `<div class="photo-placeholder">\ud83d\udc64</div>`}
+    <div class="header-site">
+      <span style="color: #fff;">${worker.worksite?.name || "AMIL"} </span>
+      <span style="color: #FFD700;">JANITOR SERVICES</span>
+    </div>
+    <div class="date">Date: ${dateStr}</div>
+    <div class="label row1">NAME</div><div class="colon row1">:</div><div class="val row1">${worker.name}</div>
+    <div class="label row2">DESIGNATION</div><div class="colon row2">:</div><div class="val row2">${worker.role || "\u2014"}</div>
+    <div class="label row3">NIC NO.</div><div class="colon row3">:</div><div class="val row3">${worker.nic || "\u2014"}</div>
+  </div>
+  <script>
+    Promise.all(Array.from(document.images).map(img => {
+      if (img.complete) return Promise.resolve();
+      return new Promise(resolve => { img.onload = resolve; img.onerror = resolve; });
+    })).then(() => {
+      setTimeout(() => { window.print(); }, 400);
+    });
+  <\/script>
+</body>
+</html>`;
+
+  if (Platform.OS === 'web') {
+    // On web mobile: open in new tab — browser's share sheet lets user save as PDF
+    const win = window.open('', '_blank');
+    if (win) { win.document.write(html); win.document.close(); }
+    return;
+  }
+
+  // Native mobile: use expo-print + expo-sharing
+  let templateBase64 = '';
+  try {
+    const { FileSystem } = await import('expo-file-system');
+    templateBase64 = await FileSystem.readAsStringAsync(templateUri, { encoding: 'base64' as any });
+  } catch (e) {
+    console.warn('Could not read template as base64', e);
+  }
+  const templateSrc = templateBase64
+    ? `data:image/png;base64,${templateBase64}`
+    : templateUri;
+
+  const nativeHtml = html.replace(templateUri, templateSrc);
+  const { uri } = await Print.printToFileAsync({ html: nativeHtml, width: 975, height: 643 });
+  await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: `ID Card \u2013 ${worker.name}`, UTI: 'com.adobe.pdf' });
+}
+
+
 // -------------------------------------------------------------------------
 import { useWindowDimensions, useColorScheme } from "react-native";
+
+// Detect mobile browser (web running on a phone/tablet)
+const isMobileBrowser =
+  Platform.OS === 'web' &&
+  typeof navigator !== 'undefined' &&
+  /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
 
 export default function TemplatePage() {
   const goBack = useGoBack();
@@ -284,9 +369,13 @@ export default function TemplatePage() {
                         <Pressable onPress={() => openCard(w)} style={styles.viewBtn}>
                           <Text style={styles.viewBtnTxt}>👁 View</Text>
                         </Pressable>
-                        {Platform.OS === "web" && (
+                        {Platform.OS === "web" && !isMobileBrowser ? (
                           <Pressable onPress={() => printCard(w)} style={styles.printBtn}>
                             <Text style={styles.printBtnTxt}>🖨 Print</Text>
+                          </Pressable>
+                        ) : (
+                          <Pressable onPress={() => downloadPdfCard(w)} style={styles.printBtn}>
+                            <Text style={styles.printBtnTxt}>⬇ PDF</Text>
                           </Pressable>
                         )}
                       </View>
@@ -309,12 +398,19 @@ export default function TemplatePage() {
                     ID Card – {selectedWorker.name}
                   </ThemedText>
                   <View style={{ flexDirection: "row", gap: 8 }}>
-                    {Platform.OS === "web" && (
+                    {Platform.OS === "web" && !isMobileBrowser ? (
                       <Pressable
                         onPress={() => { setShowCard(false); printCard(selectedWorker); }}
                         style={styles.printBtn}
                       >
                         <Text style={styles.printBtnTxt}>🖨 Print</Text>
+                      </Pressable>
+                    ) : (
+                      <Pressable
+                        onPress={() => { setShowCard(false); downloadPdfCard(selectedWorker); }}
+                        style={styles.printBtn}
+                      >
+                        <Text style={styles.printBtnTxt}>⬇ Download PDF</Text>
                       </Pressable>
                     )}
                     <Pressable onPress={() => setShowCard(false)} style={styles.closeBtn}>

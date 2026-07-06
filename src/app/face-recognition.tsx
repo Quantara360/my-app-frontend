@@ -11,6 +11,7 @@ import {
   Pressable,
   StyleSheet,
   View,
+  Modal,
 } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
@@ -46,6 +47,18 @@ export default function FaceRecognition() {
   });
   const [list, setList] = useState<any[]>([]);
   const router = useRouter();
+
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
+  const [modalType, setModalType] = useState<"success" | "error">("error");
+
+  const showAlert = (title: string, message: string, type: "success" | "error" = "error") => {
+    setModalTitle(title);
+    setModalMessage(message);
+    setModalType(type);
+    setModalVisible(true);
+  };
 
   useEffect(() => {
     (async () => {
@@ -170,7 +183,11 @@ export default function FaceRecognition() {
       console.log('[recognize] response:', recData);
 
       if (!recData.success) {
-        Alert.alert("Recognition Error", recData.error || "Face service error. Please try again.");
+        let errorMsg = recData.error || "Face service error. Please try again.";
+        if (errorMsg.toLowerCase().includes("face could not be detected") || errorMsg.includes("enforce_detection")) {
+          errorMsg = "No face detected in the picture. Please make sure your face is clearly visible and well-lit, then try again.";
+        }
+        showAlert("Recognition Error", errorMsg);
         setIsProcessing(false);
         return;
       }
@@ -180,7 +197,7 @@ export default function FaceRecognition() {
         const msg = reason.toLowerCase().includes("no face")
           ? "No face detected. Please ensure your face is clearly visible and well-lit."
           : "Could not identify any registered worker. Please try again.";
-        Alert.alert("No Match", msg);
+        showAlert("No Match", msg);
         setIsProcessing(false);
         return;
       }
@@ -219,7 +236,7 @@ export default function FaceRecognition() {
 
       if (!attRes.ok || !attData.success) {
         const errMsg = attData.message || attData.error || JSON.stringify(attData.errors) || "Failed to mark attendance.";
-        Alert.alert("Attendance Error", errMsg);
+        showAlert("Attendance Error", errMsg);
         setIsProcessing(false);
         return;
       }
@@ -243,8 +260,10 @@ export default function FaceRecognition() {
         },
         ...s,
       ]);
+      
+      showAlert("Success", "Attendance marked successfully", "success");
     } catch (e) {
-      Alert.alert("Capture failed", String(e));
+      showAlert("Capture failed", String(e));
     } finally {
       setIsProcessing(false);
       setPhotoUri(null);
@@ -260,11 +279,11 @@ export default function FaceRecognition() {
       if (res.ok) {
         setList((prev) => prev.filter((item) => item.id !== id));
       } else {
-        Alert.alert("Error", "Could not delete attendance record");
+        showAlert("Error", "Could not delete attendance record");
       }
     } catch (e) {
       console.error(e);
-      Alert.alert("Error", "Network error while deleting");
+      showAlert("Error", "Network error while deleting");
     }
   };
 
@@ -390,13 +409,34 @@ export default function FaceRecognition() {
 
         <Pressable
           style={styles.bottomButton}
-          onPress={() => Alert.alert("Marked Attendance", "Attendance marked")}
+          onPress={() => showAlert("Marked Attendance", "Attendance marked", "success")}
         >
           <ThemedText type="smallBold" style={{ color: "#fff" }}>
             Marked Attendance
           </ThemedText>
         </Pressable>
       </View>
+
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={[styles.modalHeader, { backgroundColor: modalType === 'success' ? '#28a745' : '#dc3545' }]}>
+              <ThemedText style={styles.modalTitle}>{modalTitle}</ThemedText>
+            </View>
+            <View style={styles.modalBody}>
+              <ThemedText style={[styles.modalMessage, Platform.OS === 'web' && { wordBreak: 'break-word' } as any]}>{modalMessage}</ThemedText>
+              <Pressable style={styles.modalButton} onPress={() => setModalVisible(false)}>
+                <ThemedText style={styles.modalButtonText}>OK</ThemedText>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ThemedView>
   );
 }
@@ -554,5 +594,54 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "rgba(0,0,0,0.35)",
     borderRadius: 12,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContainer: {
+    width: "80%",
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    overflow: "hidden",
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
+  },
+  modalHeader: {
+    padding: 16,
+    alignItems: "center",
+  },
+  modalTitle: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 18,
+  },
+  modalBody: {
+    padding: 20,
+    alignItems: "center",
+    width: "100%",
+  },
+  modalMessage: {
+    fontSize: 16,
+    textAlign: "center",
+    marginBottom: 20,
+    color: "#333",
+    flexShrink: 1,
+    width: "100%",
+  },
+  modalButton: {
+    backgroundColor: "#4b4fbf",
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+  },
+  modalButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
   },
 });

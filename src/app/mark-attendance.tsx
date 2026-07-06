@@ -31,10 +31,26 @@ export default function MarkAttendance() {
   const { worksiteId, subSiteId, shift: paramShift, state: paramState } = useLocalSearchParams<{ worksiteId?: string; subSiteId?: string; shift?: string; state?: string }>();
   console.log('[mark-attendance] params:', { worksiteId, subSiteId, paramShift, paramState });
   const { token } = useAuth();
-  const [shift, setShift] = useState(paramShift || "Evening");
   const [state, setState] = useState(paramState || "IN");
   const [date, setDate] = useState(new Date());
+  const [currentTime, setCurrentTime] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const hour = currentTime.getHours();
+  const shift = (hour >= 6 && hour < 18) ? "Morning" : "Evening";
+
+  let isLate = false;
+  if (shift === "Morning" && hour >= 7 && hour < 18) {
+      isLate = true;
+  } else if (shift === "Evening" && (hour >= 19 || hour < 6)) {
+      isLate = true;
+  }
+
   const [workers, setWorkers] = useState<any[]>([]);
   const [selectedWorkers, setSelectedWorkers] = useState<Set<number>>(new Set());
 
@@ -88,20 +104,20 @@ export default function MarkAttendance() {
 
         <View style={styles.cardWrap}>
           <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}>
+            {isLate && (
+              <ThemedText type="subtitle" style={{ color: "red", marginBottom: 10, textAlign: "center", fontWeight: "bold" }}>
+                Late Attendance
+              </ThemedText>
+            )}
             <ThemedText type="subtitle" style={[styles.cardTitle, { backgroundColor: theme.background }]}>
               Enter Details
             </ThemedText>
 
             <View style={styles.formRow}>
               <ThemedText type="small">Shift:</ThemedText>
-              <Pressable
-                style={[styles.pill, { backgroundColor: theme.background }]}
-                onPress={() =>
-                  setShift((s) => (s === "Evening" ? "Morning" : "Evening"))
-                }
-              >
+              <View style={[styles.pill, { backgroundColor: theme.background }]}>
                 <ThemedText type="small">{shift === "Morning" ? "Day Shift" : "Night Shift"}</ThemedText>
-              </Pressable>
+              </View>
             </View>
 
             <View style={styles.formRow}>

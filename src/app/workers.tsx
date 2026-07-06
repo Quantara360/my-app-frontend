@@ -66,6 +66,8 @@ export default function WorkersPage() {
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [cameraReady, setCameraReady] = useState(false);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [photoBase64, setPhotoBase64] = useState<string | null>(null);
+  const [isVerifyingFace, setIsVerifyingFace] = useState(false);
   const [faceSuccess, setFaceSuccess] = useState(false);
   const [faceProgress, setFaceProgress] = useState(65);
   const [joinDate, setJoinDate] = useState<Date>(new Date());
@@ -79,6 +81,12 @@ export default function WorkersPage() {
   const [epfHistoryOpen, setEpfHistoryOpen] = useState(false);
   const [epfHistory, setEpfHistory] = useState<{ id: number; epf_number: string; created_at: string }[]>([]);
   const [loadingEpfHistory, setLoadingEpfHistory] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [errorModal, setErrorModal] = useState<{ title: string; message: string } | null>(null);
+
+  const showErrorModal = (title: string, message: string) => {
+    setErrorModal({ title, message });
+  };
   const cameraRef = useRef<any>(null);
   const webDateInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -234,10 +242,11 @@ export default function WorkersPage() {
             const ctx = canvas.getContext('2d');
             if (!ctx) throw new Error('Unable to get canvas drawing context');
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            return { uri: canvas.toDataURL('image/jpeg', 0.6) };
+            return { uri: canvas.toDataURL('image/jpeg', 0.6), base64: canvas.toDataURL('image/jpeg', 0.6).split(',')[1] };
           })()
-        : await cameraRef.current.takePictureAsync({ quality: 0.6, base64: false });
+        : await cameraRef.current.takePictureAsync({ quality: 0.6, base64: true });
       setPhotoUri(photo.uri);
+      setPhotoBase64(Platform.OS === 'web' ? photo.base64 : (photo.base64 || null));
       setFaceProgress(80);
     } catch (error) {
       Alert.alert('Capture failed', 'Unable to capture the photo. Please try again.');
@@ -249,6 +258,39 @@ export default function WorkersPage() {
       await captureFacePhoto();
       return;
     }
+
+    setIsVerifyingFace(true);
+    try {
+      const ext = photoUri.split(".").pop() || "jpg";
+      const dataUri = Platform.OS === 'web' && photoUri.startsWith("data:") 
+        ? photoUri 
+        : `data:image/${ext};base64,${photoBase64}`;
+
+      const recRes = await fetch(`${API_BASE_URL}/face-recognition/recognize`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ image_base64: dataUri }),
+      });
+      const recData = await recRes.json();
+      
+      if (!recData.success) {
+        let errMsg = recData.error || "Face service error.";
+        if (errMsg.toLowerCase().includes("face could not be detected") || errMsg.includes("enforce_detection")) {
+          errMsg = "No face detected in the picture. Please ensure your face is clearly visible and well-lit.";
+        }
+        showErrorModal('Face Recognition Error', errMsg);
+        setIsVerifyingFace(false);
+        return;
+      }
+    } catch (e) {
+      console.warn("Face verification error", e);
+    }
+    setIsVerifyingFace(false);
+
     // Store the photo URI to upload after worker is saved
     setPendingPhotoUri(photoUri);
     setFaceSuccess(true);
@@ -260,112 +302,133 @@ export default function WorkersPage() {
   };
 
   const handleSaveWorker = async () => {
-    if (!token) {
+    if (!token || isSaving) {
       return;
     }
+    setIsSaving(true);
 
-    const payload = {
-      name: formValues.name,
-      role: formValues.role,
-      assigned_worksite_id: formValues.assigned_worksite_id,
-      phone: null,
-      status: 'active',
-      nic: formValues.nic,
-      age: formValues.age ? Number(formValues.age) : null,
-      join_date: formValues.join_date || joinDate.toISOString().split('T')[0],
-      face_recognition_enabled: formValues.face_recognition_enabled,
-      epf: formValues.epf || null,
-      gender: formValues.gender || null,
-    };
+    try {
+      const payload = {
+        name: formValues.name,
+        role: formValues.role,
+        assigned_worksite_id: formValues.assigned_worksite_id,
+        phone: null,
+        status: 'active',
+        nic: formValues.nic,
+        age: formValues.age ? Number(formValues.age) : null,
+        join_date: formValues.join_date || joinDate.toISOString().split('T')[0],
+        face_recognition_enabled: formValues.face_recognition_enabled,
+        epf: formValues.epf || null,
+        gender: formValues.gender || null,
+      };
 
-    const method = isEditing ? 'PUT' : 'POST';
-    const url = isEditing && selectedWorker
-      ? `${API_BASE_URL}/workers/${selectedWorker.id}`
-      : `${API_BASE_URL}/workers`;
+      const method = isEditing ? 'PUT' : 'POST';
+      const url = isEditing && selectedWorker
+        ? `${API_BASE_URL}/workers/${selectedWorker.id}`
+        : `${API_BASE_URL}/workers`;
 
-    const response = await fetch(url, {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(payload),
-    });
-
-    const savedWorker = await response.json();
-    if (response.ok) {
-      const savedId = savedWorker.id;
-
-      // Upload face photo to face service if one was captured
-      if (pendingPhotoUri && savedId) {
-        try {
-          setUploadingFace(true);
-          const formData = new FormData();
-          let fileName = 'photo.jpg';
-          let mimeType = 'image/jpeg';
-          
-          if (!pendingPhotoUri.startsWith('data:')) {
-            fileName = pendingPhotoUri.split('/').pop() || 'photo.jpg';
-            const ext = fileName.split('.').pop() || 'jpg';
-            mimeType = `image/${ext}`;
-          }
-
-          if (Platform.OS === 'web') {
-            if (pendingPhotoUri.startsWith('data:')) {
-              // data URI — convert to proper blob with explicit MIME type
-              const arr = pendingPhotoUri.split(',');
-              const mime = (arr[0].match(/:(.*?);/) || [])[1] || 'image/jpeg';
-              const bstr = atob(arr[1]);
-              let n = bstr.length;
-              const u8arr = new Uint8Array(n);
-              while (n--) u8arr[n] = bstr.charCodeAt(n);
-              const blob = new Blob([u8arr], { type: mime });
-              formData.append('photo', blob, 'photo.jpg');
-            } else {
-              const res = await fetch(pendingPhotoUri);
-              const rawBlob = await res.blob();
-              const typedBlob = new Blob([rawBlob], { type: 'image/jpeg' });
-              formData.append('photo', typedBlob, fileName);
-            }
-          } else {
-            formData.append('photo', {
-              uri: pendingPhotoUri,
-              name: fileName,
-              type: mimeType,
-            } as any);
-          }
-
-          const uploadRes = await fetch(`${API_BASE_URL}/workers/${savedId}/upload-face`, {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${token}`,
-              Accept: 'application/json',
-            },
-            body: formData,
-          });
-          if (!uploadRes.ok) {
-            const errBody = await uploadRes.text();
-            console.warn('Face upload failed:', uploadRes.status, errBody);
-          }
-        } catch (err) {
-          console.warn('Face upload error:', err);
-        } finally {
-          setUploadingFace(false);
-          setPendingPhotoUri(null);
-        }
-      }
-
-      setFormOpen(false);
-      setSelectedWorker(null);
-      setIsEditing(false);
-      setWorkers((prev) => {
-        if (isEditing && selectedWorker) {
-          return prev.map((worker) => (worker.id === selectedWorker.id ? savedWorker : worker));
-        }
-        return [savedWorker, ...prev];
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
       });
-      setSuccessMessage(isEditing ? 'Worker Updated Successfully!' : 'Worker Added Successfully!');
+
+      const savedWorker = await response.json();
+      if (response.ok) {
+        const savedId = savedWorker.id;
+
+        // Upload face photo to face service if one was captured
+        if (pendingPhotoUri && savedId) {
+          try {
+            setUploadingFace(true);
+            const formData = new FormData();
+            let fileName = 'photo.jpg';
+            let mimeType = 'image/jpeg';
+            
+            if (!pendingPhotoUri.startsWith('data:')) {
+              fileName = pendingPhotoUri.split('/').pop() || 'photo.jpg';
+              const ext = fileName.split('.').pop() || 'jpg';
+              mimeType = `image/${ext}`;
+            }
+
+            if (Platform.OS === 'web') {
+              if (pendingPhotoUri.startsWith('data:')) {
+                // data URI — convert to proper blob with explicit MIME type
+                const arr = pendingPhotoUri.split(',');
+                const mime = (arr[0].match(/:(.*?);/) || [])[1] || 'image/jpeg';
+                const bstr = atob(arr[1]);
+                let n = bstr.length;
+                const u8arr = new Uint8Array(n);
+                while (n--) u8arr[n] = bstr.charCodeAt(n);
+                const blob = new Blob([u8arr], { type: mime });
+                formData.append('photo', blob, 'photo.jpg');
+              } else {
+                const res = await fetch(pendingPhotoUri);
+                const rawBlob = await res.blob();
+                const typedBlob = new Blob([rawBlob], { type: 'image/jpeg' });
+                formData.append('photo', typedBlob, fileName);
+              }
+            } else {
+              formData.append('photo', {
+                uri: pendingPhotoUri,
+                name: fileName,
+                type: mimeType,
+              } as any);
+            }
+
+            const uploadRes = await fetch(`${API_BASE_URL}/workers/${savedId}/upload-face`, {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${token}`,
+                Accept: 'application/json',
+              },
+              body: formData,
+            });
+            
+            if (!uploadRes.ok) {
+              const errText = await uploadRes.text();
+              let errMsg = errText;
+              try {
+                const errJson = JSON.parse(errText);
+                errMsg = errJson.message || errJson.error || errText;
+              } catch (e) {}
+              
+              if (errMsg.toLowerCase().includes("face could not be detected") || errMsg.includes("enforce_detection")) {
+                errMsg = "No face detected in the picture. The worker details were saved, but please edit the worker to retake the photo with a clearly visible face.";
+              }
+              showErrorModal('Face Recognition Error', errMsg);
+            }
+          } catch (err) {
+            console.warn('Face upload error:', err);
+            showErrorModal('Face Recognition Error', 'Network error while uploading face photo.');
+          } finally {
+            setUploadingFace(false);
+            setPendingPhotoUri(null);
+          }
+        }
+
+        setFormOpen(false);
+        setSelectedWorker(null);
+        setIsEditing(false);
+        setWorkers((prev) => {
+          if (isEditing && selectedWorker) {
+            return prev.map((worker) => (worker.id === selectedWorker.id ? savedWorker : worker));
+          }
+          return [savedWorker, ...prev];
+        });
+        setSuccessMessage(isEditing ? 'Worker Updated Successfully!' : 'Worker Added Successfully!');
+      } else {
+        showErrorModal('Error', savedWorker.message || 'Failed to save worker.');
+      }
+    } catch (error) {
+      console.error(error);
+      showErrorModal('Error', 'An unexpected error occurred.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -699,8 +762,12 @@ export default function WorkersPage() {
                     <Text style={styles.faceButtonText}>Open Face Recognition</Text>
                   </Pressable>
                 </View>
-                <Pressable style={styles.saveButton} onPress={handleSaveWorker}>
-                  <Text style={styles.saveText}>Save Details!</Text>
+                <Pressable style={[styles.saveButton, isSaving && { opacity: 0.7 }]} onPress={handleSaveWorker} disabled={isSaving}>
+                  {isSaving ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={styles.saveText}>Save Details!</Text>
+                  )}
                 </Pressable>
               </ScrollView>
             </View>
@@ -771,8 +838,12 @@ export default function WorkersPage() {
                   <Pressable style={styles.faceRetryButton} onPress={handleRetryFace}>
                     <Text style={styles.faceRetryText}>&lt;&lt;Retry&gt;&gt;</Text>
                   </Pressable>
-                  <Pressable style={styles.faceMarkButton} onPress={handleMarkFace}>
-                    <Text style={styles.faceMarkText}>&lt;&lt;Mark&gt;&gt;</Text>
+                  <Pressable style={[styles.faceMarkButton, isVerifyingFace && { opacity: 0.7 }]} onPress={handleMarkFace} disabled={isVerifyingFace}>
+                    {isVerifyingFace ? (
+                      <ActivityIndicator color="#fff" size="small" />
+                    ) : (
+                      <Text style={styles.faceMarkText}>&lt;&lt;Mark&gt;&gt;</Text>
+                    )}
                   </Pressable>
                 </View>
               )}
@@ -892,6 +963,26 @@ export default function WorkersPage() {
           title={successMessage ?? ''}
           onClose={() => setSuccessMessage(null)}
         />
+
+        {/* Error Modal */}
+        <Modal visible={!!errorModal} transparent animationType="fade" onRequestClose={() => setErrorModal(null)}>
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { backgroundColor: theme.background, maxWidth: 380, padding: 0, overflow: 'hidden' }]}>
+              <View style={{ backgroundColor: '#dc3545', padding: 16, alignItems: 'center' }}>
+                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 17 }}>{errorModal?.title}</Text>
+              </View>
+              <View style={{ padding: 20, alignItems: 'center' }}>
+                <Text style={{ color: theme.text, fontSize: 15, textAlign: 'center', marginBottom: 20 }}>{errorModal?.message}</Text>
+                <Pressable
+                  style={{ backgroundColor: '#4b4fbf', paddingVertical: 10, paddingHorizontal: 28, borderRadius: 8 }}
+                  onPress={() => setErrorModal(null)}
+                >
+                  <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 15 }}>OK</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </SafeAreaView>
     </ThemedView>
   );
