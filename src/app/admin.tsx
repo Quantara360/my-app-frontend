@@ -2170,7 +2170,7 @@ export default function AdminDashboard() {
               <View style={styles.manageSiteCardTopRow}>
                 <View style={styles.manageSiteLogoWrapper}>
                   {site.logo ? (
-                    <Image source={{ uri: site.logo.startsWith('http') ? site.logo : `${API_BASE_URL.replace('/api', '')}${site.logo}` }} style={{ width: 70, height: 70, borderRadius: 12 }} resizeMode="cover" />
+                    <Image source={{ uri: site.logo.startsWith('http') ? site.logo : `${API_BASE_URL.replace(/\/api$/, '')}${site.logo}` }} style={{ width: 70, height: 70, borderRadius: 12 }} resizeMode="cover" />
                   ) : (
                     <Text style={styles.manageSiteLogoIcon}>
                       {site._level === 'hospital' ? '🏥' : site._level === 'subsite' ? '📍' : '🏗️'}
@@ -2326,7 +2326,7 @@ export default function AdminDashboard() {
                 style={[styles.formInput, { alignItems: 'center', justifyContent: 'center', padding: 12, borderStyle: 'dashed', borderWidth: 1 }]}
               >
                 {siteLogoUri || selectedManageSite?.logo ? (
-                  <Image source={{ uri: siteLogoUri || (selectedManageSite.logo.startsWith('http') ? selectedManageSite.logo : `${API_BASE_URL.replace('/api', '')}${selectedManageSite.logo}`) }} style={{ width: 100, height: 100, borderRadius: 8 }} />
+                  <Image source={{ uri: siteLogoUri || (selectedManageSite.logo.startsWith('http') ? selectedManageSite.logo : `${API_BASE_URL.replace(/\/api$/, '')}${selectedManageSite.logo}`) }} style={{ width: 100, height: 100, borderRadius: 8 }} />
                 ) : (
                   <Text style={{ color: isDark ? '#aaa' : '#666' }}>Tap to select an image</Text>
                 )}
