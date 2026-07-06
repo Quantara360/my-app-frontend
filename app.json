@@ -22,7 +22,13 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/logo.png"
+      "favicon": "./assets/images/logo.png",
+      "name": "Abeysone",
+      "shortName": "Abeysone",
+      "themeColor": "#000000",
+      "backgroundColor": "#000000",
+      "display": "standalone",
+      "startUrl": "/"
     },
     "plugins": [
       "expo-router",
