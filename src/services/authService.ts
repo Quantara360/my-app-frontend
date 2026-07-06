@@ -4,7 +4,7 @@ import Constants from 'expo-constants';
 import * as SecureStore from 'expo-secure-store';
 
 // Local API base URL for testing (change back to https://api.abeysone.cloud/api for production)
-export const API_BASE_URL = 'http://localhost:8000/api';
+export const API_BASE_URL = 'https://api.abeysone.cloud/api';
 
 export type AuthUser = {
   id: number;
