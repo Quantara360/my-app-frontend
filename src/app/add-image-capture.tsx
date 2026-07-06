@@ -1,17 +1,7 @@
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useEffect, useRef, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import {
-  View,
-  StyleSheet,
-  Pressable,
-  Text,
-  Image,
-  Alert,
-  ScrollView,
-  Modal,
-  Platform,
-  ActivityIndicator,
-} from "react-native";
+import {  View, StyleSheet, Pressable, Text, Image, Alert, ScrollView, Modal, Platform, ActivityIndicator } from 'react-native';
 import { CameraView } from "expo-camera";
 import * as FileSystem from "expo-file-system";
 import * as MediaLibrary from "expo-media-library";
@@ -28,6 +18,8 @@ export default function AddImageCapture() {
   const params = useLocalSearchParams();
   const router = useRouter();
   const theme = useTheme();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
   const { token } = useAuth();
   const book = Number(params.book ?? 1);
   const worksiteId = params.worksiteId;
@@ -325,6 +317,10 @@ export default function AddImageCapture() {
 
   return (
     <ThemedView style={styles.container}>
+      <View style={[styles.background, { backgroundColor: isDark ? "#121212" : "#F1E7DF" }]} />
+      <View style={[styles.backgroundCircleLarge, { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(255, 255, 255, 0.65)" }]} />
+      <View style={[styles.backgroundCircleSmall, { backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(255, 255, 255, 0.5)" }]} />
+
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -484,6 +480,26 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: Spacing.four,
   },
+  background: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  backgroundCircleLarge: {
+    position: "absolute",
+    width: Platform.select({ web: 280, default: 420 }),
+    height: Platform.select({ web: 280, default: 420 }),
+    borderRadius: Platform.select({ web: 140, default: 210 }),
+    top: -160,
+    right: -90,
+  },
+  backgroundCircleSmall: {
+    position: "absolute",
+    width: Platform.select({ web: 180, default: 260 }),
+    height: Platform.select({ web: 180, default: 260 }),
+    borderRadius: Platform.select({ web: 90, default: 130 }),
+    bottom: -100,
+    left: -80,
+  },
+
   scrollContent: {
     alignItems: "center",
     paddingTop: Spacing.six + Spacing.four,
