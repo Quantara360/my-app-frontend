@@ -219,10 +219,10 @@ const styles = StyleSheet.create({
   },
   centerContent: {
     flex: 1,
-    justifyContent: "center",
+    justifyContent: "flex-start",
     alignItems: "center",
     width: "100%",
-    paddingTop: Spacing.six,
+    paddingTop: 120,
     overflow: 'hidden',
   },
   cardPressed: {

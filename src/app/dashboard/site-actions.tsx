@@ -172,13 +172,16 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   heroSection: {
-    marginTop: Spacing.two,
+    marginTop: 40,
     paddingHorizontal: Spacing.three,
     gap: Spacing.two,
     alignItems: "center",
+    width: "100%",
   },
   subtitle: {
-    textAlign: "center",
+    textAlign: "left",
+    alignSelf: "flex-start",
+    marginBottom: 24,
   },
   title: {
     lineHeight: Platform.select({ web: 40, default: 56 }),

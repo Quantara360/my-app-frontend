@@ -9,6 +9,7 @@ import {
   Linking,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   View,
   Modal,
@@ -317,29 +318,35 @@ export default function FaceRecognition() {
     );
 
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={{ flex: 1 }}>
       <View style={[styles.background, { backgroundColor: isDark ? "#121212" : "#F1E7DF" }]} />
       <View style={[styles.backgroundCircleLarge, { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(255, 255, 255, 0.65)" }]} />
       <View style={[styles.backgroundCircleSmall, { backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(255, 255, 255, 0.5)" }]} />
+      <ScrollView contentContainerStyle={styles.container} style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
       <View style={styles.headerRow}>
         <Pressable style={[styles.backButton, { backgroundColor: theme.backgroundElement, borderColor: "rgba(128,128,128,0.2)" }]} onPress={goBack} accessibilityLabel="Back">
           <ThemedText type="subtitle" style={styles.backText}>←</ThemedText>
         </Pressable>
       </View>
-      <View style={styles.titleRow}>
-        <View style={styles.headerText}>
-          <ThemedText type="subtitle">Face Recognition</ThemedText>
-          <ThemedText type="small">
+      <View style={[styles.titleRow, { marginTop: Spacing.four, justifyContent: "center" }]}>
+        <View style={[styles.headerText, { marginRight: 0 }]}>
+          <ThemedText type="subtitle" style={{ textAlign: "center" }}>Face Recognition</ThemedText>
+          <ThemedText type="small" style={{ textAlign: "center" }}>
             Please hold your face towards the camera steadily...
           </ThemedText>
         </View>
-        <Pressable style={styles.flipButton} onPress={() => setCameraFacing(prev => prev === 'front' ? 'back' : 'front')}>
-          <ThemedText style={styles.flipText}>🔄</ThemedText>
-        </Pressable>
       </View>
 
       <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}> 
-        <ThemedText type="smallBold">Keep Your eyes open</ThemedText>
+        <View style={{ flexDirection: "row", width: "100%", alignItems: "center", marginBottom: Spacing.two }}>
+          <View style={{ flex: 1 }} />
+          <ThemedText type="smallBold" style={{ flex: 2, textAlign: "center" }}>Keep Your eyes open</ThemedText>
+          <View style={{ flex: 1, alignItems: "flex-end" }}>
+            <Pressable style={styles.flipButton} onPress={() => setCameraFacing(prev => prev === 'front' ? 'back' : 'front')}>
+              <ThemedText style={styles.flipText}>🔄</ThemedText>
+            </Pressable>
+          </View>
+        </View>
 
         <View style={styles.previewWrap}>
           {photoUri ? (
@@ -393,6 +400,7 @@ export default function FaceRecognition() {
       <View style={styles.tableWrap}>
         <FlatList
           data={list}
+          scrollEnabled={false}
           keyExtractor={(i) => String(i.id)}
           ListHeaderComponent={() => (
             <View style={styles.tableHeaderRow}>
@@ -459,6 +467,7 @@ export default function FaceRecognition() {
           </View>
         </View>
       </Modal>
+      </ScrollView>
     </ThemedView>
   );
 }
@@ -466,9 +475,10 @@ export default function FaceRecognition() {
 const styles = StyleSheet.create({
   background: {
     ...StyleSheet.absoluteFillObject,
+    ...Platform.select({ web: { position: "fixed" as any } }),
   },
   backgroundCircleLarge: {
-    position: "absolute",
+    position: Platform.select({ web: "fixed" as any, default: "absolute" }),
     width: Platform.select({ web: 280, default: 420 }),
     height: Platform.select({ web: 280, default: 420 }),
     borderRadius: Platform.select({ web: 140, default: 210 }),
@@ -476,7 +486,7 @@ const styles = StyleSheet.create({
     right: -90,
   },
   backgroundCircleSmall: {
-    position: "absolute",
+    position: Platform.select({ web: "fixed" as any, default: "absolute" }),
     width: Platform.select({ web: 180, default: 260 }),
     height: Platform.select({ web: 180, default: 260 }),
     borderRadius: Platform.select({ web: 90, default: 130 }),
@@ -484,7 +494,7 @@ const styles = StyleSheet.create({
     left: -80,
   },
   container: {
-    flex: 1,
+    flexGrow: 1,
     padding: Spacing.four,
     paddingTop: 60,
     alignItems: "center",

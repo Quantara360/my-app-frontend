@@ -189,9 +189,10 @@ const styles = StyleSheet.create({
   },
   centerContent: {
     flexGrow: 1,
-    justifyContent: "center",
+    justifyContent: "flex-start",
     alignItems: "center",
     width: "100%",
+    paddingTop: Spacing.four,
     paddingBottom: Spacing.four,
     gap: 12,
     flexDirection: "column",

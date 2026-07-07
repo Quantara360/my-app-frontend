@@ -39,7 +39,7 @@ const officeStaffTiles = [
   },
   {
     id: "approvals",
-    title: "Getting Approvals",
+    title: "Approvals",
     route: "/approvals",
   },
   {
@@ -66,6 +66,11 @@ const officeStaffTiles = [
     id: "template",
     title: "Template",
     route: "/template",
+  },
+  {
+    id: "bonds",
+    title: "Bonds",
+    route: "/bonds",
   },
 ];
 
@@ -117,10 +122,12 @@ export default function DashboardScreen() {
 
   if (user.role === "officeStaff") {
     return (
-      <View
-        style={[styles.staffContainer, { backgroundColor: theme.background }]}
-      >
-        <SafeAreaView style={styles.staffSafeArea}>
+      <ThemedView style={styles.container}>
+        <View style={[styles.background, { backgroundColor: isDark ? "#121212" : "#F1E7DF" }]} />
+        <View style={[styles.backgroundCircleLarge, { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(255, 255, 255, 0.65)" }]} />
+        <View style={[styles.backgroundCircleSmall, { backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(255, 255, 255, 0.5)" }]} />
+        
+        <SafeAreaView style={styles.safeArea}>
           <View
             style={styles.staffScroll}
           >
@@ -191,7 +198,7 @@ export default function DashboardScreen() {
             </View>
           </View>
         </SafeAreaView>
-      </View>
+      </ThemedView>
     );
   }
 
