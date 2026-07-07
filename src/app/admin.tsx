@@ -1285,6 +1285,8 @@ export default function AdminDashboard() {
       setCurrentMainSiteId(null);
       setCurrentHospitalId(null);
       setSelectedView("manageSite");
+    } else if (card.title === "Bonds") {
+      router.push("/bonds");
     } else {
       Alert.alert(`${card.title}`, `You clicked on ${card.title}`);
     }
@@ -2031,33 +2033,56 @@ export default function AdminDashboard() {
           })}
         </View>
 
-        {/* Petacash & Accounts - Full Width Card */}
-        {(() => {
-          const scaleValue = getCardScaleValue("petacash");
-          return (
-            <AnimatedPressable
-              key="petacash"
-              style={[
-                styles.fullWidthCard,
-                { transform: [{ scale: scaleValue }] },
-              ]}
-              onPress={() =>
-                Alert.alert(
-                  "Petacash & Accounts",
-                  "You clicked on Petacash & Accounts",
-                )
-              }
-            >
-              <Text style={styles.cardIcon}>💰</Text>
-              <ThemedText
-                type="smallBold"
-                style={[styles.fullWidthCardTitle, { color: "#1f1d21" }]}
+        {/* Peticash & Bonds - Side by Side Row */}
+        <View style={styles.cardsRow}>
+          {(() => {
+            const scaleValue = getCardScaleValue("petacash");
+            return (
+              <AnimatedPressable
+                key="petacash"
+                style={[
+                  styles.card,
+                  { backgroundColor: "#b2f0b2", transform: [{ scale: scaleValue }] },
+                ]}
+                onPress={() =>
+                  Alert.alert(
+                    "Peticash & Accounts",
+                    "You clicked on Peticash & Accounts",
+                  )
+                }
               >
-                Peticash & Accounts
-              </ThemedText>
-            </AnimatedPressable>
-          );
-        })()}
+                <Text style={styles.cardIcon}>💰</Text>
+                <ThemedText
+                  type="smallBold"
+                  style={[styles.cardTitle, { color: "#1f1d21" }]}
+                >
+                  Peticash
+                </ThemedText>
+              </AnimatedPressable>
+            );
+          })()}
+          {(() => {
+            const scaleValue = getCardScaleValue("bonds");
+            return (
+              <AnimatedPressable
+                key="bonds"
+                style={[
+                  styles.card,
+                  { backgroundColor: "#d1c4e9", transform: [{ scale: scaleValue }] },
+                ]}
+                onPress={() => router.push("/bonds" as any)}
+              >
+                <Text style={styles.cardIcon}>📜</Text>
+                <ThemedText
+                  type="smallBold"
+                  style={[styles.cardTitle, { color: "#1f1d21" }]}
+                >
+                  Bonds
+                </ThemedText>
+              </AnimatedPressable>
+            );
+          })()}
+        </View>
       </View>
     </>
   );

@@ -212,7 +212,7 @@ export default function PeticashPage() {
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={[styles.container, { backgroundColor: 'transparent' }]}>
       <BackgroundPattern />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.headerRow}>

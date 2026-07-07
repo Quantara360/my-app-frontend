@@ -51,7 +51,8 @@ export default function BidBondsPage() {
   const goBack = useGoBack();
   const theme = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const isAdmin = user?.role === 'admin';
 
   const [bonds, setBonds] = useState<BidBond[]>([]);
   const [search, setSearch] = useState('');
@@ -87,9 +88,6 @@ export default function BidBondsPage() {
   const openAdd = () => {
     setSelectedBond(null);
     setIsEditing(false);
-    const parsedDate = b.duration_date ? new Date(b.duration_date) : new Date();
-    setSelectedDate(parsedDate);
-    setShowDatePicker(false);
     setFormValues({ ...initialForm });
     setSelectedDate(new Date());
     setShowDatePicker(false);
@@ -158,7 +156,7 @@ export default function BidBondsPage() {
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={[styles.container, { backgroundColor: 'transparent' }]}>
       <BackgroundPattern />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.headerRow}>
@@ -177,9 +175,11 @@ export default function BidBondsPage() {
               value={search}
               onChangeText={setSearch}
             />
-            <Pressable style={[styles.addButton, { backgroundColor: theme.backgroundSelected }]} onPress={openAdd}>
-              <ThemedText type="smallBold">+ Add</ThemedText>
-            </Pressable>
+            {!isAdmin && (
+              <Pressable style={[styles.addButton, { backgroundColor: theme.backgroundSelected }]} onPress={openAdd}>
+                <ThemedText type="smallBold">+ Add</ThemedText>
+              </Pressable>
+            )}
           </View>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>

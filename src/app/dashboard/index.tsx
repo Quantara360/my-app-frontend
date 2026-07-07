@@ -49,7 +49,7 @@ const officeStaffTiles = [
   },
   {
     id: "other-payments",
-    title: "Other Payments",
+    title: "Payments",
     route: "/other-payments",
   },
   {
@@ -179,6 +179,7 @@ export default function DashboardScreen() {
                     key={tile.id}
                     style={({ pressed }) => [
                       styles.staffCard,
+                      tile.id === "bonds" ? { flexBasis: "100%", maxWidth: "100%" } : {},
                       {
                         backgroundColor: theme.background,
                         borderColor: theme.backgroundSelected,

@@ -48,7 +48,8 @@ export default function PerformanceBondsPage() {
   const goBack = useGoBack();
   const theme = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const isAdmin = user?.role === 'admin';
 
   const [bonds, setBonds] = useState<PerformanceBond[]>([]);
   const [search, setSearch] = useState('');
@@ -84,9 +85,6 @@ export default function PerformanceBondsPage() {
   const openAdd = () => {
     setSelectedBond(null);
     setIsEditing(false);
-    const parsedDate = b.date ? new Date(b.date) : new Date();
-    setSelectedDate(parsedDate);
-    setShowDatePicker(false);
     setFormValues({ ...initialForm });
     setSelectedDate(new Date());
     setShowDatePicker(false);
@@ -153,7 +151,7 @@ export default function PerformanceBondsPage() {
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={[styles.container, { backgroundColor: 'transparent' }]}>
       <BackgroundPattern />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.headerRow}>
@@ -172,9 +170,11 @@ export default function PerformanceBondsPage() {
               value={search}
               onChangeText={setSearch}
             />
-            <Pressable style={[styles.addButton, { backgroundColor: theme.backgroundSelected }]} onPress={openAdd}>
-              <ThemedText type="smallBold">+ Add</ThemedText>
-            </Pressable>
+            {!isAdmin && (
+              <Pressable style={[styles.addButton, { backgroundColor: theme.backgroundSelected }]} onPress={openAdd}>
+                <ThemedText type="smallBold">+ Add</ThemedText>
+              </Pressable>
+            )}
           </View>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>

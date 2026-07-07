@@ -348,7 +348,7 @@ export default function WorkerSalariesPage() {
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={[styles.container, { backgroundColor: 'transparent' }]}>
       <BackgroundPattern />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.headerRow}>

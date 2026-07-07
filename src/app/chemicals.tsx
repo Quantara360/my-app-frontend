@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { BackgroundPattern } from '@/components/BackgroundPattern';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { SuccessModal } from '@/components/success-modal';
@@ -219,7 +220,8 @@ export default function ChemicalsPage() {
   const hazardOptions = ['low', 'medium', 'high'];
 
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={[styles.container, { backgroundColor: 'transparent' }]}>
+      <BackgroundPattern />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.headerRow}>
           <Pressable style={[styles.backButton, { backgroundColor: theme.backgroundSelected }]} onPress={() => router.back()}>
@@ -478,7 +480,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     flex: 1,
     padding: Spacing.four,
     paddingBottom: BottomTabInset,
-    backgroundColor: theme.background,
+    backgroundColor: 'transparent',
   },
   safeArea: {
     flex: 1,
@@ -532,7 +534,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     minWidth: 160,
     padding: Spacing.two,
     borderRadius: 24,
-    backgroundColor: theme.background,
+    backgroundColor: 'transparent',
     color: theme.text,
     fontSize: 13,
     borderWidth: 1,
@@ -544,7 +546,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     paddingHorizontal: Spacing.two,
     borderBottomWidth: 2,
     borderColor: theme.backgroundSelected,
-    backgroundColor: theme.background,
+    backgroundColor: 'transparent',
     gap: Spacing.two,
   },
   columnHeader: {
@@ -644,7 +646,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     width: '100%',
     padding: Spacing.two,
     borderRadius: 24,
-    backgroundColor: theme.background,
+    backgroundColor: 'transparent',
     color: theme.text,
     fontSize: 13,
     marginTop: Spacing.one,
@@ -664,7 +666,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     width: '100%',
     padding: Spacing.two,
     borderRadius: 24,
-    backgroundColor: theme.background,
+    backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: theme.backgroundSelected,
   },

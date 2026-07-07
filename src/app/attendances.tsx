@@ -147,7 +147,7 @@ export default function AttendancesPage() {
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={[styles.container, { backgroundColor: 'transparent' }]}>
       <BackgroundPattern />
       <SafeAreaView style={{ flex: 1 }}>
         {/* Header */}
