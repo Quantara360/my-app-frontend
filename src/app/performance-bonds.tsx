@@ -54,7 +54,8 @@ export default function PerformanceBondsPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [selectedBond, setSelectedBond] = useState<PerformanceBond | null>(null);
   const [formValues, setFormValues] = useState({ ...initialForm });
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [successTitle, setSuccessTitle] = useState('');
   const [viewOpen, setViewOpen] = useState(false);
   const [viewItem, setViewItem] = useState<PerformanceBond | null>(null);
   const [statusPickerOpen, setStatusPickerOpen] = useState(false);
@@ -119,7 +120,8 @@ export default function PerformanceBondsPage() {
       const normalized = normalizePerformanceBond(saved);
       setBonds((prev) => isEditing && selectedBond ? prev.map((p) => p.id === selectedBond.id ? normalized : p) : [normalized, ...prev]);
       setFormOpen(false);
-      setSuccessMessage(isEditing ? 'Performance Bond Updated!' : 'Performance Bond Added!');
+      setSuccessTitle(isEditing ? 'Performance Bond Updated!' : 'Performance Bond Added!');
+      setShowSuccess(true);
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'Failed to save');
     }
@@ -133,7 +135,8 @@ export default function PerformanceBondsPage() {
     });
     if (!res.ok) { Alert.alert('Error', 'Failed to delete'); return; }
     setBonds((prev) => prev.filter((b) => b.id !== id));
-    setSuccessMessage('Performance Bond Deleted!');
+    setSuccessTitle('Performance Bond Deleted!');
+    setShowSuccess(true);
   };
 
   return (
@@ -278,7 +281,7 @@ export default function PerformanceBondsPage() {
           </View>
         </Modal>
 
-        <SuccessModal message={successMessage} onDismiss={() => setSuccessMessage(null)} />
+        <SuccessModal visible={showSuccess} title={successTitle} onClose={() => setShowSuccess(false)} />
       </SafeAreaView>
     </ThemedView>
   );

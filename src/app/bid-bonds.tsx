@@ -57,7 +57,8 @@ export default function BidBondsPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [selectedBond, setSelectedBond] = useState<BidBond | null>(null);
   const [formValues, setFormValues] = useState({ ...initialForm });
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [successTitle, setSuccessTitle] = useState('');
   const [viewOpen, setViewOpen] = useState(false);
   const [viewItem, setViewItem] = useState<BidBond | null>(null);
   const [statusPickerOpen, setStatusPickerOpen] = useState(false);
@@ -124,7 +125,8 @@ export default function BidBondsPage() {
       const normalized = normalizeBidBond(saved);
       setBonds((prev) => isEditing && selectedBond ? prev.map((p) => p.id === selectedBond.id ? normalized : p) : [normalized, ...prev]);
       setFormOpen(false);
-      setSuccessMessage(isEditing ? 'Bid Bond Updated!' : 'Bid Bond Added!');
+      setSuccessTitle(isEditing ? 'Bid Bond Updated!' : 'Bid Bond Added!');
+      setShowSuccess(true);
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'Failed to save');
     }
@@ -138,7 +140,8 @@ export default function BidBondsPage() {
     });
     if (!res.ok) { Alert.alert('Error', 'Failed to delete'); return; }
     setBonds((prev) => prev.filter((b) => b.id !== id));
-    setSuccessMessage('Bid Bond Deleted!');
+    setSuccessTitle('Bid Bond Deleted!');
+    setShowSuccess(true);
   };
 
   return (
@@ -297,7 +300,7 @@ export default function BidBondsPage() {
           </View>
         </Modal>
 
-        <SuccessModal message={successMessage} onDismiss={() => setSuccessMessage(null)} />
+        <SuccessModal visible={showSuccess} title={successTitle} onClose={() => setShowSuccess(false)} />
       </SafeAreaView>
     </ThemedView>
   );
