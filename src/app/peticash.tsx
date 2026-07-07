@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Modal, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { BackgroundPattern } from '@/components/BackgroundPattern';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { SuccessModal } from '@/components/success-modal';
@@ -212,6 +213,7 @@ export default function PeticashPage() {
 
   return (
     <ThemedView style={styles.container}>
+      <BackgroundPattern />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.headerRow}>
           <Pressable style={[styles.backButton, { backgroundColor: theme.backgroundSelected }]} onPress={() => goBack()}>
@@ -520,7 +522,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) =>
       flex: 1,
       padding: Spacing.four,
       paddingBottom: BottomTabInset,
-      backgroundColor: theme.background,
+      backgroundColor: 'transparent',
     },
     safeArea: {
       flex: 1,
@@ -574,7 +576,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) =>
       minWidth: 160,
       padding: Spacing.two,
       borderRadius: 24,
-      backgroundColor: theme.background,
+      backgroundColor: 'transparent',
       color: theme.text,
       fontSize: 13,
       borderWidth: 1,
@@ -586,7 +588,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) =>
       paddingHorizontal: Spacing.two,
       borderBottomWidth: 2,
       borderColor: theme.backgroundSelected,
-      backgroundColor: theme.background,
+      backgroundColor: 'transparent',
       gap: Spacing.two,
     },
     columnHeader: {
@@ -695,7 +697,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) =>
       width: '100%',
       padding: Spacing.two,
       borderRadius: 24,
-      backgroundColor: theme.background,
+      backgroundColor: 'transparent',
       borderWidth: 1,
       borderColor: theme.backgroundSelected,
     },
@@ -707,7 +709,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) =>
       width: '100%',
       padding: Spacing.two,
       borderRadius: 24,
-      backgroundColor: theme.background,
+      backgroundColor: 'transparent',
       color: theme.text,
       fontSize: 13,
       marginTop: Spacing.one,

@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Modal, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { BackgroundPattern } from '@/components/BackgroundPattern';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { SuccessModal } from '@/components/success-modal';
@@ -199,6 +200,7 @@ export default function OfficeSalariesPage() {
 
   return (
     <ThemedView style={styles.container}>
+      <BackgroundPattern />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.headerRow}>
           <Pressable style={[styles.backButton, { backgroundColor: theme.backgroundSelected }]} onPress={() => goBack()}>
@@ -449,7 +451,7 @@ export default function OfficeSalariesPage() {
 
 const createStyles = (theme: ReturnType<typeof useTheme>) =>
   StyleSheet.create({
-    container: { flex: 1, padding: Spacing.four, paddingBottom: BottomTabInset, backgroundColor: theme.background },
+    container: { flex: 1, padding: Spacing.four, paddingBottom: BottomTabInset, backgroundColor: 'transparent' },
     safeArea: { flex: 1, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', gap: Spacing.three },
     headerRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, marginTop: 40 },
     backButton: { padding: Spacing.two, borderRadius: 14 },
@@ -457,8 +459,8 @@ const createStyles = (theme: ReturnType<typeof useTheme>) =>
     card: { borderRadius: 30, padding: Spacing.four, gap: Spacing.three, minHeight: 520, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 18, shadowOffset: { width: 0, height: 12 }, elevation: 10, backgroundColor: theme.backgroundElement },
     topControls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.three, flexWrap: 'wrap' },
     addButton: { paddingVertical: Spacing.two, paddingHorizontal: Spacing.four, borderRadius: 24, minWidth: 80 },
-    searchInput: { flex: 1, minWidth: 160, padding: Spacing.two, borderRadius: 24, backgroundColor: theme.background, color: theme.text, fontSize: 13, borderWidth: 1, borderColor: theme.backgroundSelected },
-    tableHeader: { flexDirection: 'row', paddingVertical: Spacing.three, paddingHorizontal: Spacing.two, borderBottomWidth: 2, borderColor: theme.backgroundSelected, backgroundColor: theme.background, gap: Spacing.two },
+    searchInput: { flex: 1, minWidth: 160, padding: Spacing.two, borderRadius: 24, backgroundColor: 'transparent', color: theme.text, fontSize: 13, borderWidth: 1, borderColor: theme.backgroundSelected },
+    tableHeader: { flexDirection: 'row', paddingVertical: Spacing.three, paddingHorizontal: Spacing.two, borderBottomWidth: 2, borderColor: theme.backgroundSelected, backgroundColor: 'transparent', gap: Spacing.two },
     columnHeader: {
       flex: 1,
       minWidth: 120, fontWeight: '700', color: theme.text, fontSize: 13 },
@@ -491,12 +493,12 @@ const createStyles = (theme: ReturnType<typeof useTheme>) =>
     formBody: { gap: Spacing.two },
     fieldRow: { gap: Spacing.one },
     fieldLabel: { fontSize: 13, color: theme.text, fontWeight: '700', marginBottom: Spacing.one },
-    selectInput: { width: '100%', padding: Spacing.two, borderRadius: 24, backgroundColor: theme.background, borderWidth: 1, borderColor: theme.backgroundSelected },
+    selectInput: { width: '100%', padding: Spacing.two, borderRadius: 24, backgroundColor: 'transparent', borderWidth: 1, borderColor: theme.backgroundSelected },
     selectText: { color: theme.text, fontSize: 13 },
     statusOptions: { borderRadius: 20, overflow: 'hidden', marginTop: Spacing.one, backgroundColor: theme.backgroundSelected },
     statusOption: { paddingVertical: Spacing.one, paddingHorizontal: Spacing.three, borderRadius: 20, backgroundColor: theme.backgroundSelected },
     statusOptionText: { color: theme.text, fontSize: 13 },
-    textInput: { width: '100%', padding: Spacing.two, borderRadius: 24, backgroundColor: theme.background, color: theme.text, fontSize: 13, marginTop: Spacing.one, borderWidth: 1, borderColor: theme.backgroundSelected },
+    textInput: { width: '100%', padding: Spacing.two, borderRadius: 24, backgroundColor: 'transparent', color: theme.text, fontSize: 13, marginTop: Spacing.one, borderWidth: 1, borderColor: theme.backgroundSelected },
     pill: { borderRadius: 24, paddingVertical: Spacing.two, paddingHorizontal: Spacing.four, minWidth: 140, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: theme.backgroundSelected },
     pillText: { color: theme.text, fontSize: 13 },
     typeList: { flexDirection: 'row', gap: Spacing.two, flexWrap: 'wrap' },

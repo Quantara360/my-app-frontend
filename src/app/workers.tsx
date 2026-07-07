@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Image, Linking, Modal, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Camera, CameraView } from 'expo-camera';
+import { BackgroundPattern } from '@/components/BackgroundPattern';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { SuccessModal } from '@/components/success-modal';
@@ -458,6 +459,7 @@ export default function WorkersPage() {
 
   return (
     <ThemedView style={styles.container}>
+      <BackgroundPattern />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.headerRow}>
           <Pressable style={[styles.backButton, { backgroundColor: theme.backgroundSelected }]} onPress={() => goBack()}>
@@ -974,7 +976,7 @@ export default function WorkersPage() {
         {/* Error Modal */}
         <Modal visible={!!errorModal} transparent animationType="fade" onRequestClose={() => setErrorModal(null)}>
           <View style={styles.modalOverlay}>
-            <View style={[styles.modalContent, { backgroundColor: theme.background, maxWidth: 380, padding: 0, overflow: 'hidden' }]}>
+            <View style={[styles.modalContent, { backgroundColor: 'transparent', maxWidth: 380, padding: 0, overflow: 'hidden' }]}>
               <View style={{ backgroundColor: '#dc3545', padding: 16, alignItems: 'center' }}>
                 <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 17 }}>{errorModal?.title}</Text>
               </View>
@@ -1000,7 +1002,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     flex: 1,
     padding: Spacing.four,
     paddingBottom: BottomTabInset,
-    backgroundColor: theme.background,
+    backgroundColor: 'transparent',
   },
   safeArea: {
     flex: 1,
@@ -1069,7 +1071,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     width: '100%',
     padding: Spacing.two,
     borderRadius: 24,
-    backgroundColor: theme.background,
+    backgroundColor: 'transparent',
     color: theme.text,
     fontSize: 13,
     borderWidth: 1,
@@ -1079,7 +1081,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     width: '100%',
     padding: Spacing.two,
     borderRadius: 24,
-    backgroundColor: theme.background,
+    backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: theme.backgroundSelected,
   },
@@ -1093,7 +1095,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     paddingHorizontal: Spacing.two,
     borderBottomWidth: 2,
     borderColor: theme.backgroundSelected,
-    backgroundColor: theme.background,
+    backgroundColor: 'transparent',
     gap: Spacing.two,
   },
   columnHeader: {
@@ -1208,7 +1210,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   selectInput: {
     padding: Spacing.three,
     borderRadius: 20,
-    backgroundColor: theme.background,
+    backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: theme.backgroundSelected,
   },
@@ -1219,7 +1221,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     width: '100%',
     padding: Spacing.three,
     borderRadius: 24,
-    backgroundColor: theme.background,
+    backgroundColor: 'transparent',
     color: theme.text,
     marginBottom: Spacing.two,
     borderWidth: 1,
@@ -1331,7 +1333,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: theme.background,
+    backgroundColor: 'transparent',
   },
   facePreviewCamera: {
     width: '100%',

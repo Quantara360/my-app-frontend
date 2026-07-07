@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import {
   Alert, Modal, Platform, Pressable, SafeAreaView,
   ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native';
+import { BackgroundPattern } from '@/components/BackgroundPattern';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { SuccessModal } from '@/components/success-modal';
@@ -59,6 +61,9 @@ export default function PerformanceBondsPage() {
   const [viewOpen, setViewOpen] = useState(false);
   const [viewItem, setViewItem] = useState<PerformanceBond | null>(null);
   const [statusPickerOpen, setStatusPickerOpen] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const webDateInputRef = React.useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -79,13 +84,21 @@ export default function PerformanceBondsPage() {
   const openAdd = () => {
     setSelectedBond(null);
     setIsEditing(false);
+    const parsedDate = b.date ? new Date(b.date) : new Date();
+    setSelectedDate(parsedDate);
+    setShowDatePicker(false);
     setFormValues({ ...initialForm });
+    setSelectedDate(new Date());
+    setShowDatePicker(false);
     setFormOpen(true);
   };
 
   const openEdit = (b: PerformanceBond) => {
     setSelectedBond(b);
     setIsEditing(true);
+    const parsedDate = b.date ? new Date(b.date) : new Date();
+    setSelectedDate(parsedDate);
+    setShowDatePicker(false);
     setFormValues({
       valid_period: b.valid_period,
       date: b.date,
@@ -100,7 +113,7 @@ export default function PerformanceBondsPage() {
     if (!token) return;
     const payload = {
       valid_period: formValues.valid_period,
-      date: formValues.date,
+      date: formValues.date || selectedDate.toISOString().split('T')[0],
       description: formValues.description,
       amount: Number(formValues.amount) || 0,
       tender_status: formValues.tender_status,
@@ -141,6 +154,7 @@ export default function PerformanceBondsPage() {
 
   return (
     <ThemedView style={styles.container}>
+      <BackgroundPattern />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.headerRow}>
           <Pressable style={[styles.backButton, { backgroundColor: theme.backgroundSelected }]} onPress={() => goBack()}>
@@ -166,23 +180,23 @@ export default function PerformanceBondsPage() {
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View style={{ minWidth: '100%' }}>
               <View style={styles.tableHeader}>
-                <Text style={[styles.columnHeader, { width: 50 }]}>ID</Text>
-                <Text style={[styles.columnHeader, { width: 110 }]}>Valid Period</Text>
-                <Text style={[styles.columnHeader, { width: 120 }]}>Date</Text>
-                <Text style={[styles.columnHeader, { width: 150 }]}>Description</Text>
-                <Text style={[styles.columnHeader, { width: 100 }]}>Amount</Text>
-                <Text style={[styles.columnHeader, { width: 110 }]}>Tender Status</Text>
+                <Text style={[styles.columnHeader, { width: 50, minWidth: 50, flex: 0 }]}>ID</Text>
+                <Text style={[styles.columnHeader, { width: 110, minWidth: 110, flex: 0 }]}>Valid Period</Text>
+                <Text style={[styles.columnHeader, { width: 120, minWidth: 120, flex: 0 }]}>Date</Text>
+                <Text style={[styles.columnHeader, { width: 150, minWidth: 150, flex: 0 }]}>Description</Text>
+                <Text style={[styles.columnHeader, { width: 100, minWidth: 100, flex: 0 }]}>Amount</Text>
+                <Text style={[styles.columnHeader, { width: 110, minWidth: 110, flex: 0 }]}>Tender Status</Text>
                 <Text style={styles.columnHeaderRight}>Actions</Text>
               </View>
               <ScrollView style={styles.tableBody} showsVerticalScrollIndicator={false}>
                 {filtered.map((b) => (
                   <View key={b.id} style={styles.tableRow}>
-                    <Text style={[styles.rowCell, { width: 50 }]} numberOfLines={1}>{b.id}</Text>
-                    <Text style={[styles.rowCell, { width: 110 }]} numberOfLines={1}>{b.valid_period}</Text>
-                    <Text style={[styles.rowCell, { width: 120 }]} numberOfLines={1}>{b.date}</Text>
-                    <Text style={[styles.rowCell, { width: 150 }]} numberOfLines={2}>{b.description}</Text>
-                    <Text style={[styles.rowCell, { width: 100 }]} numberOfLines={1}>{Number(b.amount).toLocaleString()}</Text>
-                    <Text style={[styles.rowCell, { width: 110 }]} numberOfLines={1}>{b.tender_status}</Text>
+                    <Text style={[styles.rowCell, { width: 50, minWidth: 50, flex: 0 }]} numberOfLines={1}>{b.id}</Text>
+                    <Text style={[styles.rowCell, { width: 110, minWidth: 110, flex: 0 }]} numberOfLines={1}>{b.valid_period}</Text>
+                    <Text style={[styles.rowCell, { width: 120, minWidth: 120, flex: 0 }]} numberOfLines={1}>{b.date}</Text>
+                    <Text style={[styles.rowCell, { width: 150, minWidth: 150, flex: 0 }]} numberOfLines={2}>{b.description}</Text>
+                    <Text style={[styles.rowCell, { width: 100, minWidth: 100, flex: 0 }]} numberOfLines={1}>{Number(b.amount).toLocaleString()}</Text>
+                    <Text style={[styles.rowCell, { width: 110, minWidth: 110, flex: 0 }]} numberOfLines={1}>{b.tender_status}</Text>
                     <View style={styles.actionsColumn}>
                       <Pressable style={styles.actionButtonIcon} onPress={() => { setViewItem(b); setViewOpen(true); }}>
                         <Text style={styles.actionIcon}>👁</Text>
@@ -221,7 +235,45 @@ export default function PerformanceBondsPage() {
                 <TextInput style={[styles.textInput, { color: theme.text, borderColor: theme.backgroundSelected }]} placeholder="e.g. 12 Months" placeholderTextColor={theme.textSecondary} value={formValues.valid_period} onChangeText={(v) => setFormValues((p) => ({ ...p, valid_period: v }))} />
 
                 <Text style={[styles.label, { color: theme.textSecondary }]}>Date</Text>
-                <TextInput style={[styles.textInput, { color: theme.text, borderColor: theme.backgroundSelected }]} placeholder="e.g. 2025-12-31" placeholderTextColor={theme.textSecondary} value={formValues.date} onChangeText={(v) => setFormValues((p) => ({ ...p, date: v }))} />
+                {Platform.OS === 'web' ? (
+                  <View style={{ position: 'relative' }}>
+                    <Pressable style={[styles.textInput, { justifyContent: 'center', borderColor: theme.backgroundSelected }]} onPress={() => { webDateInputRef.current?.showPicker?.(); webDateInputRef.current?.click(); }}>
+                      <Text style={{ color: theme.text }}>{formValues.date || selectedDate.toISOString().split('T')[0]}</Text>
+                    </Pressable>
+                    <input
+                      ref={webDateInputRef}
+                      type="date"
+                      value={formValues.date || selectedDate.toISOString().split('T')[0]}
+                      onChange={(event) => {
+                        const value = event.currentTarget.value;
+                        setFormValues((prev) => ({ ...prev, date: value }));
+                        const parsed = new Date(value);
+                        if (!Number.isNaN(parsed.getTime())) setSelectedDate(parsed);
+                      }}
+                      style={{ position: 'absolute', opacity: 0, width: 1, height: 1, zIndex: -1, pointerEvents: 'none' }}
+                    />
+                  </View>
+                ) : (
+                  <>
+                    <Pressable style={[styles.textInput, { justifyContent: 'center', borderColor: theme.backgroundSelected }]} onPress={() => setShowDatePicker(true)}>
+                      <Text style={{ color: theme.text }}>{selectedDate.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}</Text>
+                    </Pressable>
+                    {showDatePicker && (
+                      <DateTimePicker
+                        value={selectedDate}
+                        mode="date"
+                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                        onChange={(_event, date) => {
+                          setShowDatePicker(Platform.OS === 'ios');
+                          if (date) {
+                            setSelectedDate(date);
+                            setFormValues((prev) => ({ ...prev, date: date.toISOString().split('T')[0] }));
+                          }
+                        }}
+                      />
+                    )}
+                  </>
+                )}
 
                 <Text style={[styles.label, { color: theme.textSecondary }]}>Description</Text>
                 <TextInput style={[styles.textInput, { color: theme.text, borderColor: theme.backgroundSelected, height: 80, textAlignVertical: 'top' }]} placeholder="Description" placeholderTextColor={theme.textSecondary} multiline value={formValues.description} onChangeText={(v) => setFormValues((p) => ({ ...p, description: v }))} />
@@ -288,21 +340,21 @@ export default function PerformanceBondsPage() {
 }
 
 const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
-  container: { flex: 1, padding: Spacing.four, paddingBottom: BottomTabInset, backgroundColor: theme.background },
+  container: { flex: 1, padding: Spacing.four, paddingBottom: BottomTabInset, backgroundColor: 'transparent' },
   safeArea: { flex: 1, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, marginBottom: Spacing.four },
   backButton: { padding: Spacing.two, borderRadius: 16 },
   pageTitle: { flex: 1, textAlign: 'center', color: theme.text },
   card: { flex: 1, width: '100%', borderRadius: 28, padding: Spacing.three, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 18, shadowOffset: { width: 0, height: 12 }, elevation: 10 },
   topControls: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, marginBottom: Spacing.three },
-  searchInput: { flex: 1, borderWidth: 1, borderColor: theme.backgroundSelected, borderRadius: 12, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, color: theme.text, backgroundColor: theme.background },
+  searchInput: { flex: 1, borderWidth: 1, borderColor: theme.backgroundSelected, borderRadius: 12, paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, color: theme.text, backgroundColor: 'transparent' },
   addButton: { paddingVertical: Spacing.two, paddingHorizontal: Spacing.three, borderRadius: 12 },
   tableHeader: { flexDirection: 'row', paddingVertical: 10, paddingHorizontal: Spacing.two, borderBottomWidth: 1, borderBottomColor: theme.backgroundSelected },
-  columnHeader: { flex: 1, fontSize: 12, fontWeight: '700', color: theme.textSecondary, textTransform: 'uppercase' },
-  columnHeaderRight: { width: 110, fontSize: 12, fontWeight: '700', color: theme.textSecondary, textTransform: 'uppercase', textAlign: 'right' },
+  columnHeader: { flex: 1, minWidth: 100, fontSize: 12, fontWeight: '700', color: theme.textSecondary, textTransform: 'uppercase' },
+  columnHeaderRight: { width: 110, minWidth: 110, fontSize: 12, fontWeight: '700', color: theme.textSecondary, textTransform: 'uppercase', textAlign: 'right' },
   tableBody: { maxHeight: 400 },
-  tableRow: { flexDirection: 'row', paddingVertical: 10, paddingHorizontal: Spacing.two, borderBottomWidth: 1, borderBottomColor: theme.backgroundSelected, alignItems: 'center' },
-  rowCell: { flex: 1, fontSize: 13, color: theme.text },
+  tableRow: { flexDirection: 'row', paddingVertical: 10, paddingHorizontal: Spacing.two, borderBottomWidth: 1, borderBottomColor: theme.backgroundSelected, alignItems: 'center', gap: Spacing.one },
+  rowCell: { flex: 1, minWidth: 100, fontSize: 13, color: theme.text },
   actionsColumn: { width: 110, flexDirection: 'row', justifyContent: 'flex-end', gap: 4 },
   actionButtonIcon: { padding: 6, borderRadius: 8, backgroundColor: theme.backgroundSelected },
   actionButtonIconDelete: { padding: 6, borderRadius: 8, backgroundColor: '#ff6b6b22' },

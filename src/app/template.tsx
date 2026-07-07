@@ -15,6 +15,7 @@ import {
   View,
   Image,
 } from "react-native";
+import { BackgroundPattern } from '@/components/BackgroundPattern';
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { BottomTabInset, Spacing } from "@/constants/theme";
@@ -321,6 +322,7 @@ export default function TemplatePage() {
 
   return (
     <ThemedView style={styles.container}>
+      <BackgroundPattern />
       <SafeAreaView style={{ flex: 1 }}>
         {/* Header */}
         <View style={styles.header}>

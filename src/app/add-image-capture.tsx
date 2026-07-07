@@ -6,6 +6,7 @@ import { CameraView } from "expo-camera";
 import * as FileSystem from "expo-file-system";
 import * as MediaLibrary from "expo-media-library";
 import { ThemedView } from "@/components/themed-view";
+import { BackgroundPattern } from '@/components/BackgroundPattern';
 import { ThemedText } from "@/components/themed-text";
 import { Spacing, MaxContentWidth, BottomTabInset } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
