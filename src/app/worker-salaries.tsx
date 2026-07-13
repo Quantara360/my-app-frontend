@@ -220,32 +220,31 @@ export default function WorkerSalariesPage() {
   ) => {
     const daysCount = getDaysInMonth(year, month);
     const authHeader = { Authorization: `Bearer ${token}`, Accept: 'application/json' };
-    // workerMap only contains workers who attended (no include_absents)
     const workerMap: Record<number, { name: string; days: Record<string, { Morning: number; Evening: number }> }> = {};
 
-    for (let d = 1; d <= daysCount; d++) {
-      const dateStr = `${year}-${padDatePart(month + 1)}-${padDatePart(d)}`;
-      for (const shift of ['Morning', 'Evening'] as const) {
-        try {
-          const params: Record<string, string> = { date: dateStr, shift };
-          if (worksiteId) params.worksite_id = String(worksiteId);
-          if (subSiteId) params.sub_site_id = String(subSiteId);
-          const qs = new URLSearchParams(params).toString();
-          const resp = await fetch(`${API_BASE_URL}/attendances?${qs}`, { headers: authHeader });
-          if (!resp.ok) continue;
-          const json = await resp.json();
-          const records: any[] = Array.isArray(json) ? json : json.data || [];
-          records.forEach((rec: any) => {
-            if (rec.status === 'absent') return; // skip absents — only attended workers
-            const wid = rec.worker_id;
-            const wname = rec.worker?.name ?? `Worker #${wid}`;
-            if (!workerMap[wid]) workerMap[wid] = { name: wname, days: {} };
-            if (!workerMap[wid].days[dateStr]) workerMap[wid].days[dateStr] = { Morning: 0, Evening: 0 };
-            workerMap[wid].days[dateStr][shift] = 1;
-          });
-        } catch (_) { /* skip on error */ }
+    try {
+      const monthStr = `${year}-${padDatePart(month + 1)}`;
+      const params: Record<string, string> = { month: monthStr, all: '1' };
+      if (worksiteId) params.worksite_id = String(worksiteId);
+      if (subSiteId) params.sub_site_id = String(subSiteId);
+      const qs = new URLSearchParams(params).toString();
+      const resp = await fetch(`${API_BASE_URL}/attendances?${qs}`, { headers: authHeader });
+      if (resp.ok) {
+        const json = await resp.json();
+        const records: any[] = Array.isArray(json) ? json : json.data || [];
+        records.forEach((rec: any) => {
+          if (rec.status === 'absent') return;
+          const wid = rec.worker_id;
+          const wname = rec.worker?.name ?? `Worker #${wid}`;
+          const dateStr = rec.date.split('T')[0];
+          const shift = rec.shift as 'Morning' | 'Evening';
+          if (!workerMap[wid]) workerMap[wid] = { name: wname, days: {} };
+          if (!workerMap[wid].days[dateStr]) workerMap[wid].days[dateStr] = { Morning: 0, Evening: 0 };
+          workerMap[wid].days[dateStr][shift] = 1;
+        });
       }
-    }
+    } catch (_) {}
+
     return { workerMap, daysCount };
   };
 
@@ -264,36 +263,33 @@ export default function WorkerSalariesPage() {
     const authHeader = { Authorization: `Bearer ${token}`, Accept: 'application/json' };
     const workerMap: Record<number, { name: string; days: Record<string, { Morning: number; Evening: number }> }> = {};
 
-    // Build list of sub-site IDs to query (if any); otherwise query worksite_id only
+    const monthStr = `${year}-${padDatePart(month + 1)}`;
     const subSiteIds = subSites.map(s => s.id);
     const queries: Array<{ worksiteId: number; subSiteId: number | null }> =
       subSiteIds.length > 0
         ? subSiteIds.map(sid => ({ worksiteId, subSiteId: sid }))
         : [{ worksiteId, subSiteId: null }];
 
-    for (let d = 1; d <= daysCount; d++) {
-      const dateStr = `${year}-${padDatePart(month + 1)}-${padDatePart(d)}`;
-      for (const shift of ['Morning', 'Evening'] as const) {
-        for (const q of queries) {
-          try {
-            const params: Record<string, string> = { date: dateStr, shift, worksite_id: String(q.worksiteId) };
-            if (q.subSiteId) params.sub_site_id = String(q.subSiteId);
-            const qs = new URLSearchParams(params).toString();
-            const resp = await fetch(`${API_BASE_URL}/attendances?${qs}`, { headers: authHeader });
-            if (!resp.ok) continue;
-            const json = await resp.json();
-            const records: any[] = Array.isArray(json) ? json : json.data || [];
-            records.forEach((rec: any) => {
-              if (rec.status === 'absent') return;
-              const wid = rec.worker_id;
-              const wname = rec.worker?.name ?? `Worker #${wid}`;
-              if (!workerMap[wid]) workerMap[wid] = { name: wname, days: {} };
-              if (!workerMap[wid].days[dateStr]) workerMap[wid].days[dateStr] = { Morning: 0, Evening: 0 };
-              workerMap[wid].days[dateStr][shift] = 1;
-            });
-          } catch (_) {}
-        }
-      }
+    for (const q of queries) {
+      try {
+        const params: Record<string, string> = { month: monthStr, all: '1', worksite_id: String(q.worksiteId) };
+        if (q.subSiteId) params.sub_site_id = String(q.subSiteId);
+        const qs = new URLSearchParams(params).toString();
+        const resp = await fetch(`${API_BASE_URL}/attendances?${qs}`, { headers: authHeader });
+        if (!resp.ok) continue;
+        const json = await resp.json();
+        const records: any[] = Array.isArray(json) ? json : json.data || [];
+        records.forEach((rec: any) => {
+          if (rec.status === 'absent') return;
+          const wid = rec.worker_id;
+          const wname = rec.worker?.name ?? `Worker #${wid}`;
+          const dateStr = rec.date.split('T')[0];
+          const shift = rec.shift as 'Morning' | 'Evening';
+          if (!workerMap[wid]) workerMap[wid] = { name: wname, days: {} };
+          if (!workerMap[wid].days[dateStr]) workerMap[wid].days[dateStr] = { Morning: 0, Evening: 0 };
+          workerMap[wid].days[dateStr][shift] = 1;
+        });
+      } catch (_) {}
     }
     return { workerMap, daysCount };
   };
