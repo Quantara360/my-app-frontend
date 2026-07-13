@@ -27,26 +27,86 @@ export default function AttendancesPage() {
   const [attendanceDateFilter, setAttendanceDateFilter] = useState("");
   const [attendanceWorksiteFilter, setAttendanceWorksiteFilter] = useState("All");
 
-  // ── Worksites for filter dropdown ────────────────────────────────────────────
-  const [worksites, setWorksites] = useState<{ id: number; name: string }[]>([]);
+  // ── Cascading location filter: Main Site → Hospital → Sub Site ──────────────
+  const [mainSites, setMainSites] = useState<{ id: number; name: string }[]>([]);
+  const [hospitals, setHospitals] = useState<{ id: number; name: string; worksite_id: number }[]>([]);
+  const [subSites, setSubSites] = useState<{ id: number; name: string; hospital_id: number }[]>([]);
 
+  const [selectedMainSite, setSelectedMainSite] = useState<string>("All");
+  const [selectedHospital, setSelectedHospital] = useState<string>("All");
+  const [selectedSubSite, setSelectedSubSite] = useState<string>("All");
+
+  // Derived lists filtered by parent selection
+  const filteredHospitals = hospitals.filter(
+    (h) => selectedMainSite === "All" || String(h.worksite_id) === selectedMainSite
+  );
+  const filteredSubSites = subSites.filter(
+    (s) => selectedHospital === "All" || String(s.hospital_id) === selectedHospital
+  );
+
+  // Keep old worksite filter in sync with the cascading selection
+  // (absent-logic still uses worksite_id / main-site level)
+  useEffect(() => {
+    setAttendanceWorksiteFilter(selectedMainSite);
+  }, [selectedMainSite]);
+
+  // Load all main sites once
   useEffect(() => {
     (async () => {
       try {
         const res = await fetch(`${API_BASE_URL}/worksites`, { headers: await getAuthHeaders() });
         const body = await res.json();
-        const list = Array.isArray(body) ? body : body.data ?? [];
-        setWorksites(list);
+        setMainSites(Array.isArray(body) ? body : body.data ?? []);
       } catch (e) {
-        console.error("Failed to load worksites:", e);
+        console.error("Failed to load main sites:", e);
       }
     })();
   }, []);
 
+  // Load all hospitals once
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/hospitals`, { headers: await getAuthHeaders() });
+        const body = await res.json();
+        setHospitals(Array.isArray(body) ? body : body.data ?? []);
+      } catch (e) {
+        console.error("Failed to load hospitals:", e);
+      }
+    })();
+  }, []);
+
+  // Load all sub-sites once
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/sub-sites`, { headers: await getAuthHeaders() });
+        const body = await res.json();
+        setSubSites(Array.isArray(body) ? body : body.data ?? []);
+      } catch (e) {
+        console.error("Failed to load sub-sites:", e);
+      }
+    })();
+  }, []);
+
+  // Reset child selections when parent changes
+  const handleMainSiteChange = (value: string) => {
+    setSelectedMainSite(value);
+    setSelectedHospital("All");
+    setSelectedSubSite("All");
+  };
+  const handleHospitalChange = (value: string) => {
+    setSelectedHospital(value);
+    setSelectedSubSite("All");
+  };
+  const handleSubSiteChange = (value: string) => {
+    setSelectedSubSite(value);
+  };
+
   // ── Load attendance data ─────────────────────────────────────────────────────
   const loadAttendancesData = async () => {
     try {
-      // Use absent-aware endpoint when all 3 filters are set
+      // Use absent-aware endpoint when all 3 filters are set (main site level)
       if (
         attendanceWorksiteFilter !== "All" &&
         attendanceDateFilter !== "" &&
@@ -91,6 +151,27 @@ export default function AttendancesPage() {
         attendanceDateFilter === "" ||
         (item.date && item.date.startsWith(attendanceDateFilter));
 
+      // ── Cascading location filter ───────────────────────────────────────────
+      // Main site: handled server-side via worksite_id (attendanceWorksiteFilter).
+      // Hospital: two-layer check for backwards compatibility:
+      //   1. New records (after migration): match via hospital_id directly.
+      //   2. Old records (hospital_id = null): fall back to sub_site_id membership
+      //      so records created before the migration are not silently hidden.
+      const hospitalSubSiteIds = filteredSubSites.map((s) => String(s.id));
+      const hospitalMatch =
+        selectedHospital === "All" ||
+        // New records: direct hospital_id match
+        String(item.hospital_id) === selectedHospital ||
+        // Old records fallback: hospital_id is null but sub_site belongs to this hospital
+        (item.hospital_id == null &&
+          item.sub_site_id != null &&
+          hospitalSubSiteIds.includes(String(item.sub_site_id)));
+
+      // Sub-site: further narrow within the hospital.
+      const subSiteMatch =
+        selectedSubSite === "All" ||
+        String(item.sub_site_id) === selectedSubSite;
+
       // Tab filter:
       // IN tab  → show everyone who has a marked_at (clocked-in), including absent synthetic rows
       // OUT tab → show only workers who have been clocked out (out_marked_at is set)
@@ -99,9 +180,9 @@ export default function AttendancesPage() {
           ? (item.status || "").toLowerCase() === "absent" || !!item.marked_at
           : !!item.out_marked_at;
 
-      return searchMatch && shiftMatch && statusMatch && dateMatch && tabMatch;
+      return searchMatch && shiftMatch && statusMatch && dateMatch && hospitalMatch && subSiteMatch && tabMatch;
     });
-  }, [attendances, attendanceSearch, attendanceShiftFilter, attendanceStatusFilter, attendanceDateFilter, activeTab]);
+  }, [attendances, attendanceSearch, attendanceShiftFilter, attendanceStatusFilter, attendanceDateFilter, activeTab, selectedHospital, selectedSubSite, filteredSubSites]);
 
   // ── Status colour helper ─────────────────────────────────────────────────────
   function statusColor(status: string) {
@@ -193,16 +274,61 @@ export default function AttendancesPage() {
             />
           </View>
 
-          {/* Worksite filter (required for absent logic) */}
+          {/* ── Cascading location filter ─────────────────────────────────── */}
+          {/* Level 1: Main Site */}
           <select
-            value={attendanceWorksiteFilter}
-            onChange={(e: any) => setAttendanceWorksiteFilter(e.target.value)}
+            value={selectedMainSite}
+            onChange={(e: any) => handleMainSiteChange(e.target.value)}
             style={selectStyle}
           >
-            <option value="All">All Worksites</option>
-            {worksites.map((ws) => (
+            <option value="All">All Main Sites</option>
+            {mainSites.map((ws) => (
               <option key={ws.id} value={String(ws.id)}>
                 {ws.name}
+              </option>
+            ))}
+          </select>
+
+          {/* Level 2: Hospital (shown only when a main site is selected) */}
+          <select
+            value={selectedHospital}
+            onChange={(e: any) => handleHospitalChange(e.target.value)}
+            style={{
+              ...selectStyle,
+              opacity: selectedMainSite === "All" ? 0.5 : 1,
+            }}
+            disabled={selectedMainSite === "All"}
+          >
+            <option value="All">
+              {selectedMainSite === "All" ? "— Select Main Site first —" : "All Hospitals"}
+            </option>
+            {filteredHospitals.map((h) => (
+              <option key={h.id} value={String(h.id)}>
+                {h.name}
+              </option>
+            ))}
+          </select>
+
+          {/* Level 3: Sub Site (shown only when a hospital is selected and has sub-sites) */}
+          <select
+            value={selectedSubSite}
+            onChange={(e: any) => handleSubSiteChange(e.target.value)}
+            style={{
+              ...selectStyle,
+              opacity: (selectedHospital === "All" || filteredSubSites.length === 0) ? 0.5 : 1,
+            }}
+            disabled={selectedHospital === "All" || filteredSubSites.length === 0}
+          >
+            <option value="All">
+              {selectedHospital === "All"
+                ? "— Select Hospital first —"
+                : filteredSubSites.length === 0
+                ? "No sub-sites"
+                : "All Sub Sites"}
+            </option>
+            {filteredSubSites.map((s) => (
+              <option key={s.id} value={String(s.id)}>
+                {s.name}
               </option>
             ))}
           </select>
@@ -240,7 +366,7 @@ export default function AttendancesPage() {
         </View>
 
         {/* Absent info banner for IN tab */}
-        {activeTab === "IN" && attendanceWorksiteFilter !== "All" && attendanceDateFilter !== "" && attendanceShiftFilter !== "All" && (
+        {activeTab === "IN" && selectedMainSite !== "All" && attendanceDateFilter !== "" && attendanceShiftFilter !== "All" && (
           <View style={styles.infoBanner}>
             <Text style={styles.infoBannerText}>
               💡 Absent workers (yellow) appear once the shift ends — Morning at 6 PM, Evening at 6 AM next day.
@@ -317,9 +443,9 @@ export default function AttendancesPage() {
               {filteredAttendanceData.length === 0 && (
                 <View style={styles.emptyRow}>
                   <Text style={styles.emptyText}>No matching attendances found.</Text>
-                  {activeTab === "IN" && attendanceWorksiteFilter === "All" && (
+                  {activeTab === "IN" && selectedMainSite === "All" && (
                     <Text style={[styles.emptyText, { marginTop: 6, fontSize: 12 }]}>
-                      Tip: Select a Worksite + Date + Shift to see absent workers.
+                      Tip: Select a Main Site + Date + Shift to see absent workers.
                     </Text>
                   )}
                 </View>

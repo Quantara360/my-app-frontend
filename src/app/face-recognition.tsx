@@ -36,8 +36,8 @@ export default function FaceRecognition() {
   const isDark = colorScheme === "dark";
   const { token } = useAuth();
   const goBack = useGoBack();
-  const { worksiteId, subSiteId, shift, state } = useLocalSearchParams<{ worksiteId?: string; subSiteId?: string; shift?: string; state?: string }>();
-  console.log('[face-recognition] params:', { worksiteId, subSiteId, shift, state });
+  const { worksiteId, hospitalId, subSiteId, shift, state } = useLocalSearchParams<{ worksiteId?: string; hospitalId?: string; subSiteId?: string; shift?: string; state?: string }>();
+  console.log('[face-recognition] params:', { worksiteId, hospitalId, subSiteId, shift, state });
   const currentState = state || "IN";
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [cameraReady, setCameraReady] = useState(false);
@@ -218,6 +218,7 @@ export default function FaceRecognition() {
       const attendancePayload = {
         worker_id: recData.worker_id,
         worksite_id: wsId,
+        hospital_id: hospitalId && hospitalId !== "" ? Number(hospitalId) : null,
         sub_site_id: subSiteId ? Number(subSiteId) : null,
         shift: currentShift,
         date: today,

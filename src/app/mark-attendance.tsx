@@ -19,8 +19,8 @@ export default function MarkAttendance() {
   const theme = useTheme();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
-  const { worksiteId, subSiteId, shift: paramShift, state: paramState } = useLocalSearchParams<{ worksiteId?: string; subSiteId?: string; shift?: string; state?: string }>();
-  console.log('[mark-attendance] params:', { worksiteId, subSiteId, paramShift, paramState });
+  const { worksiteId, hospitalId, subSiteId, shift: paramShift, state: paramState } = useLocalSearchParams<{ worksiteId?: string; hospitalId?: string; subSiteId?: string; shift?: string; state?: string }>();
+  console.log('[mark-attendance] params:', { worksiteId, hospitalId, subSiteId, paramShift, paramState });
   const { token } = useAuth();
   const [date, setDate] = useState(new Date());
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -218,6 +218,7 @@ export default function MarkAttendance() {
                       pathname: "/face-recognition" as any,
                       params: {
                         worksiteId: String(worksiteId || ""),
+                        hospitalId: String(hospitalId || ""),
                         subSiteId: String(subSiteId || ""),
                         shift,
                         state: derivedState,
