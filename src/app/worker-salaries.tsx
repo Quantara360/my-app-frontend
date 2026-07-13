@@ -220,10 +220,27 @@ export default function WorkerSalariesPage() {
   ) => {
     const daysCount = getDaysInMonth(year, month);
     const authHeader = { Authorization: `Bearer ${token}`, Accept: 'application/json' };
-    // Key: `workerId:dateStr:shift` to deduplicate across multiple queries
     const seen = new Set<string>();
     const workerMap: Record<number, { name: string; days: Record<string, { Morning: number; Evening: number }> }> = {};
 
+    // Step 1: Seed workerMap with ALL workers at this worksite (all days = 0)
+    if (worksiteId) {
+      try {
+        const wResp = await fetch(
+          `${API_BASE_URL}/workers?worksite_id=${worksiteId}&status=active&all=1`,
+          { headers: authHeader },
+        );
+        if (wResp.ok) {
+          const wData = await wResp.json();
+          const wList: any[] = Array.isArray(wData) ? wData : wData.data || [];
+          wList.forEach((w: any) => {
+            if (!workerMap[w.id]) workerMap[w.id] = { name: w.name, days: {} };
+          });
+        }
+      } catch (_) {}
+    }
+
+    // Step 2: Overlay actual attendance records
     const processRecords = (records: any[]) => {
       records.forEach((rec: any) => {
         if (rec.status === 'absent') return;
@@ -245,7 +262,6 @@ export default function WorkerSalariesPage() {
       const monthStr = `${year}-${padDatePart(month + 1)}`;
       const params: Record<string, string> = { month: monthStr, all: '1' };
       if (worksiteId) params.worksite_id = String(worksiteId);
-      // Only pass sub_site_id if we specifically want sub-site level data
       if (subSiteId) params.sub_site_id = String(subSiteId);
       const qs = new URLSearchParams(params).toString();
       const resp = await fetch(`${API_BASE_URL}/attendances?${qs}`, { headers: authHeader });
@@ -275,6 +291,22 @@ export default function WorkerSalariesPage() {
     const seen = new Set<string>();
     const workerMap: Record<number, { name: string; days: Record<string, { Morning: number; Evening: number }> }> = {};
 
+    // Step 1: Seed workerMap with ALL workers at this worksite (all days = 0)
+    try {
+      const wResp = await fetch(
+        `${API_BASE_URL}/workers?worksite_id=${worksiteId}&status=active&all=1`,
+        { headers: authHeader },
+      );
+      if (wResp.ok) {
+        const wData = await wResp.json();
+        const wList: any[] = Array.isArray(wData) ? wData : wData.data || [];
+        wList.forEach((w: any) => {
+          if (!workerMap[w.id]) workerMap[w.id] = { name: w.name, days: {} };
+        });
+      }
+    } catch (_) {}
+
+    // Step 2: Overlay actual attendance per sub-site
     const processRecords = (records: any[]) => {
       records.forEach((rec: any) => {
         if (rec.status === 'absent') return;
@@ -295,26 +327,21 @@ export default function WorkerSalariesPage() {
     const monthStr = `${year}-${padDatePart(month + 1)}`;
     const subSiteIds = subSites.map(s => s.id);
 
-    if (subSiteIds.length > 0) {
-      // Query attendance for each sub-site under this hospital
-      for (const sid of subSiteIds) {
-        try {
-          const params: Record<string, string> = {
-            month: monthStr, all: '1',
-            worksite_id: String(worksiteId),
-            sub_site_id: String(sid),
-          };
-          const qs = new URLSearchParams(params).toString();
-          const resp = await fetch(`${API_BASE_URL}/attendances?${qs}`, { headers: authHeader });
-          if (!resp.ok) continue;
-          const json = await resp.json();
-          const records: any[] = Array.isArray(json) ? json : json.data || [];
-          processRecords(records);
-        } catch (_) {}
-      }
+    for (const sid of subSiteIds) {
+      try {
+        const params: Record<string, string> = {
+          month: monthStr, all: '1',
+          worksite_id: String(worksiteId),
+          sub_site_id: String(sid),
+        };
+        const qs = new URLSearchParams(params).toString();
+        const resp = await fetch(`${API_BASE_URL}/attendances?${qs}`, { headers: authHeader });
+        if (!resp.ok) continue;
+        const json = await resp.json();
+        const records: any[] = Array.isArray(json) ? json : json.data || [];
+        processRecords(records);
+      } catch (_) {}
     }
-    // Note: If the hospital has no sub-sites, we do NOT fall back to worksite-level data.
-    // Falling back would incorrectly show the entire main site's attendance for an empty hospital.
 
     return { workerMap, daysCount };
   };
@@ -494,14 +521,6 @@ export default function WorkerSalariesPage() {
       } else {
         // Only main site selected
         ({ workerMap, daysCount } = await fetchAttendanceBothShifts(year, month, dlSiteId, null));
-      }
-
-      if (Object.keys(workerMap).length === 0) {
-        Alert.alert(
-          'No Data',
-          'No attendance records found for this location in this month.\n\nNote: If you selected a Sub-site or Hospital, only attendance that was specifically marked at those sub-sites will appear.'
-        );
-        return;
       }
 
       buildAndDownloadXlsx(workerMap, year, month, daysCount, locationLabel);
