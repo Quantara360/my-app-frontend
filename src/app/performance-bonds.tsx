@@ -17,6 +17,8 @@ import { useGoBack } from '@/hooks/use-go-back';
 type PerformanceBond = {
   id: number;
   valid_period: string;
+  bond_name: string;
+  bond_number: string;
   date: string;
   description: string;
   amount: number;
@@ -27,6 +29,8 @@ const TENDER_STATUS_OPTIONS = ['Open', 'Closed', 'Pending', 'Awarded', 'Rejected
 
 const initialForm = {
   valid_period: '',
+  bond_name: '',
+  bond_number: '',
   date: '',
   description: '',
   amount: '',
@@ -37,6 +41,8 @@ function normalizePerformanceBond(b: any): PerformanceBond {
   return {
     id: Number(b.id ?? 0),
     valid_period: String(b.valid_period ?? ''),
+    bond_name: String(b.bond_name ?? ''),
+    bond_number: String(b.bond_number ?? ''),
     date: String(b.date ?? ''),
     description: String(b.description ?? ''),
     amount: Number(b.amount ?? 0),
@@ -78,7 +84,7 @@ export default function PerformanceBondsPage() {
 
   const filtered = useMemo(() =>
     bonds.filter((b) =>
-      [b.valid_period, b.tender_status, b.description, String(b.amount), b.date]
+      [b.valid_period, b.bond_name, b.bond_number, b.tender_status, b.description, String(b.amount), b.date]
         .join(' ').toLowerCase().includes(search.toLowerCase())
     ), [bonds, search]);
 
@@ -99,6 +105,8 @@ export default function PerformanceBondsPage() {
     setShowDatePicker(false);
     setFormValues({
       valid_period: b.valid_period,
+      bond_name: b.bond_name,
+      bond_number: b.bond_number,
       date: b.date,
       description: b.description,
       amount: String(b.amount),
@@ -111,6 +119,8 @@ export default function PerformanceBondsPage() {
     if (!token) return;
     const payload = {
       valid_period: formValues.valid_period,
+      bond_name: formValues.bond_name,
+      bond_number: formValues.bond_number,
       date: formValues.date || selectedDate.toISOString().split('T')[0],
       description: formValues.description,
       amount: Number(formValues.amount) || 0,
@@ -182,6 +192,8 @@ export default function PerformanceBondsPage() {
               <View style={styles.tableHeader}>
                 <Text style={[styles.columnHeader, { width: 50, minWidth: 50, flex: 0 }]}>ID</Text>
                 <Text style={[styles.columnHeader, { width: 110, minWidth: 110, flex: 0 }]}>Valid Period</Text>
+                <Text style={[styles.columnHeader, { width: 110, minWidth: 110, flex: 0 }]}>Bond Name</Text>
+                <Text style={[styles.columnHeader, { width: 110, minWidth: 110, flex: 0 }]}>Bond Number</Text>
                 <Text style={[styles.columnHeader, { width: 120, minWidth: 120, flex: 0 }]}>Date</Text>
                 <Text style={[styles.columnHeader, { width: 150, minWidth: 150, flex: 0 }]}>Description</Text>
                 <Text style={[styles.columnHeader, { width: 100, minWidth: 100, flex: 0 }]}>Amount</Text>
@@ -193,6 +205,8 @@ export default function PerformanceBondsPage() {
                   <View key={b.id} style={styles.tableRow}>
                     <Text style={[styles.rowCell, { width: 50, minWidth: 50, flex: 0 }]} numberOfLines={1}>{b.id}</Text>
                     <Text style={[styles.rowCell, { width: 110, minWidth: 110, flex: 0 }]} numberOfLines={1}>{b.valid_period}</Text>
+                    <Text style={[styles.rowCell, { width: 110, minWidth: 110, flex: 0 }]} numberOfLines={1}>{b.bond_name}</Text>
+                    <Text style={[styles.rowCell, { width: 110, minWidth: 110, flex: 0 }]} numberOfLines={1}>{b.bond_number}</Text>
                     <Text style={[styles.rowCell, { width: 120, minWidth: 120, flex: 0 }]} numberOfLines={1}>{b.date}</Text>
                     <Text style={[styles.rowCell, { width: 150, minWidth: 150, flex: 0 }]} numberOfLines={2}>{b.description}</Text>
                     <Text style={[styles.rowCell, { width: 100, minWidth: 100, flex: 0 }]} numberOfLines={1}>{Number(b.amount).toLocaleString()}</Text>
@@ -233,6 +247,12 @@ export default function PerformanceBondsPage() {
               <ScrollView style={styles.formBody} showsVerticalScrollIndicator={false}>
                 <Text style={[styles.label, { color: theme.textSecondary }]}>Valid Period</Text>
                 <TextInput style={[styles.textInput, { color: theme.text, borderColor: theme.backgroundSelected }]} placeholder="e.g. 12 Months" placeholderTextColor={theme.textSecondary} value={formValues.valid_period} onChangeText={(v) => setFormValues((p) => ({ ...p, valid_period: v }))} />
+
+                <Text style={[styles.label, { color: theme.textSecondary }]}>Bond Name</Text>
+                <TextInput style={[styles.textInput, { color: theme.text, borderColor: theme.backgroundSelected }]} placeholder="Bond Name" placeholderTextColor={theme.textSecondary} value={formValues.bond_name} onChangeText={(v) => setFormValues((p) => ({ ...p, bond_name: v }))} />
+
+                <Text style={[styles.label, { color: theme.textSecondary }]}>Bond Number</Text>
+                <TextInput style={[styles.textInput, { color: theme.text, borderColor: theme.backgroundSelected }]} placeholder="Bond Number" placeholderTextColor={theme.textSecondary} value={formValues.bond_number} onChangeText={(v) => setFormValues((p) => ({ ...p, bond_number: v }))} />
 
                 <Text style={[styles.label, { color: theme.textSecondary }]}>Date</Text>
                 {Platform.OS === 'web' ? (
@@ -317,6 +337,8 @@ export default function PerformanceBondsPage() {
                 <ScrollView style={{ padding: Spacing.three }}>
                   {[
                     ['Valid Period', viewItem.valid_period],
+                    ['Bond Name', viewItem.bond_name],
+                    ['Bond Number', viewItem.bond_number],
                     ['Date', viewItem.date],
                     ['Description', viewItem.description],
                     ['Amount', Number(viewItem.amount).toLocaleString()],

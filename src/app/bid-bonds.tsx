@@ -17,6 +17,8 @@ import { useGoBack } from '@/hooks/use-go-back';
 type BidBond = {
   id: number;
   valid_period: string;
+  bond_name: string;
+  bond_number: string;
   tender_status: string;
   duration_date: string;
   description: string;
@@ -28,6 +30,8 @@ const TENDER_STATUS_OPTIONS = ['Open', 'Closed', 'Pending', 'Awarded', 'Rejected
 
 const initialForm = {
   valid_period: '',
+  bond_name: '',
+  bond_number: '',
   tender_status: 'Open',
   duration_date: '',
   description: '',
@@ -39,6 +43,8 @@ function normalizeBidBond(b: any): BidBond {
   return {
     id: Number(b.id ?? 0),
     valid_period: String(b.valid_period ?? ''),
+    bond_name: String(b.bond_name ?? ''),
+    bond_number: String(b.bond_number ?? ''),
     tender_status: String(b.tender_status ?? ''),
     duration_date: String(b.duration_date ?? ''),
     description: String(b.description ?? ''),
@@ -81,7 +87,7 @@ export default function BidBondsPage() {
 
   const filtered = useMemo(() =>
     bonds.filter((b) =>
-      [b.valid_period, b.tender_status, b.description, String(b.amount)]
+      [b.valid_period, b.bond_name, b.bond_number, b.tender_status, b.description, String(b.amount)]
         .join(' ').toLowerCase().includes(search.toLowerCase())
     ), [bonds, search]);
 
@@ -102,6 +108,8 @@ export default function BidBondsPage() {
     setShowDatePicker(false);
     setFormValues({
       valid_period: b.valid_period,
+      bond_name: b.bond_name,
+      bond_number: b.bond_number,
       tender_status: b.tender_status,
       duration_date: b.duration_date,
       description: b.description,
@@ -115,6 +123,8 @@ export default function BidBondsPage() {
     if (!token) return;
     const payload = {
       valid_period: formValues.valid_period,
+      bond_name: formValues.bond_name,
+      bond_number: formValues.bond_number,
       tender_status: formValues.tender_status,
       duration_date: formValues.duration_date || selectedDate.toISOString().split('T')[0],
       description: formValues.description,
@@ -187,6 +197,8 @@ export default function BidBondsPage() {
               <View style={styles.tableHeader}>
                 <Text style={[styles.columnHeader, { width: 50, minWidth: 50, flex: 0 }]}>ID</Text>
                 <Text style={[styles.columnHeader, { width: 110, minWidth: 110, flex: 0 }]}>Valid Period</Text>
+                <Text style={[styles.columnHeader, { width: 110, minWidth: 110, flex: 0 }]}>Bond Name</Text>
+                <Text style={[styles.columnHeader, { width: 110, minWidth: 110, flex: 0 }]}>Bond Number</Text>
                 <Text style={[styles.columnHeader, { width: 110, minWidth: 110, flex: 0 }]}>Tender Status</Text>
                 <Text style={[styles.columnHeader, { width: 120, minWidth: 120, flex: 0 }]}>Date (Duration)</Text>
                 <Text style={[styles.columnHeader, { width: 140, minWidth: 140, flex: 0 }]}>Description</Text>
@@ -199,6 +211,8 @@ export default function BidBondsPage() {
                   <View key={b.id} style={styles.tableRow}>
                     <Text style={[styles.rowCell, { width: 50, minWidth: 50, flex: 0 }]} numberOfLines={1}>{b.id}</Text>
                     <Text style={[styles.rowCell, { width: 110, minWidth: 110, flex: 0 }]} numberOfLines={1}>{b.valid_period}</Text>
+                    <Text style={[styles.rowCell, { width: 110, minWidth: 110, flex: 0 }]} numberOfLines={1}>{b.bond_name}</Text>
+                    <Text style={[styles.rowCell, { width: 110, minWidth: 110, flex: 0 }]} numberOfLines={1}>{b.bond_number}</Text>
                     <Text style={[styles.rowCell, { width: 110, minWidth: 110, flex: 0 }]} numberOfLines={1}>{b.tender_status}</Text>
                     <Text style={[styles.rowCell, { width: 120, minWidth: 120, flex: 0 }]} numberOfLines={1}>{b.duration_date}</Text>
                     <Text style={[styles.rowCell, { width: 140, minWidth: 140, flex: 0 }]} numberOfLines={2}>{b.description}</Text>
@@ -246,6 +260,12 @@ export default function BidBondsPage() {
               <ScrollView style={styles.formBody} showsVerticalScrollIndicator={false}>
                 <Text style={[styles.label, { color: theme.textSecondary }]}>Valid Period</Text>
                 <TextInput style={[styles.textInput, { color: theme.text, borderColor: theme.backgroundSelected }]} placeholder="e.g. 90 Days" placeholderTextColor={theme.textSecondary} value={formValues.valid_period} onChangeText={(v) => setFormValues((p) => ({ ...p, valid_period: v }))} />
+
+                <Text style={[styles.label, { color: theme.textSecondary }]}>Bond Name</Text>
+                <TextInput style={[styles.textInput, { color: theme.text, borderColor: theme.backgroundSelected }]} placeholder="Bond Name" placeholderTextColor={theme.textSecondary} value={formValues.bond_name} onChangeText={(v) => setFormValues((p) => ({ ...p, bond_name: v }))} />
+
+                <Text style={[styles.label, { color: theme.textSecondary }]}>Bond Number</Text>
+                <TextInput style={[styles.textInput, { color: theme.text, borderColor: theme.backgroundSelected }]} placeholder="Bond Number" placeholderTextColor={theme.textSecondary} value={formValues.bond_number} onChangeText={(v) => setFormValues((p) => ({ ...p, bond_number: v }))} />
 
                 <Text style={[styles.label, { color: theme.textSecondary }]}>Tender Status</Text>
                 <View style={{ position: 'relative', zIndex: 20 }}>
@@ -335,6 +355,8 @@ export default function BidBondsPage() {
                 <ScrollView style={{ padding: Spacing.three }}>
                   {[
                     ['Valid Period', viewItem.valid_period],
+                    ['Bond Name', viewItem.bond_name],
+                    ['Bond Number', viewItem.bond_number],
                     ['Tender Status', viewItem.tender_status],
                     ['Date (Duration)', viewItem.duration_date],
                     ['Description', viewItem.description],
