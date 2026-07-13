@@ -312,19 +312,10 @@ export default function WorkerSalariesPage() {
           processRecords(records);
         } catch (_) {}
       }
-    } else {
-      // No sub-sites — fall back to worksite-level query
-      try {
-        const params: Record<string, string> = { month: monthStr, all: '1', worksite_id: String(worksiteId) };
-        const qs = new URLSearchParams(params).toString();
-        const resp = await fetch(`${API_BASE_URL}/attendances?${qs}`, { headers: authHeader });
-        if (resp.ok) {
-          const json = await resp.json();
-          const records: any[] = Array.isArray(json) ? json : json.data || [];
-          processRecords(records);
-        }
-      } catch (_) {}
     }
+    // Note: If the hospital has no sub-sites, we do NOT fall back to worksite-level data.
+    // Falling back would incorrectly show the entire main site's attendance for an empty hospital.
+
     return { workerMap, daysCount };
   };
 
@@ -506,7 +497,10 @@ export default function WorkerSalariesPage() {
       }
 
       if (Object.keys(workerMap).length === 0) {
-        Alert.alert('No Data', 'No attendance records found for the selected location and month.');
+        Alert.alert(
+          'No Data',
+          'No attendance records found for this location in this month.\n\nNote: If you selected a Sub-site or Hospital, only attendance that was specifically marked at those sub-sites will appear.'
+        );
         return;
       }
 
