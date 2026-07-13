@@ -110,7 +110,7 @@ export default function SelectSites() {
               onPress={() => {
                 router.push({
                   pathname: "/dashboard/site-actions",
-                  params: { siteId: site.id, worksiteId, siteName: site.name },
+                  params: { siteId: site.id, worksiteId, hospitalId, siteName: site.name },
                 } as any);
               }}
             >

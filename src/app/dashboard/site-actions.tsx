@@ -80,7 +80,7 @@ export default function SiteActionsPage() {
                 if (action.id === "attendance") {
                   router.push({
                     pathname: "/mark-attendance",
-                    params: { worksiteId: worksiteId ?? "", subSiteId: siteId ?? "" },
+                    params: { worksiteId: worksiteId ?? "", hospitalId: hospitalId ?? "", subSiteId: siteId ?? "" },
                   } as any);
                   return;
                 }

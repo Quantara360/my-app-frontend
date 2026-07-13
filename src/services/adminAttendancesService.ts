@@ -11,6 +11,7 @@ export interface AttendanceRecord {
   id: string | number;
   worker_id: number;
   worksite_id?: number | null;
+  hospital_id?: number | null;
   sub_site_id?: number | null;
   shift: string;
   date: string;
@@ -24,6 +25,10 @@ export interface AttendanceRecord {
     name: string;
   };
   worksite?: {
+    id: number;
+    name: string;
+  };
+  hospital?: {
     id: number;
     name: string;
   };
