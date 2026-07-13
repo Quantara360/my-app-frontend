@@ -13,10 +13,23 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useGoBack } from "@/hooks/use-go-back";
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
+import * as XLSX from 'xlsx';
 
 type Worksite = {
   id: number;
   name: string;
+};
+
+type Hospital = {
+  id: number;
+  name: string;
+  worksite_id: number;
+};
+
+type SubSite = {
+  id: number;
+  name: string;
+  hospital_id: number;
 };
 
 type Worker = {
@@ -87,6 +100,18 @@ export default function WorkerSalariesPage() {
   const [isDownloading, setIsDownloading] = useState(false);
   const webMonthInputRef = useRef<HTMLInputElement | null>(null);
 
+  // Hierarchical location filter for the download modal
+  const [dlSiteId, setDlSiteId] = useState<number | null>(null);
+  const [dlHospitalId, setDlHospitalId] = useState<number | null>(null);
+  const [dlSubSiteId, setDlSubSiteId] = useState<number | null>(null);
+  const [dlHospitals, setDlHospitals] = useState<Hospital[]>([]);
+  const [dlSubSites, setDlSubSites] = useState<SubSite[]>([]);
+  const [dlSitePickerOpen, setDlSitePickerOpen] = useState(false);
+  const [dlHospitalPickerOpen, setDlHospitalPickerOpen] = useState(false);
+  const [dlSubSitePickerOpen, setDlSubSitePickerOpen] = useState(false);
+  const [dlLoadingHospitals, setDlLoadingHospitals] = useState(false);
+  const [dlLoadingSubSites, setDlLoadingSubSites] = useState(false);
+
   useEffect(() => {
     if (!token) return;
 
@@ -140,86 +165,243 @@ export default function WorkerSalariesPage() {
 
   // ── Attendance Excel Download helpers ──────────────────────────────────────
   const getDaysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
-
   const padDatePart = (n: number) => String(n).padStart(2, '0');
 
-  const fetchAttendanceForMonth = async (year: number, month: number, shift: 'Morning' | 'Evening') => {
+  // Load hospitals when main site changes
+  const handleDlSiteChange = async (siteId: number | null) => {
+    setDlSiteId(siteId);
+    setDlHospitalId(null);
+    setDlSubSiteId(null);
+    setDlHospitals([]);
+    setDlSubSites([]);
+    if (!siteId || !token) return;
+    setDlLoadingHospitals(true);
+    try {
+      const resp = await fetch(`${API_BASE_URL}/hospitals?worksite_id=${siteId}`, {
+        headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        setDlHospitals(Array.isArray(data) ? data : data.data || []);
+      }
+    } catch (_) {}
+    setDlLoadingHospitals(false);
+  };
+
+  // Load sub-sites when hospital changes
+  const handleDlHospitalChange = async (hospitalId: number | null) => {
+    setDlHospitalId(hospitalId);
+    setDlSubSiteId(null);
+    setDlSubSites([]);
+    if (!hospitalId || !token) return;
+    setDlLoadingSubSites(true);
+    try {
+      const resp = await fetch(`${API_BASE_URL}/sub-sites?hospital_id=${hospitalId}`, {
+        headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        setDlSubSites(Array.isArray(data) ? data : data.data || []);
+      }
+    } catch (_) {}
+    setDlLoadingSubSites(false);
+  };
+
+  /**
+   * Fetch attendance for both Morning & Evening for every day in the month,
+   * scoped to the selected location. Only workers who actually attended are included.
+   * Returns: workerMap[workerId] = { name, days: { 'YYYY-MM-DD': { Morning: 0|1, Evening: 0|1 } } }
+   */
+  const fetchAttendanceBothShifts = async (
+    year: number,
+    month: number,
+    worksiteId: number | null,
+    subSiteId: number | null,
+  ) => {
     const daysCount = getDaysInMonth(year, month);
     const authHeader = { Authorization: `Bearer ${token}`, Accept: 'application/json' };
-    const workerMap: Record<number, { name: string; days: Record<string, number> }> = {};
+    // workerMap only contains workers who attended (no include_absents)
+    const workerMap: Record<number, { name: string; days: Record<string, { Morning: number; Evening: number }> }> = {};
 
     for (let d = 1; d <= daysCount; d++) {
       const dateStr = `${year}-${padDatePart(month + 1)}-${padDatePart(d)}`;
-      try {
-        const qs = new URLSearchParams({ date: dateStr, shift, include_absents: '1' }).toString();
-        const resp = await fetch(`${API_BASE_URL}/attendances?${qs}`, { headers: authHeader });
-        if (!resp.ok) continue;
-        const json = await resp.json();
-        const records: any[] = Array.isArray(json) ? json : json.data || [];
-        records.forEach((rec: any) => {
-          const wid = rec.worker_id;
-          const wname = rec.worker?.name ?? `Worker #${wid}`;
-          if (!workerMap[wid]) workerMap[wid] = { name: wname, days: {} };
-          // present/late = 1, absent = 0
-          workerMap[wid].days[dateStr] = rec.status === 'absent' ? 0 : 1;
-        });
-      } catch (_) { /* skip day on error */ }
+      for (const shift of ['Morning', 'Evening'] as const) {
+        try {
+          const params: Record<string, string> = { date: dateStr, shift };
+          if (worksiteId) params.worksite_id = String(worksiteId);
+          if (subSiteId) params.sub_site_id = String(subSiteId);
+          const qs = new URLSearchParams(params).toString();
+          const resp = await fetch(`${API_BASE_URL}/attendances?${qs}`, { headers: authHeader });
+          if (!resp.ok) continue;
+          const json = await resp.json();
+          const records: any[] = Array.isArray(json) ? json : json.data || [];
+          records.forEach((rec: any) => {
+            if (rec.status === 'absent') return; // skip absents — only attended workers
+            const wid = rec.worker_id;
+            const wname = rec.worker?.name ?? `Worker #${wid}`;
+            if (!workerMap[wid]) workerMap[wid] = { name: wname, days: {} };
+            if (!workerMap[wid].days[dateStr]) workerMap[wid].days[dateStr] = { Morning: 0, Evening: 0 };
+            workerMap[wid].days[dateStr][shift] = 1;
+          });
+        } catch (_) { /* skip on error */ }
+      }
     }
-
-    return { workerMap, daysCount, year, month };
+    return { workerMap, daysCount };
   };
 
-  const buildCsv = (
-    workerMap: Record<number, { name: string; days: Record<string, number> }>,
+  /**
+   * When a hospital is selected but no sub-site, union attendance from all sub-sites
+   * under that hospital plus any records directly at the worksite.
+   */
+  const fetchAttendanceForHospital = async (
+    year: number,
+    month: number,
+    worksiteId: number,
+    hospitalId: number,
+    subSites: SubSite[],
+  ) => {
+    const daysCount = getDaysInMonth(year, month);
+    const authHeader = { Authorization: `Bearer ${token}`, Accept: 'application/json' };
+    const workerMap: Record<number, { name: string; days: Record<string, { Morning: number; Evening: number }> }> = {};
+
+    // Build list of sub-site IDs to query (if any); otherwise query worksite_id only
+    const subSiteIds = subSites.map(s => s.id);
+    const queries: Array<{ worksiteId: number; subSiteId: number | null }> =
+      subSiteIds.length > 0
+        ? subSiteIds.map(sid => ({ worksiteId, subSiteId: sid }))
+        : [{ worksiteId, subSiteId: null }];
+
+    for (let d = 1; d <= daysCount; d++) {
+      const dateStr = `${year}-${padDatePart(month + 1)}-${padDatePart(d)}`;
+      for (const shift of ['Morning', 'Evening'] as const) {
+        for (const q of queries) {
+          try {
+            const params: Record<string, string> = { date: dateStr, shift, worksite_id: String(q.worksiteId) };
+            if (q.subSiteId) params.sub_site_id = String(q.subSiteId);
+            const qs = new URLSearchParams(params).toString();
+            const resp = await fetch(`${API_BASE_URL}/attendances?${qs}`, { headers: authHeader });
+            if (!resp.ok) continue;
+            const json = await resp.json();
+            const records: any[] = Array.isArray(json) ? json : json.data || [];
+            records.forEach((rec: any) => {
+              if (rec.status === 'absent') return;
+              const wid = rec.worker_id;
+              const wname = rec.worker?.name ?? `Worker #${wid}`;
+              if (!workerMap[wid]) workerMap[wid] = { name: wname, days: {} };
+              if (!workerMap[wid].days[dateStr]) workerMap[wid].days[dateStr] = { Morning: 0, Evening: 0 };
+              workerMap[wid].days[dateStr][shift] = 1;
+            });
+          } catch (_) {}
+        }
+      }
+    }
+    return { workerMap, daysCount };
+  };
+
+  /**
+   * Build an XLSX workbook with the Day/Night paired-column layout:
+   *
+   * Row 1:  [Title]
+   * Row 2:  No | Worker Name | Jul 1 (merged 2 cols) | Jul 2 … |
+   * Row 3:             | Day | Night | Day | Night …
+   * Data:   1  | Name  |  1  |   0   |  1  |  0   …
+   * Count:     | Count |<sum>|<sum> …
+   */
+  const buildAndDownloadXlsx = (
+    workerMap: Record<number, { name: string; days: Record<string, { Morning: number; Evening: number }> }>,
     year: number,
     month: number,
     daysCount: number,
-    shift: 'Morning' | 'Evening',
+    locationLabel: string,
   ) => {
     const monthName = new Date(year, month, 1).toLocaleString('default', { month: 'long' });
-    const dayHeaders = Array.from({ length: daysCount }, (_, i) => String(i + 1)).join(',');
-    const header = `No,Worker Name,${dayHeaders},Present,Absent`;
+    const wb = XLSX.utils.book_new();
 
-    const rows = Object.entries(workerMap).map(([, { name, days }], idx) => {
-      let presentCount = 0;
-      const dayCells = Array.from({ length: daysCount }, (_, i) => {
-        const dateStr = `${year}-${padDatePart(month + 1)}-${padDatePart(i + 1)}`;
-        const val = days[dateStr] ?? 0;
-        if (val === 1) presentCount++;
-        return val;
-      });
-      const absentCount = daysCount - presentCount;
-      return `${idx + 1},"${name}",${dayCells.join(',')},${presentCount},${absentCount}`;
+    // ── Build rows as plain arrays ─────────────────────────────────────────
+    // Row 0 – title
+    const titleRow: any[] = [`${locationLabel} — Attendance — ${monthName} ${year}`];
+
+    // Row 1 – date headers (every 2 columns)
+    const dateHeaderRow: any[] = ['No', 'Worker Name'];
+    for (let d = 1; d <= daysCount; d++) {
+      dateHeaderRow.push(`${monthName.substring(0, 3)} ${d}`); // e.g. "Jul 1"
+      dateHeaderRow.push('');  // placeholder for merge
+    }
+
+    // Row 2 – shift headers
+    const shiftHeaderRow: any[] = ['', ''];
+    for (let d = 1; d <= daysCount; d++) {
+      shiftHeaderRow.push('Day');
+      shiftHeaderRow.push('Night');
+    }
+
+    // Data rows
+    const workerEntries = Object.entries(workerMap);
+    const dataRows: any[][] = workerEntries.map(([, { name, days }], idx) => {
+      const row: any[] = [idx + 1, name];
+      for (let d = 1; d <= daysCount; d++) {
+        const dateStr = `${year}-${padDatePart(month + 1)}-${padDatePart(d)}`;
+        const cell = days[dateStr];
+        row.push(cell?.Morning ?? 0);
+        row.push(cell?.Evening ?? 0);
+      }
+      return row;
     });
 
-    const shiftLabel = shift === 'Morning' ? 'Day Shift' : 'Night Shift';
-    const titleRow = `Workers Attendance - ${shiftLabel} - ${monthName} ${year}`;
-    return [titleRow, header, ...rows].join('\n');
-  };
+    // Count row
+    const countRow: any[] = ['', 'Count'];
+    for (let d = 1; d <= daysCount; d++) {
+      const dateStr = `${year}-${padDatePart(month + 1)}-${padDatePart(d)}`;
+      let daySum = 0;
+      let nightSum = 0;
+      workerEntries.forEach(([, { days }]) => {
+        daySum   += days[dateStr]?.Morning ?? 0;
+        nightSum += days[dateStr]?.Evening ?? 0;
+      });
+      countRow.push(daySum);
+      countRow.push(nightSum);
+    }
 
-  const handleDownloadAttendance = async (shift: 'Morning' | 'Evening') => {
-    if (!token) return;
-    setIsDownloading(true);
-    try {
-      const year = downloadMonth.getFullYear();
-      const month = downloadMonth.getMonth();
-      const { workerMap, daysCount } = await fetchAttendanceForMonth(year, month, shift);
+    // Assemble all rows
+    const allRows = [titleRow, dateHeaderRow, shiftHeaderRow, ...dataRows, countRow];
+    const ws = XLSX.utils.aoa_to_sheet(allRows);
 
-      if (Object.keys(workerMap).length === 0) {
-        Alert.alert('No Data', `No ${shift === 'Morning' ? 'day' : 'night'} shift attendance found for the selected month.`);
-        setIsDownloading(false);
-        return;
-      }
+    // ── Merge cells ───────────────────────────────────────────────────────
+    const merges: XLSX.Range[] = [];
+    // Title spans all columns
+    const totalCols = 2 + daysCount * 2;
+    merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: totalCols - 1 } });
+    // Date header merges (2 cols each)
+    for (let d = 0; d < daysCount; d++) {
+      const c = 2 + d * 2;
+      merges.push({ s: { r: 1, c }, e: { r: 1, c: c + 1 } });
+    }
+    ws['!merges'] = merges;
 
-      const csvContent = buildCsv(workerMap, year, month, daysCount, shift);
-      const monthName = downloadMonth.toLocaleString('default', { month: 'long' });
-      const shiftLabel = shift === 'Morning' ? 'Day' : 'Night';
-      const fileName = `Attendance_${shiftLabel}_${monthName}_${year}.csv`;
+    // ── Column widths ────────────────────────────────────────────────────
+    const colWidths: XLSX.ColInfo[] = [
+      { wch: 5 },   // No
+      { wch: 22 },  // Worker Name
+    ];
+    for (let d = 0; d < daysCount; d++) {
+      colWidths.push({ wch: 6 });  // Day
+      colWidths.push({ wch: 6 });  // Night
+    }
+    ws['!cols'] = colWidths;
 
-      if (Platform.OS === 'web') {
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
+    XLSX.utils.book_append_sheet(wb, ws, 'Attendance');
+
+    // ── Output ────────────────────────────────────────────────────────────
+    const fileName = `Attendance_${locationLabel.replace(/[^a-zA-Z0-9]/g, '_')}_${monthName}_${year}.xlsx`;
+    const wbOut = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const uint8 = new Uint8Array(wbOut);
+
+    if (Platform.OS === 'web') {
+      const blob = new Blob([uint8], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
       link.href = url;
       link.download = fileName;
       link.style.display = 'none';
@@ -227,16 +409,78 @@ export default function WorkerSalariesPage() {
       link.click();
       document.body.removeChild(link);
       setTimeout(() => URL.revokeObjectURL(url), 1000);
-      } else {
-        const fileUri = `${FileSystem.cacheDirectory}${fileName}`;
-        await FileSystem.writeAsStringAsync(fileUri, csvContent, { encoding: FileSystem.EncodingType.UTF8 });
+    } else {
+      // Native: write to cache then share
+      const base64 = Buffer.from(uint8).toString('base64');
+      // @ts-ignore – expo-file-system types vary by version
+      const fileUri = `${FileSystem.cacheDirectory}${fileName}`;
+      // @ts-ignore
+      FileSystem.writeAsStringAsync(fileUri, base64, { encoding: FileSystem.EncodingType.Base64 }).then(async () => {
         const canShare = await Sharing.isAvailableAsync();
         if (canShare) {
-          await Sharing.shareAsync(fileUri, { mimeType: 'text/csv', UTI: 'public.comma-separated-values-text' });
+          await Sharing.shareAsync(fileUri, {
+            mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            UTI: 'org.openxmlformats.spreadsheetml.sheet',
+          });
         } else {
           Alert.alert('Sharing not available on this device.');
         }
+      });
+    }
+  };
+
+  const handleDownloadAttendance = async () => {
+    if (!token) return;
+    if (!dlSiteId) {
+      Alert.alert('Select Location', 'Please select at least a Main Site.');
+      return;
+    }
+    setIsDownloading(true);
+    try {
+      const year = downloadMonth.getFullYear();
+      const month = downloadMonth.getMonth();
+      const selectedSite = worksites.find(s => s.id === dlSiteId);
+      const selectedHospital = dlHospitals.find(h => h.id === dlHospitalId);
+      const selectedSubSite = dlSubSites.find(ss => ss.id === dlSubSiteId);
+
+      // Build a human-readable label for the sheet title
+      let locationLabel = selectedSite?.name ?? 'Site';
+      if (selectedHospital) locationLabel = selectedHospital.name;
+      if (selectedSubSite) locationLabel = `${selectedHospital?.name ?? ''} - ${selectedSubSite.name}`;
+
+      let workerMap: Record<number, { name: string; days: Record<string, { Morning: number; Evening: number }> }>;
+      let daysCount: number;
+
+      if (dlSubSiteId) {
+        // Sub-site selected → filter by worksite + sub_site
+        ({ workerMap, daysCount } = await fetchAttendanceBothShifts(year, month, dlSiteId, dlSubSiteId));
+      } else if (dlHospitalId) {
+        // Hospital selected but no sub-site → fetch all sub-sites under hospital
+        let subSitesToQuery = dlSubSites;
+        if (subSitesToQuery.length === 0) {
+          // Sub-sites may not have been loaded yet; fetch them
+          try {
+            const resp = await fetch(`${API_BASE_URL}/sub-sites?hospital_id=${dlHospitalId}`, {
+              headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+            });
+            if (resp.ok) {
+              const data = await resp.json();
+              subSitesToQuery = Array.isArray(data) ? data : data.data || [];
+            }
+          } catch (_) {}
+        }
+        ({ workerMap, daysCount } = await fetchAttendanceForHospital(year, month, dlSiteId, dlHospitalId, subSitesToQuery));
+      } else {
+        // Only main site selected
+        ({ workerMap, daysCount } = await fetchAttendanceBothShifts(year, month, dlSiteId, null));
       }
+
+      if (Object.keys(workerMap).length === 0) {
+        Alert.alert('No Data', 'No attendance records found for the selected location and month.');
+        return;
+      }
+
+      buildAndDownloadXlsx(workerMap, year, month, daysCount, locationLabel);
     } catch (err) {
       Alert.alert('Error', err instanceof Error ? err.message : 'Failed to generate attendance sheet.');
     } finally {
@@ -679,7 +923,12 @@ export default function WorkerSalariesPage() {
           visible={downloadModalOpen}
           transparent
           animationType="slide"
-          onRequestClose={() => setDownloadModalOpen(false)}
+          onRequestClose={() => {
+            setDownloadModalOpen(false);
+            setDlSitePickerOpen(false);
+            setDlHospitalPickerOpen(false);
+            setDlSubSitePickerOpen(false);
+          }}
         >
           <View style={styles.modalOverlay}>
             <View style={[styles.modalContent, { backgroundColor: theme.backgroundElement, padding: Spacing.four }]}>
@@ -690,11 +939,11 @@ export default function WorkerSalariesPage() {
                 </Pressable>
               </View>
 
-              <View style={{ marginTop: Spacing.three, gap: Spacing.three }}>
+              <ScrollView style={{ marginTop: Spacing.three }} showsVerticalScrollIndicator={false}>
+                {/* ── Month picker ── */}
                 <Text style={[styles.fieldLabel, { color: theme.text }]}>Select Month</Text>
-
                 {Platform.OS === 'web' ? (
-                  <View>
+                  <View style={{ marginBottom: Spacing.three }}>
                     <Pressable
                       style={[styles.pill, { backgroundColor: 'transparent', alignSelf: 'flex-start' }]}
                       onPress={() => {
@@ -712,7 +961,7 @@ export default function WorkerSalariesPage() {
                       type="month"
                       value={`${downloadMonth.getFullYear()}-${padDatePart(downloadMonth.getMonth() + 1)}`}
                       onChange={(e: any) => {
-                        const val = e.currentTarget.value; // "YYYY-MM"
+                        const val = e.currentTarget.value;
                         if (val) {
                           const [y, m] = val.split('-').map(Number);
                           setDownloadMonth(new Date(y, m - 1, 1));
@@ -729,7 +978,7 @@ export default function WorkerSalariesPage() {
                     />
                   </View>
                 ) : (
-                  <>
+                  <View style={{ marginBottom: Spacing.three }}>
                     <Pressable
                       style={[styles.pill, { backgroundColor: 'transparent', alignSelf: 'flex-start' }]}
                       onPress={() => setShowMonthPicker(true)}
@@ -746,39 +995,172 @@ export default function WorkerSalariesPage() {
                         onChange={(_event, selectedDate) => {
                           setShowMonthPicker(Platform.OS === 'ios');
                           if (selectedDate) {
-                            // Snap to first day of the selected month
                             setDownloadMonth(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
                           }
                         }}
                       />
                     )}
-                  </>
+                  </View>
                 )}
 
-                <Text style={[styles.fieldLabel, { color: theme.text, marginTop: Spacing.two }]}>Select Shift to Download</Text>
+                {/* ── Main Site picker ── */}
+                <Text style={[styles.fieldLabel, { color: theme.text }]}>Select Main Site</Text>
+                <View style={{ position: 'relative', zIndex: 30, marginBottom: Spacing.three }}>
+                  <Pressable
+                    style={[styles.selectInput, { minHeight: 44, justifyContent: 'center' }]}
+                    onPress={() => {
+                      setDlSitePickerOpen(p => !p);
+                      setDlHospitalPickerOpen(false);
+                      setDlSubSitePickerOpen(false);
+                    }}
+                  >
+                    <Text style={[styles.selectText, { color: theme.text }]} numberOfLines={1}>
+                      {dlSiteId ? (worksites.find(s => s.id === dlSiteId)?.name ?? 'Site') : '— Select Main Site —'}
+                    </Text>
+                  </Pressable>
+                  {dlSitePickerOpen && (
+                    <View style={[styles.statusOptions, { position: 'absolute', top: 46, left: 0, right: 0, zIndex: 40 }]}>
+                      <ScrollView style={{ maxHeight: 180 }} nestedScrollEnabled>
+                        {worksites.map(site => (
+                          <Pressable
+                            key={site.id}
+                            style={styles.statusOption}
+                            onPress={() => {
+                              handleDlSiteChange(site.id);
+                              setDlSitePickerOpen(false);
+                            }}
+                          >
+                            <Text style={styles.statusOptionText}>{site.name}</Text>
+                          </Pressable>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
+                </View>
 
+                {/* ── Hospital picker (shown only when site has hospitals) ── */}
+                {dlSiteId !== null && (
+                  dlLoadingHospitals ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: Spacing.three }}>
+                      <ActivityIndicator size="small" color={theme.text} />
+                      <Text style={{ color: theme.text, fontSize: 13 }}>Loading hospitals…</Text>
+                    </View>
+                  ) : dlHospitals.length > 0 ? (
+                    <>
+                      <Text style={[styles.fieldLabel, { color: theme.text }]}>Select Hospital</Text>
+                      <View style={{ position: 'relative', zIndex: 20, marginBottom: Spacing.three }}>
+                        <Pressable
+                          style={[styles.selectInput, { minHeight: 44, justifyContent: 'center' }]}
+                          onPress={() => {
+                            setDlHospitalPickerOpen(p => !p);
+                            setDlSitePickerOpen(false);
+                            setDlSubSitePickerOpen(false);
+                          }}
+                        >
+                          <Text style={[styles.selectText, { color: theme.text }]} numberOfLines={1}>
+                            {dlHospitalId
+                              ? (dlHospitals.find(h => h.id === dlHospitalId)?.name ?? 'Hospital')
+                              : '— All Hospitals (entire site) —'}
+                          </Text>
+                        </Pressable>
+                        {dlHospitalPickerOpen && (
+                          <View style={[styles.statusOptions, { position: 'absolute', top: 46, left: 0, right: 0, zIndex: 30 }]}>
+                            <ScrollView style={{ maxHeight: 180 }} nestedScrollEnabled>
+                              <Pressable
+                                style={styles.statusOption}
+                                onPress={() => { handleDlHospitalChange(null); setDlHospitalPickerOpen(false); }}
+                              >
+                                <Text style={styles.statusOptionText}>— All Hospitals (entire site) —</Text>
+                              </Pressable>
+                              {dlHospitals.map(h => (
+                                <Pressable
+                                  key={h.id}
+                                  style={styles.statusOption}
+                                  onPress={() => { handleDlHospitalChange(h.id); setDlHospitalPickerOpen(false); }}
+                                >
+                                  <Text style={styles.statusOptionText}>{h.name}</Text>
+                                </Pressable>
+                              ))}
+                            </ScrollView>
+                          </View>
+                        )}
+                      </View>
+                    </>
+                  ) : null
+                )}
+
+                {/* ── Sub-site picker (shown only when hospital has sub-sites) ── */}
+                {dlHospitalId !== null && (
+                  dlLoadingSubSites ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: Spacing.three }}>
+                      <ActivityIndicator size="small" color={theme.text} />
+                      <Text style={{ color: theme.text, fontSize: 13 }}>Loading sub-sites…</Text>
+                    </View>
+                  ) : dlSubSites.length > 0 ? (
+                    <>
+                      <Text style={[styles.fieldLabel, { color: theme.text }]}>Select Sub-site</Text>
+                      <View style={{ position: 'relative', zIndex: 10, marginBottom: Spacing.three }}>
+                        <Pressable
+                          style={[styles.selectInput, { minHeight: 44, justifyContent: 'center' }]}
+                          onPress={() => {
+                            setDlSubSitePickerOpen(p => !p);
+                            setDlSitePickerOpen(false);
+                            setDlHospitalPickerOpen(false);
+                          }}
+                        >
+                          <Text style={[styles.selectText, { color: theme.text }]} numberOfLines={1}>
+                            {dlSubSiteId
+                              ? (dlSubSites.find(ss => ss.id === dlSubSiteId)?.name ?? 'Sub-site')
+                              : '— All Sub-sites —'}
+                          </Text>
+                        </Pressable>
+                        {dlSubSitePickerOpen && (
+                          <View style={[styles.statusOptions, { position: 'absolute', top: 46, left: 0, right: 0, zIndex: 20 }]}>
+                            <ScrollView style={{ maxHeight: 180 }} nestedScrollEnabled>
+                              <Pressable
+                                style={styles.statusOption}
+                                onPress={() => { setDlSubSiteId(null); setDlSubSitePickerOpen(false); }}
+                              >
+                                <Text style={styles.statusOptionText}>— All Sub-sites —</Text>
+                              </Pressable>
+                              {dlSubSites.map(ss => (
+                                <Pressable
+                                  key={ss.id}
+                                  style={styles.statusOption}
+                                  onPress={() => { setDlSubSiteId(ss.id); setDlSubSitePickerOpen(false); }}
+                                >
+                                  <Text style={styles.statusOptionText}>{ss.name}</Text>
+                                </Pressable>
+                              ))}
+                            </ScrollView>
+                          </View>
+                        )}
+                      </View>
+                    </>
+                  ) : null
+                )}
+
+                {/* ── Download button ── */}
                 {isDownloading ? (
                   <View style={{ alignItems: 'center', paddingVertical: Spacing.four }}>
                     <ActivityIndicator size="large" color="#10b981" />
-                    <Text style={{ color: theme.text, marginTop: Spacing.two }}>Generating attendance sheet...</Text>
+                    <Text style={{ color: theme.text, marginTop: Spacing.two }}>Generating attendance sheet…</Text>
                   </View>
                 ) : (
-                  <View style={{ gap: Spacing.two }}>
-                    <Pressable
-                      style={[styles.saveButton, { backgroundColor: '#0ea5e9', marginTop: 0 }]}
-                      onPress={() => handleDownloadAttendance('Morning')}
-                    >
-                      <Text style={styles.saveText}>☀️ Day Shift (Morning)</Text>
-                    </Pressable>
-                    <Pressable
-                      style={[styles.saveButton, { backgroundColor: '#6366f1', marginTop: 0 }]}
-                      onPress={() => handleDownloadAttendance('Evening')}
-                    >
-                      <Text style={styles.saveText}>🌙 Night Shift (Evening)</Text>
-                    </Pressable>
-                  </View>
+                  <Pressable
+                    style={[
+                      styles.saveButton,
+                      { backgroundColor: dlSiteId ? '#10b981' : '#94a3b8', marginTop: Spacing.two },
+                    ]}
+                    onPress={handleDownloadAttendance}
+                    disabled={!dlSiteId}
+                  >
+                    <Text style={styles.saveText}>📥 Download Excel (.xlsx)</Text>
+                  </Pressable>
                 )}
-              </View>
+
+                <View style={{ height: Spacing.four }} />
+              </ScrollView>
             </View>
           </View>
         </Modal>
