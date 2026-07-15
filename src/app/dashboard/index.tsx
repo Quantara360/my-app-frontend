@@ -8,12 +8,13 @@ import { ThemedView } from "@/components/themed-view";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/hooks/use-theme";
 import { API_BASE_URL } from "@/services/authService";
-import { BottomTabInset, MaxContentWidth, Spacing } from "@/constants/theme";
+import { BottomTabInset, MaxContentWidth, Spacing, rf } from "@/constants/theme";
 
 interface WorksiteTile {
   id: number;
   name: string;
   description: string;
+  logo?: string;
 }
 
 const officeStaffTiles = [
@@ -128,8 +129,11 @@ export default function DashboardScreen() {
         <View style={[styles.backgroundCircleSmall, { backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(255, 255, 255, 0.5)" }]} />
         
         <SafeAreaView style={styles.safeArea}>
-          <View
+          <ScrollView
             style={styles.staffScroll}
+            contentContainerStyle={styles.staffScrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
           >
             <View style={styles.staffHeader}>
               <View style={{ flex: 1, paddingRight: 10 }}>
@@ -179,7 +183,7 @@ export default function DashboardScreen() {
                     key={tile.id}
                     style={({ pressed }) => [
                       styles.staffCard,
-                      tile.id === "bonds" ? { flexBasis: "100%", maxWidth: "100%" } : {},
+                      tile.id === "bonds" ? { width: "100%" } : {},
                       {
                         backgroundColor: theme.background,
                         borderColor: theme.backgroundSelected,
@@ -197,7 +201,7 @@ export default function DashboardScreen() {
                 ))}
               </View>
             </View>
-          </View>
+          </ScrollView>
         </SafeAreaView>
       </ThemedView>
     );
@@ -350,9 +354,13 @@ const styles = StyleSheet.create({
   staffScroll: {
     flex: 1,
     width: "100%",
+  },
+  staffScrollContent: {
     paddingHorizontal: Spacing.four,
+    paddingTop: Spacing.two,
     paddingBottom: BottomTabInset + Spacing.four,
     gap: Spacing.three,
+    flexGrow: 1,
   },
   topRightControls: {
     width: "100%",
@@ -445,15 +453,15 @@ const styles = StyleSheet.create({
   },
   staffGreeting: {
     color: "#475569",
-    fontSize: Platform.select({ web: 22, default: 34 }),
+    fontSize: rf(22, 16, 22),
     fontWeight: "800",
-    lineHeight: Platform.select({ web: 28, default: 42 }),
+    lineHeight: rf(28, 22, 28),
   },
   staffWelcome: {
     color: "#0F172A",
-    fontSize: Platform.select({ web: 24, default: 36 }),
+    fontSize: rf(24, 18, 28),
     fontWeight: "900",
-    lineHeight: Platform.select({ web: 32, default: 44 }),
+    lineHeight: rf(32, 24, 36),
   },
   staffMenuButton: {
     paddingVertical: Spacing.two,
@@ -468,7 +476,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   staffPanel: {
-    flex: 1,
     backgroundColor: "#FFFFFF",
     borderRadius: 36,
     padding: Spacing.four,
@@ -484,12 +491,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    gap: Spacing.two,
   },
   staffCard: {
-    flexBasis: "48%",
-    maxWidth: "48%",
-    minWidth: 140,
+    width: '48%',
     minHeight: 90,
     borderRadius: 24,
     backgroundColor: "#F8FAFC",
@@ -506,7 +510,7 @@ const styles = StyleSheet.create({
   },
   staffCardTitle: {
     color: "#0F172A",
-    fontSize: 16,
+    fontSize: rf(16, 13, 16),
     fontWeight: "800",
     textAlign: "center",
   },

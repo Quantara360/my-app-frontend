@@ -1,4 +1,4 @@
-﻿import { useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Modal, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -204,7 +204,7 @@ export default function OfficeSalariesPage() {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.headerRow}>
           <Pressable style={[styles.backButton, { backgroundColor: theme.backgroundSelected }]} onPress={() => goBack()}>
-            <ThemedText type="smallBold">←</ThemedText>
+            <ThemedText type="smallBold">{'\u2190'}</ThemedText>
           </Pressable>
           <ThemedText type="title" style={styles.pageTitle}>Office Staff Salaries</ThemedText>
         </View>
@@ -262,13 +262,13 @@ export default function OfficeSalariesPage() {
                 <Text style={[styles.rowCell, { width: 120, minWidth: 120, flex: 0 }]} numberOfLines={1}>{salary.date}</Text>
                 <View style={styles.actionsColumn}>
                   <Pressable style={styles.actionButtonIcon} onPress={() => { setSelectedViewItem(salary); setViewDetailsOpen(true); }}>
-                    <Text style={styles.actionIcon}>👁</Text>
+                    <Text style={styles.actionIcon}>{'\u{1F441}'}</Text>
                   </Pressable>
                   <Pressable style={styles.actionButtonIcon} onPress={() => openEditSalary(salary)}>
-                    <Text style={styles.actionIcon}>✎</Text>
+                    <Text style={styles.actionIcon}>{'\u270F'}</Text>
                   </Pressable>
                   <Pressable style={styles.actionButtonIconDelete} onPress={() => handleDeleteSalary(salary.id)}>
-                    <Text style={styles.actionIcon}>🗑</Text>
+                    <Text style={styles.actionIcon}>{'\u2715'}</Text>
                   </Pressable>
                 </View>
               </View>
@@ -284,7 +284,7 @@ export default function OfficeSalariesPage() {
               <View style={styles.formHeader}>
                 <ThemedText type="title">{isEditing ? 'Update Salary' : 'Add Office Salary'}</ThemedText>
                 <Pressable onPress={() => setFormOpen(false)}>
-                  <Text style={styles.closeText}>✕</Text>
+                  <Text style={styles.closeText}>{'\u2715'}</Text>
                 </Pressable>
               </View>
 
@@ -405,7 +405,7 @@ export default function OfficeSalariesPage() {
               <View style={styles.modalHeader}>
                 <ThemedText type="title">Office Salary Details</ThemedText>
                 <Pressable onPress={() => setViewDetailsOpen(false)}>
-                  <Text style={styles.modalCloseButton}>✕</Text>
+                  <Text style={styles.modalCloseButton}>{'\u2715'}</Text>
                 </Pressable>
               </View>
               <ScrollView style={styles.modalBody}>
@@ -456,7 +456,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) =>
     headerRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, marginTop: 40 },
     backButton: { padding: Spacing.two, borderRadius: 14 },
     pageTitle: { flex: 1, textAlign: 'center', color: theme.text },
-    card: { borderRadius: 30, padding: Spacing.four, gap: Spacing.three, minHeight: 520, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 18, shadowOffset: { width: 0, height: 12 }, elevation: 10, backgroundColor: theme.backgroundElement },
+    card: { borderRadius: 30, padding: Spacing.four, gap: Spacing.three, minHeight: 0, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 18, shadowOffset: { width: 0, height: 12 }, elevation: 10, backgroundColor: theme.backgroundElement },
     topControls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.three, flexWrap: 'wrap' },
     addButton: { paddingVertical: Spacing.two, paddingHorizontal: Spacing.four, borderRadius: 24, minWidth: 80 },
     searchInput: { flex: 1, minWidth: 160, padding: Spacing.two, borderRadius: 24, backgroundColor: 'transparent', color: theme.text, fontSize: 13, borderWidth: 1, borderColor: theme.backgroundSelected },
@@ -471,7 +471,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) =>
     color: theme.text,
     fontSize: 13,
   },
-    tableBody: { marginTop: Spacing.two, maxHeight: 340 },
+    tableBody: { marginTop: Spacing.two, maxHeight: 420 },
     tableRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.two, paddingHorizontal: Spacing.two, borderBottomWidth: 1, borderColor: theme.backgroundSelected, gap: Spacing.one },
     rowCell: {
       flex: 1,

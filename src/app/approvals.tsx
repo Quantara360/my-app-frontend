@@ -1,4 +1,4 @@
-﻿import { useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { BackgroundPattern } from '@/components/BackgroundPattern';
@@ -246,7 +246,7 @@ export default function ApprovalsPage() {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.headerRow}>
           <Pressable style={[styles.backButton, { backgroundColor: theme.backgroundSelected }]} onPress={() => goBack()}>
-            <ThemedText type="smallBold">←</ThemedText>
+            <Text style={{ fontSize: 20, color: '#555', fontWeight: 'bold' }}>{'\u2190'}</Text>
           </Pressable>
           <ThemedText type="title" style={styles.pageTitle}>
             Approvals
@@ -289,9 +289,9 @@ export default function ApprovalsPage() {
                 <View key={a.id} style={[styles.tableRow, index % 2 === 0 ? styles.rowEven : styles.rowOdd]}>
                   <Text style={[styles.rowCell, { flex: 0.5, textAlign: 'center' }]} numberOfLines={1}>{a.id}</Text>
                   <Text style={[styles.rowCell, { flex: 1.5, textAlign: 'center' }]} numberOfLines={1}>{a.title}</Text>
-                  <Text style={[styles.rowCell, { flex: 1.5, textAlign: 'center' }]} numberOfLines={1}>{a.amount ?? '—'}</Text>
-                  <Text style={[styles.rowCell, { flex: 1.5, textAlign: 'center' }]} numberOfLines={1}>{a.date ?? '—'}</Text>
-                  <Text style={[styles.rowCell, { flex: 1.5, textAlign: 'center' }]} numberOfLines={1}>{a.holder ?? '—'}</Text>
+                  <Text style={[styles.rowCell, { flex: 1.5, textAlign: 'center' }]} numberOfLines={1}>{a.amount ?? '�'}</Text>
+                  <Text style={[styles.rowCell, { flex: 1.5, textAlign: 'center' }]} numberOfLines={1}>{a.date ?? '�'}</Text>
+                  <Text style={[styles.rowCell, { flex: 1.5, textAlign: 'center' }]} numberOfLines={1}>{a.holder ?? '�'}</Text>
                   <View style={[styles.rowCell, { flex: 1.5, alignItems: 'center' }]}>
                     <View style={[styles.statusPill, a.status.toLowerCase() === 'approved' ? styles.statusPillGreen : a.status.toLowerCase() === 'reject' || a.status.toLowerCase() === 'rejected' ? styles.statusPillRed : styles.statusPillYellow]}>
                       <Text style={styles.statusPillText}>{a.status}</Text>
@@ -300,11 +300,11 @@ export default function ApprovalsPage() {
                   <View style={[styles.rowCell, { flex: 1, flexDirection: 'row', justifyContent: 'center', gap: 8 }]}>
                     {a.status.toLowerCase() === 'pending' && (
                     <Pressable style={[styles.actionButtonIconDelete, { backgroundColor: '#3b82f6' }]} onPress={() => openEditApproval(a)}>
-                      <Text style={styles.actionIcon}>✎</Text>
+                       <Text style={styles.actionIcon}>{'\u2713'}</Text>
                     </Pressable>
                     )}
                     <Pressable style={styles.actionButtonIconDelete} onPress={() => handleDeleteApproval(a.id)}>
-                      <Text style={styles.actionIcon}>🗑</Text>
+                       <Text style={styles.actionIcon}>{'\u2715'}</Text>
                     </Pressable>
                   </View>
                 </View>
@@ -321,7 +321,7 @@ export default function ApprovalsPage() {
               <View style={styles.formHeader}>
                 <ThemedText type="title">{isEditing ? 'Update Approval' : 'Add Approval'}</ThemedText>
                 <Pressable onPress={() => setFormOpen(false)}>
-                  <Text style={styles.closeText}>✕</Text>
+                  <Text style={styles.closeText}>{'\u2715'}</Text>
                 </Pressable>
               </View>
 
@@ -415,7 +415,7 @@ export default function ApprovalsPage() {
               <View style={styles.modalHeader}>
                 <ThemedText type="title">Approval Details</ThemedText>
                 <Pressable onPress={() => setViewDetailsOpen(false)}>
-                  <Text style={styles.modalCloseButton}>✕</Text>
+                  <Text style={styles.modalCloseButton}>{'\u2715'}</Text>
                 </Pressable>
               </View>
               <ScrollView style={styles.modalBody}>
@@ -431,7 +431,7 @@ export default function ApprovalsPage() {
                     </View>
                     <View style={styles.detailRow}>
                       <ThemedText type="subtitle" style={styles.detailLabel}>Description</ThemedText>
-                      <ThemedText>{selectedViewApproval.description ?? '—'}</ThemedText>
+                      <ThemedText>{selectedViewApproval.description ?? '�'}</ThemedText>
                     </View>
                     <View style={styles.detailRow}>
                       <ThemedText type="subtitle" style={styles.detailLabel}>Status</ThemedText>
@@ -439,11 +439,11 @@ export default function ApprovalsPage() {
                     </View>
                     <View style={styles.detailRow}>
                       <ThemedText type="subtitle" style={styles.detailLabel}>Requested By</ThemedText>
-                      <ThemedText>{selectedViewApproval.requested_by ?? '—'}</ThemedText>
+                      <ThemedText>{selectedViewApproval.requested_by ?? '�'}</ThemedText>
                     </View>
                     <View style={styles.detailRow}>
                       <ThemedText type="subtitle" style={styles.detailLabel}>Approved By</ThemedText>
-                      <ThemedText>{selectedViewApproval.approved_by ?? '—'}</ThemedText>
+                      <ThemedText>{selectedViewApproval.approved_by ?? '�'}</ThemedText>
                     </View>
                   </>
                 )}
@@ -499,7 +499,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     borderRadius: 30,
     padding: Spacing.four,
     gap: Spacing.three,
-    minHeight: 520,
+    minHeight: 0,
     shadowColor: '#000',
     shadowOpacity: 0.08,
     shadowRadius: 18,
@@ -561,7 +561,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   },
   tableBody: {
     marginTop: Spacing.two,
-    maxHeight: 340,
+    maxHeight: 420,
   },
   tableRow: {
     flexDirection: 'row',

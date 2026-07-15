@@ -63,3 +63,44 @@ export const Spacing = {
 
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
 export const MaxContentWidth = 800;
+
+// ─── Responsive Helpers ───────────────────────────────────────────────────────
+// Base design width (iPhone 8 / SE 2nd gen). All sizes are expressed relative
+// to this so they scale up/down proportionally on every device.
+import { Dimensions, PixelRatio } from 'react-native';
+
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
+const BASE_WIDTH = 375;
+
+const _scale = SCREEN_W / BASE_WIDTH;
+
+/**
+ * Responsive font size.
+ * Pass the size you designed for at 375px; it will scale proportionally and
+ * be clamped between `min` and `max` so it stays readable on very small/large
+ * screens.
+ */
+export function rf(size: number, min?: number, max?: number): number {
+  const scaled = Math.round(PixelRatio.roundToNearestPixel(size * _scale));
+  if (min !== undefined && scaled < min) return min;
+  if (max !== undefined && scaled > max) return max;
+  return scaled;
+}
+
+/**
+ * Responsive size (margins, padding, dimensions).
+ * Same scaling as rf() but typically used for non-font measurements.
+ */
+export function rs(size: number, min?: number, max?: number): number {
+  const scaled = Math.round(size * _scale);
+  if (min !== undefined && scaled < min) return min;
+  if (max !== undefined && scaled > max) return max;
+  return scaled;
+}
+
+/** True if the current device is in landscape orientation */
+export const isLandscape = SCREEN_W > SCREEN_H;
+
+/** Shorthand for a percentage of screen width */
+export const vw = (pct: number) => (SCREEN_W * pct) / 100;
+

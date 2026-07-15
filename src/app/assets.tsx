@@ -1,5 +1,5 @@
-﻿import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'expo-router';
 import { Alert, Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { BackgroundPattern } from '@/components/BackgroundPattern';
 import { ThemedText } from '@/components/themed-text';
@@ -113,12 +113,20 @@ export default function AssetsPage() {
   }, [token]);
 
   const filteredAssets = useMemo(() => {
-    return (assets ?? []).filter((asset) => {
-      const matchesSearch = (asset.name ?? '').toLowerCase().includes(search.toLowerCase());
+    return assets.filter((asset) => {
+      const matchesSearch = asset.name.toLowerCase().includes(search.toLowerCase());
       const matchesSite = siteFilter ? asset.worksite_id === siteFilter : true;
       return matchesSearch && matchesSite;
     });
   }, [assets, search, siteFilter]);
+
+  const handleGoBack = () => {
+    if (router.canGoBack?.()) {
+      goBack();
+    } else {
+      router.replace('/dashboard');
+    }
+  };
 
   const openAddAsset = () => {
     setSelectedAsset(null);
@@ -134,9 +142,9 @@ export default function AssetsPage() {
       name: asset.name,
       type: asset.type ?? '',
       location: asset.location ?? '',
+      count: String(asset.count),
+      value: String(asset.value),
       status: asset.status,
-      count: String(asset.count ?? 0),
-      value: String(asset.value ?? 0),
       worksite_id: asset.worksite_id ?? null,
     });
     setFormOpen(true);
@@ -156,9 +164,9 @@ export default function AssetsPage() {
       name: formValues.name,
       type: formValues.type || null,
       location: formValues.location || null,
-      status: formValues.status,
       count: Number(formValues.count) || 0,
       value: Number(formValues.value) || 0,
+      status: formValues.status,
       worksite_id: formValues.worksite_id,
     };
 
@@ -179,25 +187,25 @@ export default function AssetsPage() {
       });
 
       const savedAsset = await response.json();
-      const normalizedSavedAsset = normalizeAsset(savedAsset);
-
       if (!response.ok) {
         throw new Error(savedAsset.message || 'Unable to save asset');
       }
 
+      const normalizedSavedAsset = normalizeAsset(savedAsset);
       setFormOpen(false);
       setSelectedAsset(null);
       setIsEditing(false);
       setAssets((prev) => {
         if (isEditing && selectedAsset) {
-          return prev.map((asset) => (asset.id === selectedAsset.id ? normalizedSavedAsset : asset));
+          return prev.map((asset) => (
+            asset.id === selectedAsset.id ? normalizedSavedAsset : asset
+          ));
         }
         return [normalizedSavedAsset, ...prev];
       });
       setSuccessMessage(isEditing ? 'Asset Updated Successfully!' : 'Asset Added Successfully!');
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unable to save asset.';
-      Alert.alert('Save failed', errorMessage);
+      Alert.alert('Save failed', error instanceof Error ? error.message : 'Unable to save asset.');
     }
   };
 
@@ -224,27 +232,27 @@ export default function AssetsPage() {
     setSuccessMessage('Asset Deleted Successfully!');
   };
 
-  const assetStatuses = ['available', 'in use', 'maintenance'];
+  const statusOptions = ['available', 'in-use', 'maintenance', 'retired'];
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: 'transparent' }]}>
       <BackgroundPattern />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.headerRow}>
-          <Pressable style={[styles.backButton, { backgroundColor: theme.backgroundSelected }]} onPress={() => goBack()}>
-            <ThemedText type="smallBold">←</ThemedText>
+          <Pressable style={[styles.backButton, { backgroundColor: theme.backgroundSelected }]} onPress={handleGoBack}>
+            <Text style={{ fontSize: 20, color: '#555', fontWeight: 'bold' }}>{'\u2190'}</Text>
           </Pressable>
           <ThemedText type="title" style={styles.pageTitle}>
             Assets
           </ThemedText>
         </View>
 
-        <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}> 
+        <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}>
           <View style={[styles.topControls, { zIndex: 10 }]}>
             <Pressable style={[styles.addButton, { backgroundColor: theme.backgroundSelected }]} onPress={openAddAsset}>
               <ThemedText type="smallBold">+ Add Assets</ThemedText>
             </Pressable>
-            
+
             <View style={{ position: 'relative', zIndex: 10, flex: 1, minWidth: 140 }}>
               <Pressable style={[styles.searchInput, { flex: 0, minHeight: 44, justifyContent: 'center' }]} onPress={() => setFilterPickerOpen((prev) => !prev)}>
                 <Text style={{ color: theme.text }} numberOfLines={1}>
@@ -253,62 +261,54 @@ export default function AssetsPage() {
               </Pressable>
               {filterPickerOpen && (
                 <View style={[styles.statusOptions, { position: 'absolute', top: 40, left: 0, right: 0, zIndex: 20 }]}>
-                    <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled={true}> 
-                  <Pressable style={styles.statusOption} onPress={() => { setSiteFilter(null); setFilterPickerOpen(false); }}>
-                    <Text style={styles.statusOptionText} numberOfLines={1}>All Sites</Text>
-                  </Pressable>
-                  {worksites.map((site) => (
-                    <Pressable key={site.id} style={styles.statusOption} onPress={() => { setSiteFilter(site.id); setFilterPickerOpen(false); }}>
-                      <Text style={styles.statusOptionText} numberOfLines={1}>{site.name}</Text>
+                  <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled={true}>
+                    <Pressable style={styles.statusOption} onPress={() => { setSiteFilter(null); setFilterPickerOpen(false); }}>
+                      <Text style={styles.statusOptionText} numberOfLines={1}>All Sites</Text>
                     </Pressable>
-                  ))}
-                
-                    </ScrollView>
-                  </View>
+                    {worksites.map((site) => (
+                      <Pressable key={site.id} style={styles.statusOption} onPress={() => { setSiteFilter(site.id); setFilterPickerOpen(false); }}>
+                        <Text style={styles.statusOptionText} numberOfLines={1}>{site.name}</Text>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                </View>
               )}
             </View>
-
-            
           </View>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View style={{ minWidth: '100%' }}>
               <View style={styles.tableHeader}>
-            <Text style={[styles.columnHeader, { width: 60, minWidth: 60, flex: 0 }]}>ID</Text>
-            <Text style={styles.columnHeader}>Name</Text>
-            <Text style={[styles.columnHeader, { width: 120, minWidth: 120, flex: 0 }]}>Site</Text>
-            <Text style={[styles.columnHeader, { width: 80, minWidth: 80, flex: 0 }]}>Count</Text>
-            <Text style={[styles.columnHeader, { width: 120, minWidth: 120, flex: 0 }]}>Value</Text>
-            <Text style={styles.columnHeaderRight}>Actions</Text>
-          </View>
-
-          <ScrollView style={styles.tableBody} showsVerticalScrollIndicator={false}>
-            {filteredAssets.map((asset) => {
-              const valueNumber = Number(asset.value);
-              const displayedValue = Number.isFinite(valueNumber) ? valueNumber.toFixed(2) : '0.00';
-
-              return (
-                <View key={asset.id} style={styles.tableRow}>
-                  <Text style={[styles.rowCell, { width: 60, minWidth: 60, flex: 0 }]} numberOfLines={1}>{asset.id}</Text>
-                  <Text style={styles.rowCell} numberOfLines={1}>{asset.name}</Text>
-                  <Text style={[styles.rowCell, { width: 120, minWidth: 120, flex: 0 }]} numberOfLines={1}>{asset.worksite?.name ?? 'Unassigned'}</Text>
-                  <Text style={[styles.rowCell, { width: 80, minWidth: 80, flex: 0 }]} numberOfLines={1}>{asset.count}</Text>
-                  <Text style={[styles.rowCell, { width: 120, minWidth: 120, flex: 0 }]} numberOfLines={1}>Rs. {displayedValue}</Text>
-                  <View style={styles.actionsColumn}>
-                  <Pressable style={styles.actionButtonIcon} onPress={() => { setSelectedViewAsset(asset); setViewDetailsOpen(true); }}>
-                    <Text style={styles.actionIcon}>👁</Text>
-                  </Pressable>
-                  <Pressable style={styles.actionButtonIcon} onPress={() => openEditAsset(asset)}>
-                    <Text style={styles.actionIcon}>✎</Text>
-                  </Pressable>
-                  <Pressable style={styles.actionButtonIconDelete} onPress={() => handleDeleteAsset(asset.id)}>
-                    <Text style={styles.actionIcon}>🗑</Text>
-                  </Pressable>
-                </View>
+                <Text style={[styles.columnHeader, { width: 60, minWidth: 60, flex: 0 }]}>ID</Text>
+                <Text style={[styles.columnHeader, { width: 150, minWidth: 150, flex: 0 }]}>Name</Text>
+                <Text style={[styles.columnHeader, { width: 120, minWidth: 120, flex: 0 }]}>Site</Text>
+                <Text style={[styles.columnHeader, { width: 100, minWidth: 100, flex: 0 }]}>Status</Text>
+                <Text style={[styles.columnHeader, { width: 80, minWidth: 80, flex: 0 }]}>Count</Text>
+                <Text style={styles.columnHeaderRight}>Actions</Text>
               </View>
-              );
-            })}
-          </ScrollView>
+
+              <ScrollView style={styles.tableBody} showsVerticalScrollIndicator={false}>
+                {filteredAssets.map((asset) => (
+                  <View key={asset.id} style={styles.tableRow}>
+                    <Text style={[styles.rowCell, { width: 60, minWidth: 60, flex: 0 }]} numberOfLines={1}>{asset.id}</Text>
+                    <Text style={[styles.rowCell, { width: 150, minWidth: 150, flex: 0 }]} numberOfLines={1}>{asset.name}</Text>
+                    <Text style={[styles.rowCell, { width: 120, minWidth: 120, flex: 0 }]} numberOfLines={1}>{asset.worksite?.name ?? 'Unassigned'}</Text>
+                    <Text style={[styles.rowCell, { width: 100, minWidth: 100, flex: 0 }]} numberOfLines={1}>{asset.status}</Text>
+                    <Text style={[styles.rowCell, { width: 80, minWidth: 80, flex: 0 }]} numberOfLines={1}>{asset.count}</Text>
+                    <View style={styles.actionsColumn}>
+                      <Pressable style={styles.actionButtonIcon} onPress={() => { setSelectedViewAsset(asset); setViewDetailsOpen(true); }}>
+                        <Text style={styles.actionIcon}>&#x1F441;</Text>
+                      </Pressable>
+                      <Pressable style={styles.actionButtonIcon} onPress={() => openEditAsset(asset)}>
+                        <Text style={styles.actionIcon}>&#x270E;</Text>
+                      </Pressable>
+                      <Pressable style={styles.actionButtonIconDelete} onPress={() => handleDeleteAsset(asset.id)}>
+                        <Text style={styles.actionIcon}>&#x2715;</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                ))}
+              </ScrollView>
             </View>
           </ScrollView>
         </View>
@@ -319,7 +319,7 @@ export default function AssetsPage() {
               <View style={styles.formHeader}>
                 <ThemedText type="title">{isEditing ? 'Update Asset' : 'Add Asset'}</ThemedText>
                 <Pressable onPress={() => setFormOpen(false)}>
-                  <Text style={styles.closeText}>✕</Text>
+                  <Text style={styles.closeText}>&#x2715;</Text>
                 </Pressable>
               </View>
 
@@ -330,38 +330,9 @@ export default function AssetsPage() {
                   value={formValues.name}
                   onChangeText={(value) => setFormValues((prev) => ({ ...prev, name: value }))}
                 />
-                <View style={[styles.fieldRow, { zIndex: sitePickerOpen ? 100 : 1 }]}>
-                  <Text style={styles.fieldLabel}>Site Selection</Text>
-                  <Pressable style={styles.selectInput} onPress={() => setSitePickerOpen((prev) => !prev)}>
-                    <Text style={styles.selectText} numberOfLines={1}>
-                      {formValues.worksite_id
-                        ? worksites.find((site) => site.id === formValues.worksite_id)?.name
-                        : 'Site Selection'}
-                    </Text>
-                  </Pressable>
-                  {sitePickerOpen && (
-                    <View style={[styles.statusOptions, { position: 'absolute', top: 75, left: 0, right: 0, zIndex: 100 }]}>
-                    <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled={true}>
-                      {worksites.map((site) => (
-                        <Pressable
-                          key={site.id}
-                          style={styles.statusOption}
-                          onPress={() => {
-                            setFormValues((prev) => ({ ...prev, worksite_id: site.id }));
-                            setSitePickerOpen(false);
-                          }}
-                        >
-                          <Text style={styles.statusOptionText} numberOfLines={1}>{site.name}</Text>
-                        </Pressable>
-                      ))}
-                    
-                    </ScrollView>
-                  </View>
-                  )}
-                </View>
                 <TextInput
                   style={styles.textInput}
-                  placeholder="Type"
+                  placeholder="Type (e.g. Vehicle, Equipment)"
                   value={formValues.type}
                   onChangeText={(value) => setFormValues((prev) => ({ ...prev, type: value }))}
                 />
@@ -385,31 +356,61 @@ export default function AssetsPage() {
                   value={formValues.value}
                   onChangeText={(value) => setFormValues((prev) => ({ ...prev, value: value }))}
                 />
-                <View style={[styles.fieldRow, { zIndex: statusPickerOpen ? 100 : 1 }]}>
-                  <Text style={styles.fieldLabel}>Status</Text>
-                  <Pressable style={styles.selectInput} onPress={() => setStatusPickerOpen((prev) => !prev)}>
-                    <Text style={styles.selectText} numberOfLines={1}>{formValues.status}</Text>
+
+                <View style={[styles.fieldRow, { zIndex: sitePickerOpen ? 100 : 1 }]}>
+                  <Text style={styles.fieldLabel}>Site Selection</Text>
+                  <Pressable style={styles.selectInput} onPress={() => setSitePickerOpen((prev) => !prev)}>
+                    <Text style={styles.selectText} numberOfLines={1}>
+                      {formValues.worksite_id
+                        ? worksites.find((site) => site.id === formValues.worksite_id)?.name
+                        : 'Site Selection'}
+                    </Text>
                   </Pressable>
+                  {sitePickerOpen && (
+                    <View style={[styles.statusOptions, { position: 'absolute', top: 75, left: 0, right: 0, zIndex: 100 }]}>
+                      <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled={true}>
+                        {worksites.map((site) => (
+                          <Pressable
+                            key={site.id}
+                            style={styles.statusOption}
+                            onPress={() => {
+                              setFormValues((prev) => ({ ...prev, worksite_id: site.id }));
+                              setSitePickerOpen(false);
+                            }}
+                          >
+                            <Text style={styles.statusOptionText} numberOfLines={1}>{site.name}</Text>
+                          </Pressable>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
                 </View>
-                {statusPickerOpen && (
-                  <View style={[styles.statusOptions, { position: 'absolute', top: 75, left: 0, right: 0, zIndex: 100 }]}>
-                    <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled={true}>
-                    {assetStatuses.map((status) => (
+
+                <View style={styles.fieldRow}>
+                  <Text style={styles.fieldLabel}>Status</Text>
+                  <View style={styles.statusList}>
+                    {statusOptions.map((status) => (
                       <Pressable
                         key={status}
-                        style={styles.statusOption}
-                        onPress={() => {
-                          setFormValues((prev) => ({ ...prev, status }));
-                          setStatusPickerOpen(false);
-                        }}
+                        style={[
+                          styles.statusOption,
+                          formValues.status === status && styles.statusOptionSelected,
+                        ]}
+                        onPress={() => setFormValues((prev) => ({ ...prev, status }))}
                       >
-                        <Text style={styles.statusOptionText} numberOfLines={1}>{status}</Text>
+                        <Text
+                          style={[
+                            styles.statusOptionText,
+                            formValues.status === status && styles.statusOptionTextSelected,
+                          ]}
+                        >
+                          {status}
+                        </Text>
                       </Pressable>
                     ))}
-                  
-                    </ScrollView>
                   </View>
-                )}
+                </View>
+
                 <Pressable style={styles.saveButton} onPress={handleSaveAsset}>
                   <Text style={styles.saveText}>Save Asset</Text>
                 </Pressable>
@@ -424,39 +425,39 @@ export default function AssetsPage() {
               <View style={styles.modalHeader}>
                 <ThemedText type="title">Asset Details</ThemedText>
                 <Pressable onPress={() => setViewDetailsOpen(false)}>
-                  <Text style={styles.modalCloseButton}>✕</Text>
+                  <Text style={styles.modalCloseButton}>&#x2715;</Text>
                 </Pressable>
               </View>
               <ScrollView style={styles.modalBody}>
                 {selectedViewAsset && (
                   <>
                     <View style={styles.detailRow}>
-                      <ThemedText type="subtitle" style={styles.detailLabel}>Name</ThemedText>
+                      <ThemedText type="smallBold" style={styles.detailLabel}>Name</ThemedText>
                       <ThemedText>{selectedViewAsset.name}</ThemedText>
                     </View>
                     <View style={styles.detailRow}>
-                      <ThemedText type="subtitle" style={styles.detailLabel}>Worksite</ThemedText>
+                      <ThemedText type="smallBold" style={styles.detailLabel}>Type</ThemedText>
+                      <ThemedText>{selectedViewAsset.type ?? 'N/A'}</ThemedText>
+                    </View>
+                    <View style={styles.detailRow}>
+                      <ThemedText type="smallBold" style={styles.detailLabel}>Worksite</ThemedText>
                       <ThemedText>{selectedViewAsset.worksite?.name ?? 'Unassigned'}</ThemedText>
                     </View>
                     <View style={styles.detailRow}>
-                      <ThemedText type="subtitle" style={styles.detailLabel}>Type</ThemedText>
-                      <ThemedText>{selectedViewAsset.type ?? '—'}</ThemedText>
-                    </View>
-                    <View style={styles.detailRow}>
-                      <ThemedText type="subtitle" style={styles.detailLabel}>Location</ThemedText>
-                      <ThemedText>{selectedViewAsset.location ?? '—'}</ThemedText>
-                    </View>
-                    <View style={styles.detailRow}>
-                      <ThemedText type="subtitle" style={styles.detailLabel}>Status</ThemedText>
+                      <ThemedText type="smallBold" style={styles.detailLabel}>Status</ThemedText>
                       <ThemedText>{selectedViewAsset.status}</ThemedText>
                     </View>
                     <View style={styles.detailRow}>
-                      <ThemedText type="subtitle" style={styles.detailLabel}>Count</ThemedText>
+                      <ThemedText type="smallBold" style={styles.detailLabel}>Location</ThemedText>
+                      <ThemedText>{selectedViewAsset.location ?? 'N/A'}</ThemedText>
+                    </View>
+                    <View style={styles.detailRow}>
+                      <ThemedText type="smallBold" style={styles.detailLabel}>Count</ThemedText>
                       <ThemedText>{selectedViewAsset.count}</ThemedText>
                     </View>
                     <View style={styles.detailRow}>
-                      <ThemedText type="subtitle" style={styles.detailLabel}>Value</ThemedText>
-                      <ThemedText>Rs. {selectedViewAsset.value}</ThemedText>
+                      <ThemedText type="smallBold" style={styles.detailLabel}>Value</ThemedText>
+                      <ThemedText>{selectedViewAsset.value}</ThemedText>
                     </View>
                   </>
                 )}
@@ -469,6 +470,7 @@ export default function AssetsPage() {
             </View>
           </View>
         </Modal>
+
         <SuccessModal
           visible={!!successMessage}
           title={successMessage ?? ''}
@@ -489,9 +491,9 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   safeArea: {
     flex: 1,
     gap: Spacing.three,
-  width: '100%',
-  maxWidth: MaxContentWidth,
-  alignSelf: 'center',
+    width: '100%',
+    maxWidth: MaxContentWidth,
+    alignSelf: 'center',
   },
   headerRow: {
     flexDirection: 'row',
@@ -512,7 +514,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     borderRadius: 30,
     padding: Spacing.four,
     gap: Spacing.three,
-    minHeight: 520,
+    minHeight: 0,
     shadowColor: '#000',
     shadowOpacity: 0.08,
     shadowRadius: 18,
@@ -531,7 +533,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.four,
     borderRadius: 24,
-    minWidth: 120,
+    minWidth: 140,
   },
   searchInput: {
     flex: 1,
@@ -554,8 +556,8 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     gap: Spacing.two,
   },
   columnHeader: {
-      flex: 1,
-      minWidth: 120,
+    flex: 1,
+    minWidth: 120,
     fontWeight: '700',
     color: theme.text,
     fontSize: 13,
@@ -569,7 +571,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   },
   tableBody: {
     marginTop: Spacing.two,
-    maxHeight: 340,
+    maxHeight: 420,
   },
   tableRow: {
     flexDirection: 'row',
@@ -581,13 +583,11 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     gap: Spacing.one,
   },
   rowCell: {
-      flex: 1,
-      minWidth: 120,
+    flex: 1,
+    minWidth: 120,
     color: theme.text,
     fontSize: 13,
-    },
-    
-  
+  },
   actionsColumn: {
     minWidth: 120,
     flexDirection: 'row',
@@ -595,17 +595,17 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     gap: Spacing.one,
   },
   actionButtonIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: '#10b981',
     justifyContent: 'center',
     alignItems: 'center',
   },
   actionButtonIconDelete: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: '#ef4444',
     justifyContent: 'center',
     alignItems: 'center',
@@ -684,12 +684,26 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     marginTop: Spacing.one,
     backgroundColor: theme.backgroundSelected,
   },
+  statusList: {
+    flexDirection: 'row',
+    gap: Spacing.two,
+    flexWrap: 'wrap',
+  },
   statusOption: {
-    padding: Spacing.two,
+    paddingVertical: Spacing.one,
+    paddingHorizontal: Spacing.three,
+    borderRadius: 20,
+    backgroundColor: theme.backgroundSelected,
+  },
+  statusOptionSelected: {
+    backgroundColor: '#0f172a',
   },
   statusOptionText: {
     color: theme.text,
     fontSize: 13,
+  },
+  statusOptionTextSelected: {
+    color: '#fff',
   },
   saveButton: {
     marginTop: Spacing.three,

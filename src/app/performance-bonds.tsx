@@ -374,7 +374,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   tableHeader: { flexDirection: 'row', paddingVertical: 10, paddingHorizontal: Spacing.two, borderBottomWidth: 1, borderBottomColor: theme.backgroundSelected },
   columnHeader: { flex: 1, minWidth: 100, fontSize: 12, fontWeight: '700', color: theme.textSecondary, textTransform: 'uppercase' },
   columnHeaderRight: { width: 110, minWidth: 110, fontSize: 12, fontWeight: '700', color: theme.textSecondary, textTransform: 'uppercase', textAlign: 'right' },
-  tableBody: { maxHeight: 400 },
+  tableBody: { maxHeight: 420 },
   tableRow: { flexDirection: 'row', paddingVertical: 10, paddingHorizontal: Spacing.two, borderBottomWidth: 1, borderBottomColor: theme.backgroundSelected, alignItems: 'center', gap: Spacing.one },
   rowCell: { flex: 1, minWidth: 100, fontSize: 13, color: theme.text },
   actionsColumn: { width: 110, flexDirection: 'row', justifyContent: 'flex-end', gap: 4 },

@@ -3,7 +3,8 @@ import { Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextIn
 import { BackgroundPattern } from '@/components/BackgroundPattern';
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { BottomTabInset, Spacing } from "@/constants/theme";
+import { BottomTabInset, Spacing, MaxContentWidth } from "@/constants/theme";
+
 import { useTheme } from "@/hooks/use-theme";
 import * as AttendancesService from "@/services/adminAttendancesService";
 import { useGoBack } from "@/hooks/use-go-back";
@@ -465,7 +466,7 @@ const createStyles = (isDark: boolean) =>
       padding: Spacing.four,
       paddingBottom: BottomTabInset,
       backgroundColor: isDark ? "#121212" : "#f5f5f5",
-      maxWidth: 900,
+      maxWidth: MaxContentWidth,
       width: '100%',
       alignSelf: 'center',
     },
@@ -540,7 +541,8 @@ const createStyles = (isDark: boolean) =>
       paddingVertical: 10,
       color: isDark ? "#ffffff" : "#000000",
       outlineStyle: "none",
-    },
+    } as any,
+
 
     // ── Info Banner ────────────────────────────────────────────────────────────
     infoBanner: {

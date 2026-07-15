@@ -3,7 +3,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { ActivityIndicator, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, View } from 'react-native';
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { Spacing, MaxContentWidth, BottomTabInset } from "@/constants/theme";
+import { Spacing, MaxContentWidth, BottomTabInset, rf } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 
 import { useEffect, useState } from "react";
@@ -168,11 +168,8 @@ const styles = StyleSheet.create({
     width: "100%",
     flexDirection: "row",
     justifyContent: "flex-start",
-    position: "absolute",
-    top: 60,
-    left: Spacing.four,
-    zIndex: 10,
-    elevation: 10,
+    paddingTop: Spacing.two,
+    paddingBottom: Spacing.two,
   },
   backButton: {
     paddingVertical: Spacing.two,
@@ -201,11 +198,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: Spacing.four,
-    paddingTop: 120,
+    paddingTop: Spacing.three,
   },
   title: {
     textAlign: "center",
-    fontSize: Platform.select({ web: 28, default: 38 }),
+    fontSize: rf(32, 22, 32),
     fontWeight: "700",
     marginBottom: Spacing.four,
   },
@@ -235,15 +232,15 @@ const styles = StyleSheet.create({
     elevation: 6,
     alignItems: "center",
     justifyContent: "center",
-    minHeight: Platform.select({ web: 90, default: 150 }),
+    minHeight: 80,
   },
   cardPressed: {
     opacity: 0.85,
   },
   cardText: {
     textAlign: "center",
-    fontSize: Platform.select({ web: 20, default: 30 }),
-    lineHeight: Platform.select({ web: 28, default: 38 }),
+    fontSize: rf(22, 16, 26),
+    lineHeight: rf(30, 22, 34),
     fontWeight: "600",
   },
 });

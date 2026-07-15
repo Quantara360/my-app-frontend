@@ -508,7 +508,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     borderRadius: 30,
     padding: Spacing.four,
     gap: Spacing.three,
-    minHeight: 520,
+    minHeight: 0,
     shadowColor: '#000',
     shadowOpacity: 0.08,
     shadowRadius: 18,
@@ -565,7 +565,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   },
   tableBody: {
     marginTop: Spacing.two,
-    maxHeight: 340,
+    maxHeight: 420,
   },
   tableRow: {
     flexDirection: 'row',

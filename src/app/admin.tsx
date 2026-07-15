@@ -1,6 +1,8 @@
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { BottomTabInset, Spacing } from "@/constants/theme";
+import { BottomTabInset, Spacing, rf, MaxContentWidth } from "@/constants/theme";
+
+
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
@@ -4181,11 +4183,17 @@ export default function AdminDashboard() {
       <View style={[styles.backgroundCircleLarge, { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(255, 255, 255, 0.65)" }]} />
       <View style={[styles.backgroundCircleSmall, { backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(255, 255, 255, 0.5)" }]} />
       {selectedView === "dashboard" ? (
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          style={{ maxWidth: MaxContentWidth, alignSelf: 'center', width: '100%' }}
+        >
           {renderDashboardView()}
         </ScrollView>
       ) : (
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          style={{ maxWidth: MaxContentWidth, alignSelf: 'center', width: '100%' }}
+        >
           {selectedView === "attendance"
             ? renderAttendancesView()
             : selectedView === "machineries"
@@ -4262,12 +4270,18 @@ const createStyles = (isDark: boolean) =>
       marginBottom: Spacing.three,
     },
     greeting: {
-      fontSize: 24,
+      fontSize: rf(20, 16, 22),
       fontWeight: "600",
+      flexShrink: 1,
     },
     greetingContainer: {
-      height: 64,
-      justifyContent: "center",
+      minHeight: 48,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      flexWrap: "wrap",
+      gap: Spacing.two,
+      marginBottom: Spacing.two,
     },
     siteTimeRow: {
       flexDirection: "row",
@@ -4377,14 +4391,13 @@ const createStyles = (isDark: boolean) =>
       position: "relative",
     },
     backButton: {
-      position: "absolute",
-      left: 0,
       width: 36,
       height: 36,
       borderRadius: 18,
       backgroundColor: isDark ? "#333333" : "#e0e0e0",
       alignItems: "center",
       justifyContent: "center",
+      marginRight: 8,
     },
     backButtonIcon: {
       fontSize: 24,
@@ -4761,6 +4774,10 @@ const createStyles = (isDark: boolean) =>
       alignItems: "center",
       paddingTop: Spacing.two,
     },
+    manageSiteList: {
+      flex: 1,
+    },
+
     manageSiteCard: {
       width: "100%",
       maxWidth: 320,
@@ -5276,10 +5293,11 @@ const createStyles = (isDark: boolean) =>
     },
     personalTabDot: {
       position: "absolute",
-      top: -6,
-      width: 8,
-      height: 8,
-      borderRadius: 4,
+      top: -4,
+      right: -4,
+      width: 9,
+      height: 9,
+      borderRadius: 5,
       backgroundColor: "#22c55e",
     },
     personalTabText: {

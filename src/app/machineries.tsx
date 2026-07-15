@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Alert, Modal, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -238,7 +238,7 @@ export default function MachineriesPage() {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.headerRow}>
           <Pressable style={[styles.backButton, { backgroundColor: theme.backgroundSelected }]} onPress={handleGoBack}>
-            <ThemedText type="smallBold">←</ThemedText>
+            <Text style={{ fontSize: 20, color: '#555', fontWeight: 'bold' }}>{'\u2190'}</Text>
           </Pressable>
           <ThemedText type="title" style={styles.pageTitle}>
             Machineries
@@ -298,13 +298,13 @@ export default function MachineriesPage() {
                 <Text style={[styles.rowCell, { width: 120, minWidth: 120, flex: 0 }]} numberOfLines={1}>{machinery.maintenance_due_at ?? 'N/A'}</Text>
                 <View style={styles.actionsColumn}>
                   <Pressable style={styles.actionButtonIcon} onPress={() => { setSelectedViewItem(machinery); setViewDetailsOpen(true); }}>
-                    <Text style={styles.actionIcon}>👁</Text>
+                    <Text style={styles.actionIcon}>{'\u{1F441}'}</Text>
                   </Pressable>
                   <Pressable style={styles.actionButtonIcon} onPress={() => openEditMachinery(machinery)}>
-                    <Text style={styles.actionIcon}>✎</Text>
+                    <Text style={styles.actionIcon}>{'\u270F'}</Text>
                   </Pressable>
                   <Pressable style={styles.actionButtonIconDelete} onPress={() => handleDeleteMachinery(machinery.id)}>
-                    <Text style={styles.actionIcon}>🗑</Text>
+                    <Text style={styles.actionIcon}>{'\u2715'}</Text>
                   </Pressable>
                 </View>
               </View>
@@ -320,7 +320,7 @@ export default function MachineriesPage() {
               <View style={styles.formHeader}>
                 <ThemedText type="title">{isEditing ? 'Update Machine' : 'Add Machine'}</ThemedText>
                 <Pressable onPress={() => setFormOpen(false)}>
-                  <Text style={styles.closeText}>✕</Text>
+                  <Text style={styles.closeText}>{'\u2715'}</Text>
                 </Pressable>
               </View>
 
@@ -475,7 +475,7 @@ export default function MachineriesPage() {
               <View style={styles.modalHeader}>
                 <ThemedText type="title">Machinery Details</ThemedText>
                 <Pressable onPress={() => setViewDetailsOpen(false)}>
-                  <Text style={styles.modalCloseButton}>✕</Text>
+                  <Text style={styles.modalCloseButton}>{'\u2715'}</Text>
                 </Pressable>
               </View>
               <ScrollView style={styles.modalBody}>
@@ -555,7 +555,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     borderRadius: 30,
     padding: Spacing.four,
     gap: Spacing.three,
-    minHeight: 520,
+    minHeight: 0,
     shadowColor: '#000',
     shadowOpacity: 0.08,
     shadowRadius: 18,
@@ -612,7 +612,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   },
   tableBody: {
     marginTop: Spacing.two,
-    maxHeight: 340,
+    maxHeight: 420,
   },
   tableRow: {
     flexDirection: 'row',

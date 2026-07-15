@@ -1,9 +1,10 @@
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useEffect, useRef, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import {  View, StyleSheet, Pressable, Text, Image, Alert, ScrollView, Modal, Platform, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, Pressable, Text, Image, Alert, ScrollView, Modal, Platform, ActivityIndicator } from 'react-native';
 import { CameraView } from "expo-camera";
 import * as FileSystem from "expo-file-system";
+
 import * as MediaLibrary from "expo-media-library";
 import { ThemedView } from "@/components/themed-view";
 import { BackgroundPattern } from '@/components/BackgroundPattern';
@@ -302,7 +303,7 @@ export default function AddImageCapture() {
           return;
         }
 
-        const fileUri = `${FileSystem.documentDirectory}${Date.now()}.jpg`;
+        const fileUri = `${(FileSystem as any).documentDirectory}${Date.now()}.jpg`;
         const downloadedFile = await FileSystem.downloadAsync(url, fileUri);
 
         await MediaLibrary.saveToLibraryAsync(downloadedFile.uri);

@@ -1,4 +1,4 @@
-﻿import { useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Modal, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -187,7 +187,7 @@ export default function OtherPaymentsPage() {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.headerRow}>
           <Pressable style={[styles.backButton, { backgroundColor: theme.backgroundSelected }]} onPress={() => goBack()}>
-            <ThemedText type="smallBold">←</ThemedText>
+            <Text style={{ fontSize: 20, color: '#555', fontWeight: 'bold' }}>{'\u2190'}</Text>
           </Pressable>
           <ThemedText type="title" style={styles.pageTitle}>Other Payments</ThemedText>
         </View>
@@ -207,33 +207,33 @@ export default function OtherPaymentsPage() {
           </View>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={{ minWidth: '100%' }}>
+            <View style={{ flexDirection: "column" }}>
               <View style={styles.tableHeader}>
-            <Text style={[styles.columnHeader, { width: 30 }]}>ID</Text>
-            <Text style={styles.columnHeader}>Description</Text>
+            <Text style={[styles.columnHeader, { width: 30, flex: 0, minWidth: 30 }]}>ID</Text>
+            <Text style={[styles.columnHeader, { width: 100, minWidth: 100, flex: 0 }]}>Description</Text>
             <Text style={[styles.columnHeader, { width: 120, minWidth: 120, flex: 0 }]}>Date</Text>
             <Text style={[styles.columnHeader, { width: 120, minWidth: 120, flex: 0 }]}>Amount</Text>
-            <Text style={[styles.columnHeader, { width: 150, minWidth: 150, flex: 0 }]}>Note</Text>
+            <Text style={[styles.columnHeader, { width: 100, minWidth: 100, flex: 0 }]}>Note</Text>
             <Text style={styles.columnHeaderRight}>Actions</Text>
           </View>
 
           <ScrollView style={styles.tableBody} showsVerticalScrollIndicator={false}>
             {filteredPayments.map((payment) => (
               <View key={payment.id} style={styles.tableRow}>
-                <Text style={[styles.rowCell, { width: 30 }]} numberOfLines={1}>{payment.id}</Text>
-                <Text style={styles.rowCell} numberOfLines={1}>{payment.description}</Text>
+                <Text style={[styles.rowCell, { width: 30, flex: 0, minWidth: 30 }]} numberOfLines={1}>{payment.id}</Text>
+                <Text style={[styles.rowCell, { width: 100, minWidth: 100, flex: 0 }]} numberOfLines={1}>{payment.description}</Text>
                 <Text style={[styles.rowCell, { width: 120, minWidth: 120, flex: 0 }]} numberOfLines={1}>{payment.date}</Text>
                 <Text style={[styles.rowCell, { width: 120, minWidth: 120, flex: 0 }]} numberOfLines={1}>{payment.amount}</Text>
-                <Text style={[styles.rowCell, { width: 150, minWidth: 150, flex: 0 }]} numberOfLines={1}>{payment.anouny}</Text>
+                <Text style={[styles.rowCell, { width: 100, minWidth: 100, flex: 0 }]} numberOfLines={1}>{payment.anouny}</Text>
                 <View style={styles.actionsColumn}>
                   <Pressable style={styles.actionButtonIcon} onPress={() => { setSelectedViewItem(payment); setViewDetailsOpen(true); }}>
-                    <Text style={styles.actionIcon}>👁</Text>
+                    <Text style={styles.actionIcon}>{'\u{1F441}'}</Text>
                   </Pressable>
                   <Pressable style={styles.actionButtonIcon} onPress={() => openEditPayment(payment)}>
-                    <Text style={styles.actionIcon}>✎</Text>
+                    <Text style={styles.actionIcon}>{'\u270F'}</Text>
                   </Pressable>
                   <Pressable style={styles.actionButtonIconDelete} onPress={() => handleDeletePayment(payment.id)}>
-                    <Text style={styles.actionIcon}>🗑</Text>
+                    <Text style={styles.actionIcon}>{'\u2715'}</Text>
                   </Pressable>
                 </View>
               </View>
@@ -249,7 +249,7 @@ export default function OtherPaymentsPage() {
               <View style={styles.formHeader}>
                 <ThemedText type="title">{isEditing ? 'Update Payment' : 'Add Other Payment'}</ThemedText>
                 <Pressable onPress={() => setFormOpen(false)}>
-                  <Text style={styles.closeText}>✕</Text>
+                  <Text style={styles.closeText}>{'\u2715'}</Text>
                 </Pressable>
               </View>
 
@@ -339,7 +339,7 @@ export default function OtherPaymentsPage() {
               <View style={styles.modalHeader}>
                 <ThemedText type="title">Payment Details</ThemedText>
                 <Pressable onPress={() => setViewDetailsOpen(false)}>
-                  <Text style={styles.modalCloseButton}>✕</Text>
+                  <Text style={styles.modalCloseButton}>{'\u2715'}</Text>
                 </Pressable>
               </View>
               <ScrollView style={styles.modalBody}>
@@ -390,7 +390,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) =>
     headerRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
     backButton: { padding: Spacing.two, borderRadius: 14 },
     pageTitle: { flex: 1, textAlign: 'center', color: theme.text },
-    card: { borderRadius: 30, padding: Spacing.four, gap: Spacing.three, minHeight: 520, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 18, shadowOffset: { width: 0, height: 12 }, elevation: 10, backgroundColor: theme.backgroundElement },
+    card: { borderRadius: 30, padding: Spacing.four, gap: Spacing.three, minHeight: 0, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 18, shadowOffset: { width: 0, height: 12 }, elevation: 10, backgroundColor: theme.backgroundElement },
     topControls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.three, flexWrap: 'wrap' },
     addButton: { paddingVertical: Spacing.two, paddingHorizontal: Spacing.four, borderRadius: 24, minWidth: 80 },
     searchInput: { flex: 1, minWidth: 160, padding: Spacing.two, borderRadius: 24, backgroundColor: 'transparent', color: theme.text, fontSize: 13, borderWidth: 1, borderColor: theme.backgroundSelected },
@@ -399,26 +399,29 @@ const createStyles = (theme: ReturnType<typeof useTheme>) =>
       flex: 1,
       minWidth: 120, fontWeight: '700', color: theme.text, fontSize: 13 },
     columnHeaderRight: {
-    minWidth: 120,
+    width: 110,
+    flex: 0,
     textAlign: 'center',
     fontWeight: '700',
     color: theme.text,
     fontSize: 13,
   },
-    tableBody: { marginTop: Spacing.two, maxHeight: 340 },
+    tableBody: { marginTop: Spacing.two, maxHeight: 420 },
     tableRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.two, paddingHorizontal: Spacing.two, borderBottomWidth: 1, borderColor: theme.backgroundSelected, gap: Spacing.one },
     rowCell: {
       flex: 1,
       minWidth: 120, color: theme.text, fontSize: 13,  
     },
     actionsColumn: {
-    minWidth: 120,
+    width: 110,
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: Spacing.one,
+    alignItems: 'center',
+    gap: 6,
+    flex: 0,
   },
-    actionButtonIcon: { width: 24, height: 24, borderRadius: 12, backgroundColor: '#10b981', justifyContent: 'center', alignItems: 'center' },
-    actionButtonIconDelete: { width: 24, height: 24, borderRadius: 12, backgroundColor: '#ef4444', justifyContent: 'center', alignItems: 'center' },
+    actionButtonIcon: { width: 22, height: 22, borderRadius: 11, backgroundColor: '#10b981', justifyContent: 'center', alignItems: 'center' },
+    actionButtonIconDelete: { width: 22, height: 22, borderRadius: 11, backgroundColor: '#ef4444', justifyContent: 'center', alignItems: 'center' },
     actionIcon: { color: '#fff', fontWeight: '700', fontSize: 12 },
     formOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.35)', justifyContent: 'center', alignItems: 'center', padding: Spacing.four },
     formCard: { width: '100%', maxHeight: '85%', borderRadius: 28, backgroundColor: theme.backgroundElement, padding: Spacing.four, gap: Spacing.three },

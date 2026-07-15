@@ -114,6 +114,11 @@ export default function MarkAttendance() {
       <View style={[styles.backgroundCircleSmall, { backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(255, 255, 255, 0.5)" }]} />
 
       <SafeAreaView style={styles.safeArea}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
         <View style={styles.headerRow}>
           <ThemedText type="title" style={styles.title}>
             Mark Attendance
@@ -246,7 +251,9 @@ export default function MarkAttendance() {
             </View>
           </View>
         </View>
+        </ScrollView>
       </SafeAreaView>
+
     </ThemedView>
   );
 }
@@ -281,13 +288,20 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     paddingHorizontal: Spacing.four,
-    justifyContent: "center",
+    justifyContent: "flex-start",
     alignItems: "center",
     gap: Spacing.three,
     paddingBottom: BottomTabInset + Spacing.three,
     maxWidth: MaxContentWidth,
     width: '100%',
     alignSelf: 'center',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    width: '100%',
+    alignItems: 'center',
+    paddingVertical: Spacing.three,
+    paddingBottom: BottomTabInset + Spacing.four,
   },
   headerRow: {
     width: "100%",
@@ -381,8 +395,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   workersListWrapper: {
-    maxHeight: 180,
     width: '100%',
+    maxHeight: 260,
     paddingHorizontal: 12,
   },
   workerItem: {

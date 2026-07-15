@@ -1,13 +1,13 @@
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState, useEffect } from "react";
-import { Platform, Modal, Pressable, SafeAreaView, StyleSheet, Text, View, Image } from 'react-native';
+import { Platform, Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View, Image } from 'react-native';
 import * as ImagePicker from "expo-image-picker";
 import * as SecureStore from "expo-secure-store";
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { BottomTabInset, MaxContentWidth, Spacing } from "@/constants/theme";
+import { BottomTabInset, MaxContentWidth, Spacing, rf } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/contexts/AuthContext";
 import { API_BASE_URL } from "@/services/authService";
@@ -119,33 +119,40 @@ export default function AddImagePage() {
           </ThemedText>
         </View>
 
-        <View style={styles.cardsContainer}>
-          {[1, 2, 3].map((i) => (
-            <Pressable
-              key={i}
-              style={({ pressed }) => [
-                styles.bigCard,
-                { backgroundColor: theme.backgroundElement },
-                pressed && styles.cardPressed,
-              ]}
-              onPress={() => openCapture(i)}
-            >
-              {images[i] && !failedImages[i] ? (
-                <Image
-                  source={{ uri: images[i]! }}
-                  style={styles.cardImage}
-                  onError={() =>
-                    setFailedImages((prev) => ({ ...prev, [i]: true }))
-                  }
-                />
-              ) : (
-                <ThemedText type="subtitle" style={styles.bigCardText}>
-                  {bookNames[i]}
-                </ThemedText>
-              )}
-            </Pressable>
-          ))}
-        </View>
+        <ScrollView
+          style={{ flex: 1, width: '100%' }}
+          contentContainerStyle={styles.cardsScrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.cardsContainer}>
+            {[1, 2, 3].map((i) => (
+              <Pressable
+                key={i}
+                style={({ pressed }) => [
+                  styles.bigCard,
+                  { backgroundColor: theme.backgroundElement },
+                  pressed && styles.cardPressed,
+                ]}
+                onPress={() => openCapture(i)}
+              >
+                {images[i] && !failedImages[i] ? (
+                  <Image
+                    source={{ uri: images[i]! }}
+                    style={styles.cardImage}
+                    onError={() =>
+                      setFailedImages((prev) => ({ ...prev, [i]: true }))
+                    }
+                  />
+                ) : (
+                  <ThemedText type="subtitle" style={styles.bigCardText}>
+                    {bookNames[i]}
+                  </ThemedText>
+                )}
+              </Pressable>
+            ))}
+          </View>
+        </ScrollView>
 
         <View style={styles.footer} />
 
@@ -426,15 +433,21 @@ const styles = StyleSheet.create({
   },
   cardsContainer: {
     width: "100%",
-    maxWidth: 380,
+    maxWidth: 420,
     alignSelf: "center",
     gap: Spacing.three,
+    paddingHorizontal: Spacing.two,
+  },
+  cardsScrollContent: {
+    flexGrow: 1,
+    alignItems: 'stretch',
+    paddingBottom: BottomTabInset + Spacing.four,
   },
   bigCard: {
     borderRadius: 18,
     paddingVertical: Spacing.four,
     paddingHorizontal: Spacing.four,
-    height: 140,
+    minHeight: 110,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",
@@ -444,8 +457,8 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   bigCardText: {
-    fontSize: 28,
-    lineHeight: 28,
+    fontSize: rf(24, 18, 28),
+    lineHeight: rf(28, 22, 32),
     textAlign: "center",
     fontWeight: "600",
   },

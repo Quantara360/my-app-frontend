@@ -1,9 +1,9 @@
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Platform, Pressable, SafeAreaView, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, View } from 'react-native';
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { BottomTabInset, MaxContentWidth, Spacing } from "@/constants/theme";
+import { BottomTabInset, MaxContentWidth, Spacing, rf } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import { useGoBack } from "@/hooks/use-go-back";
 
@@ -39,6 +39,11 @@ export default function SiteActionsPage() {
       <View style={[styles.backgroundCircleSmall, { backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(255, 255, 255, 0.5)" }]} />
 
       <SafeAreaView style={styles.safeArea}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
         <View style={styles.headerRow}>
           <Pressable
             style={[
@@ -101,6 +106,7 @@ export default function SiteActionsPage() {
             </Pressable>
           ))}
         </View>
+        </ScrollView>
       </SafeAreaView>
     </ThemedView>
   );
@@ -141,6 +147,10 @@ const styles = StyleSheet.create({
     paddingBottom: BottomTabInset + Spacing.three,
     overflow: 'hidden',
   },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: Spacing.four,
+  },
   headerRow: {
     width: "100%",
     flexDirection: "row",
@@ -157,7 +167,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    marginTop: Platform.select({ web: 20, default: 65 }),
+    marginTop: Platform.select({ web: 8, default: 12 }),
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
@@ -219,7 +229,7 @@ const styles = StyleSheet.create({
   },
   actionTitle: {
     textAlign: "center",
-    fontSize: 28,
-    lineHeight: 34,
+    fontSize: rf(24, 18, 28),
+    lineHeight: rf(30, 24, 34),
   },
 });

@@ -1,4 +1,4 @@
-﻿import { useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Modal, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -217,7 +217,7 @@ export default function PeticashPage() {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.headerRow}>
           <Pressable style={[styles.backButton, { backgroundColor: theme.backgroundSelected }]} onPress={() => goBack()}>
-            <ThemedText type="smallBold">←</ThemedText>
+            <Text style={{ fontSize: 20, color: '#555', fontWeight: 'bold' }}>{'\u2190'}</Text>
           </Pressable>
           <ThemedText type="title" style={styles.pageTitle}>
             Peticash
@@ -285,13 +285,13 @@ export default function PeticashPage() {
                 </Text>
                 <View style={styles.actionsColumn}>
                   <Pressable style={styles.actionButtonIcon} onPress={() => { setSelectedViewItem(t); setViewDetailsOpen(true); }}>
-                    <Text style={styles.actionIcon}>👁</Text>
+                    <Text style={styles.actionIcon}>{'\u{1F441}'}</Text>
                   </Pressable>
                   <Pressable style={styles.actionButtonIcon} onPress={() => openEditTransaction(t)}>
-                    <Text style={styles.actionIcon}>✎</Text>
+                    <Text style={styles.actionIcon}>{'\u270F'}</Text>
                   </Pressable>
                   <Pressable style={styles.actionButtonIconDelete} onPress={() => handleDeleteTransaction(t.id)}>
-                    <Text style={styles.actionIcon}>🗑</Text>
+                    <Text style={styles.actionIcon}>{'\u2715'}</Text>
                   </Pressable>
                 </View>
               </View>
@@ -307,7 +307,7 @@ export default function PeticashPage() {
               <View style={styles.formHeader}>
                 <ThemedText type="title">{isEditing ? 'Update Transaction' : 'Add Transaction'}</ThemedText>
                 <Pressable onPress={() => setFormOpen(false)}>
-                  <Text style={styles.closeText}>✕</Text>
+                  <Text style={styles.closeText}>{'\u2715'}</Text>
                 </Pressable>
               </View>
 
@@ -468,7 +468,7 @@ export default function PeticashPage() {
               <View style={styles.modalHeader}>
                 <ThemedText type="title">Transaction Details</ThemedText>
                 <Pressable onPress={() => setViewDetailsOpen(false)}>
-                  <Text style={styles.modalCloseButton}>✕</Text>
+                  <Text style={styles.modalCloseButton}>{'\u2715'}</Text>
                 </Pressable>
               </View>
               <ScrollView style={styles.modalBody}>
@@ -488,7 +488,7 @@ export default function PeticashPage() {
                     </View>
                     <View style={styles.detailRow}>
                       <ThemedText type="smallBold" style={styles.detailLabel}>Description</ThemedText>
-                      <ThemedText>{selectedViewItem.description ?? '—'}</ThemedText>
+                      <ThemedText>{selectedViewItem.description ?? '�'}</ThemedText>
                     </View>
                     <View style={styles.detailRow}>
                       <ThemedText type="smallBold" style={styles.detailLabel}>Date</ThemedText>
@@ -550,7 +550,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) =>
       borderRadius: 30,
       padding: Spacing.four,
       gap: Spacing.three,
-      minHeight: 520,
+      minHeight: 0,
       shadowColor: '#000',
       shadowOpacity: 0.08,
       shadowRadius: 18,
@@ -607,7 +607,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) =>
   },
     tableBody: {
       marginTop: Spacing.two,
-      maxHeight: 340,
+      maxHeight: 420,
     },
     tableRow: {
       flexDirection: 'row',

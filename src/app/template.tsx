@@ -18,7 +18,7 @@ import {
 import { BackgroundPattern } from '@/components/BackgroundPattern';
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { BottomTabInset, Spacing } from "@/constants/theme";
+import { BottomTabInset, Spacing, MaxContentWidth } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import { API_BASE_URL } from "@/services/authService";
 import { useAuth } from "@/contexts/AuthContext";
@@ -232,8 +232,9 @@ async function downloadPdfCard(worker: Worker) {
   // Native mobile: use expo-print + expo-sharing
   let templateBase64 = '';
   try {
-    const { FileSystem } = await import('expo-file-system');
-    templateBase64 = await FileSystem.readAsStringAsync(templateUri, { encoding: 'base64' as any });
+    const FileSystemModule = await import('expo-file-system');
+    templateBase64 = await FileSystemModule.readAsStringAsync(templateUri, { encoding: 'base64' as any });
+
   } catch (e) {
     console.warn('Could not read template as base64', e);
   }
@@ -367,7 +368,8 @@ export default function TemplatePage() {
                       <Text style={[styles.cell, { flex: 2 }]}>{w.name}</Text>
                       <Text style={[styles.cell, { flex: 2 }]}>{w.role || "—"}</Text>
                       <Text style={[styles.cell, { flex: 2 }]}>{w.worksite?.name || "—"}</Text>
-                      <View style={[styles.cell, { flex: 2.5, flexDirection: "row", gap: 8 }]}>
+                      <View style={{ flex: 2.5, flexDirection: "row", gap: 8, alignItems: 'center' }}>
+
                         <Pressable onPress={() => openCard(w)} style={styles.viewBtn}>
                           <Text style={styles.viewBtnTxt}>👁 View</Text>
                         </Pressable>
@@ -521,6 +523,9 @@ const createStyles = (isDark: boolean) =>
       flex: 1, padding: Spacing.four,
       paddingBottom: BottomTabInset,
       backgroundColor: isDark ? "#121212" : "#f5f5f5",
+      maxWidth: MaxContentWidth,
+      width: '100%',
+      alignSelf: 'center',
     },
     header: { flexDirection: "row", alignItems: "center", marginBottom: 16, marginTop: 10 },
     backBtn: {

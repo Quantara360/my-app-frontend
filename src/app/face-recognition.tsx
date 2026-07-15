@@ -19,7 +19,7 @@ import {
 import { BackgroundPattern } from '@/components/BackgroundPattern';
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { BottomTabInset, Spacing } from "@/constants/theme";
+import { BottomTabInset, Spacing, rf, MaxContentWidth } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/contexts/AuthContext";
 import { API_BASE_URL } from "@/services/authService";
@@ -400,39 +400,41 @@ export default function FaceRecognition() {
       </View>
 
       <View style={styles.tableWrap}>
-        <FlatList
-          data={list}
-          scrollEnabled={false}
-          keyExtractor={(i) => String(i.id)}
-          ListHeaderComponent={() => (
-            <View style={styles.tableHeaderRow}>
-              <ThemedText type="smallBold" style={styles.colId}>ID</ThemedText>
-              <ThemedText type="smallBold" style={styles.colName}>Name</ThemedText>
-              <ThemedText type="smallBold" style={styles.colTime}>Time & Date</ThemedText>
-              <ThemedText type="smallBold" style={styles.colState}>State</ThemedText>
-              <ThemedText type="smallBold" style={styles.colSite}>Site</ThemedText>
-              <View style={styles.colAction} />
-            </View>
-          )}
-          renderItem={({ item }) => (
-            <View style={styles.tableRow}>
-              <ThemedText type="small" style={[styles.colId, styles.cellText]} numberOfLines={1}>{item.id}</ThemedText>
-              <ThemedText type="small" style={[styles.colName, styles.cellText]} numberOfLines={1}>{item.name}</ThemedText>
-              <ThemedText type="small" style={[styles.colTime, styles.cellText]} numberOfLines={2}>{item.datetime}</ThemedText>
-              <View style={[styles.colState, { alignItems: 'center' }]}>
-                <View style={[styles.stateBadge, { backgroundColor: item.state === 'OUT' ? '#ff6b6b22' : '#28a74522' }]}>
-                  <ThemedText type="small" style={[styles.cellText, { color: item.state === 'OUT' ? '#c0392b' : '#1e8449', fontWeight: '700', fontSize: 10 }]} numberOfLines={1}>
-                    {item.state || 'IN'}
-                  </ThemedText>
-                </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <FlatList
+            data={list}
+            scrollEnabled={false}
+            keyExtractor={(i) => String(i.id)}
+            ListHeaderComponent={() => (
+              <View style={styles.tableHeaderRow}>
+                <ThemedText type="smallBold" style={styles.colId}>ID</ThemedText>
+                <ThemedText type="smallBold" style={styles.colName}>Name</ThemedText>
+                <ThemedText type="smallBold" style={styles.colTime}>Time &amp; Date</ThemedText>
+                <ThemedText type="smallBold" style={styles.colState}>State</ThemedText>
+                <ThemedText type="smallBold" style={styles.colSite}>Site</ThemedText>
+                <View style={styles.colAction} />
               </View>
-              <ThemedText type="small" style={[styles.colSite, styles.cellText]} numberOfLines={2}>{item.site}</ThemedText>
-              <Pressable style={styles.colAction} onPress={() => handleDelete(item.id)}>
-                <ThemedText style={{ color: '#e74c3c', fontSize: 14 }}>🗑</ThemedText>
-              </Pressable>
-            </View>
-          )}
-        />
+            )}
+            renderItem={({ item }) => (
+              <View style={styles.tableRow}>
+                <ThemedText type="small" style={[styles.colId, styles.cellText]} numberOfLines={1}>{item.id}</ThemedText>
+                <ThemedText type="small" style={[styles.colName, styles.cellText]} numberOfLines={1}>{item.name}</ThemedText>
+                <ThemedText type="small" style={[styles.colTime, styles.cellText]} numberOfLines={2}>{item.datetime}</ThemedText>
+                <View style={[styles.colState, { alignItems: 'center' }]}>
+                  <View style={[styles.stateBadge, { backgroundColor: item.state === 'OUT' ? '#ff6b6b22' : '#28a74522' }]}>
+                    <ThemedText type="small" style={[styles.cellText, { color: item.state === 'OUT' ? '#c0392b' : '#1e8449', fontWeight: '700', fontSize: 10 }]} numberOfLines={1}>
+                      {item.state || 'IN'}
+                    </ThemedText>
+                  </View>
+                </View>
+                <ThemedText type="small" style={[styles.colSite, styles.cellText]} numberOfLines={2}>{item.site}</ThemedText>
+                <Pressable style={styles.colAction} onPress={() => handleDelete(item.id)}>
+                  <ThemedText style={{ color: '#e74c3c', fontSize: 14 }}>🗑</ThemedText>
+                </Pressable>
+              </View>
+            )}
+          />
+        </ScrollView>
 
         <Pressable
           style={styles.bottomButton}
@@ -443,6 +445,7 @@ export default function FaceRecognition() {
           </ThemedText>
         </Pressable>
       </View>
+
 
       <Modal
         animationType="fade"
@@ -502,6 +505,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "flex-start",
     paddingBottom: BottomTabInset,
+    width: '100%',
+    maxWidth: MaxContentWidth,
+    alignSelf: 'center',
   },
   headerRow: {
     width: "100%",
@@ -521,7 +527,7 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: 22,
     marginLeft: 15,
-    marginTop: Platform.select({ web: 20, default: 65 }),
+    marginTop: Platform.select({ web: 8, default: 12 }),
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
@@ -574,19 +580,19 @@ const styles = StyleSheet.create({
   },
   camera: {
     width: "92%",
-    height: 220,
+    aspectRatio: 4 / 3,
     borderRadius: 12,
     overflow: "hidden",
   },
   previewImage: {
     width: "92%",
-    height: 220,
+    aspectRatio: 4 / 3,
     borderRadius: 12,
   },
   greenBorder: {
     position: "absolute",
     width: "94%",
-    height: 230,
+    aspectRatio: 4 / 3,
     borderRadius: 12,
     borderWidth: 4,
     borderColor: "#2bb34a",
@@ -708,6 +714,9 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    width: '100%',
+    maxWidth: MaxContentWidth,
+    alignSelf: 'center',
   },
   openSettingsButton: {
     marginTop: Spacing.two,
@@ -719,7 +728,7 @@ const styles = StyleSheet.create({
   cameraLoadingOverlay: {
     position: "absolute",
     width: "92%",
-    height: 220,
+    aspectRatio: 4 / 3,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "rgba(0,0,0,0.35)",

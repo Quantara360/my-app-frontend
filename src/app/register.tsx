@@ -4,6 +4,7 @@ import {
   Modal,
   Pressable,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -11,7 +12,7 @@ import {
 } from "react-native";
 import { registerWithApi, type UserRole } from "@/services/authService";
 import { useTheme } from "@/hooks/use-theme";
-import { MaxContentWidth } from '@/constants/theme';
+import { MaxContentWidth, rf } from '@/constants/theme';
 
 const accent = "#4f5bb1";
 const errorColor = "#e74c3c";
@@ -83,7 +84,11 @@ export default function RegisterScreen() {
       </View>
 
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.formContainer}>
+        <ScrollView
+          contentContainerStyle={styles.formContainer}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}> 
             <Text style={[styles.title, { color: theme.text }]}>Register</Text>
 
@@ -295,7 +300,7 @@ export default function RegisterScreen() {
             </Pressable>
           </Link>
         </View>
-        </View>
+        </ScrollView>
       </SafeAreaView>
     </View>
   );
@@ -361,7 +366,7 @@ const styles = StyleSheet.create({
     gap: 18,
   },
   title: {
-    fontSize: 34,
+    fontSize: rf(34, 24, 34),
     fontWeight: "700",
     textAlign: "center",
   },

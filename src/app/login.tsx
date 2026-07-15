@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/hooks/use-theme";
-import { MaxContentWidth } from '@/constants/theme';
+import { MaxContentWidth, rf } from '@/constants/theme';
 
 const accent = "#4f5bb1";
 
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
     gap: 18,
   },
   title: {
-    fontSize: 34,
+    fontSize: rf(34, 24, 34),
     fontWeight: "700",
     textAlign: "center",
     marginBottom: 6,
