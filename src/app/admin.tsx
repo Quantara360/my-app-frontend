@@ -2046,12 +2046,7 @@ export default function AdminDashboard() {
                   styles.card,
                   { backgroundColor: "#b2f0b2", transform: [{ scale: scaleValue }] },
                 ]}
-                onPress={() =>
-                  Alert.alert(
-                    "Peticash & Accounts",
-                    "You clicked on Peticash & Accounts",
-                  )
-                }
+                onPress={() => router.push("/peticash" as any)}
               >
                 <Text style={styles.cardIcon}>💰</Text>
                 <ThemedText
