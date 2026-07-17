@@ -50,7 +50,8 @@ export default function PeticashPage() {
   const router = useRouter();
   const theme = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const isAdmin = user?.role === 'admin';
 
   const [transactions, setTransactions] = useState<PeticashTransaction[]>([]);
   const [worksites, setWorksites] = useState<Worksite[]>([]);
@@ -249,9 +250,11 @@ export default function PeticashPage() {
               )}
             </View>
             
-            <Pressable style={[styles.addButton, { backgroundColor: theme.backgroundSelected }]} onPress={openAddTransaction}>
-              <ThemedText type="smallBold">+ Add</ThemedText>
-            </Pressable>
+            {!isAdmin && (
+              <Pressable style={[styles.addButton, { backgroundColor: theme.backgroundSelected }]} onPress={openAddTransaction}>
+                <ThemedText type="smallBold">+ Add</ThemedText>
+              </Pressable>
+            )}
           </View>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -287,12 +290,16 @@ export default function PeticashPage() {
                   <Pressable style={styles.actionButtonIcon} onPress={() => { setSelectedViewItem(t); setViewDetailsOpen(true); }}>
                     <Text style={styles.actionIcon}>{'\u{1F441}'}</Text>
                   </Pressable>
-                  <Pressable style={styles.actionButtonIcon} onPress={() => openEditTransaction(t)}>
-                    <Text style={styles.actionIcon}>{'\u270F'}</Text>
-                  </Pressable>
-                  <Pressable style={styles.actionButtonIconDelete} onPress={() => handleDeleteTransaction(t.id)}>
-                    <Text style={styles.actionIcon}>{'\u2715'}</Text>
-                  </Pressable>
+                  {!isAdmin && (
+                    <>
+                      <Pressable style={styles.actionButtonIcon} onPress={() => openEditTransaction(t)}>
+                        <Text style={styles.actionIcon}>{'\u270F'}</Text>
+                      </Pressable>
+                      <Pressable style={styles.actionButtonIconDelete} onPress={() => handleDeleteTransaction(t.id)}>
+                        <Text style={styles.actionIcon}>{'\u2715'}</Text>
+                      </Pressable>
+                    </>
+                  )}
                 </View>
               </View>
             ))}
@@ -488,7 +495,7 @@ export default function PeticashPage() {
                     </View>
                     <View style={styles.detailRow}>
                       <ThemedText type="smallBold" style={styles.detailLabel}>Description</ThemedText>
-                      <ThemedText>{selectedViewItem.description ?? '—'}</ThemedText>
+                      <ThemedText>{selectedViewItem.description ?? ''}</ThemedText>
                     </View>
                     <View style={styles.detailRow}>
                       <ThemedText type="smallBold" style={styles.detailLabel}>Date</ThemedText>
@@ -659,7 +666,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) =>
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: 'rgba(15, 23, 42, 0.35)',
+      backgroundColor: 'transparent',
       justifyContent: 'center',
       alignItems: 'center',
       padding: Spacing.four,
