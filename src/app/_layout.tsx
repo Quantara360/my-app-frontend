@@ -17,6 +17,14 @@ export default function RootLayout() {
     }
   }, [scheme]);
 
+  useEffect(() => {
+    if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {
+        // ignore
+      });
+    }
+  }, []);
+
   const authProvider = useMemo(
     () => (
       <AuthProvider>
