@@ -1499,6 +1499,7 @@ export default function AdminDashboard() {
             padding: "8px 12px",
             fontSize: 14,
             colorScheme: isDark ? "dark" : "light",
+            minWidth: 130,
           }}
         />
       </View>

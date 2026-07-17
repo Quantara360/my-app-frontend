@@ -362,6 +362,7 @@ export default function AttendancesPage() {
             style={{
               ...selectStyle,
               colorScheme: isDark ? "dark" : "light",
+              minWidth: 130,
             }}
           />
         </View>
