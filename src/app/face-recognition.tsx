@@ -400,10 +400,11 @@ export default function FaceRecognition() {
       </View>
 
       <View style={styles.tableWrap}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <FlatList
             data={list}
             scrollEnabled={false}
+            style={{ width: '100%' }}
+            contentContainerStyle={{ width: '100%' }}
             keyExtractor={(i) => String(i.id)}
             ListHeaderComponent={() => (
               <View style={styles.tableHeaderRow}>
@@ -434,7 +435,6 @@ export default function FaceRecognition() {
               </View>
             )}
           />
-        </ScrollView>
 
         <Pressable
           style={styles.bottomButton}
@@ -644,6 +644,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#4b4fbf",
     paddingVertical: 10,
     paddingHorizontal: 8,
+    width: '100%',
   },
   tableRow: {
     flexDirection: "row",
@@ -653,36 +654,37 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "rgba(0,0,0,0.06)",
     backgroundColor: "transparent",
+    width: '100%',
   },
   colId: {
-    width: 28,
+    flex: 0.6,
     color: "#fff",
     fontSize: 11,
     fontWeight: "700",
   },
   colName: {
-    flex: 1.2,
+    flex: 1.4,
     paddingRight: 4,
     fontSize: 11,
     fontWeight: "700",
     color: "#fff",
   },
   colTime: {
-    flex: 1.6,
+    flex: 1.8,
     paddingRight: 4,
     fontSize: 11,
     fontWeight: "700",
     color: "#fff",
   },
   colState: {
-    width: 38,
-    marginRight: 8,
+    flex: 0.8,
+    paddingRight: 4,
     fontSize: 11,
     fontWeight: "700",
     color: "#fff",
   },
   colSite: {
-    flex: 1.2,
+    flex: 1.4,
     paddingRight: 4,
     fontSize: 11,
     fontWeight: "700",

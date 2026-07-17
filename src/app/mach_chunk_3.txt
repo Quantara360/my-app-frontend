@@ -1,0 +1,164 @@
+nanceDate}
+                        mode="date"
+                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                        onChange={(_event, selectedDate) => {
+                          setShowMaintenancePicker(Platform.OS === 'ios');
+                          if (selectedDate) {
+                            setMaintenanceDate(selectedDate);
+                            setFormValues((prev) => ({
+                              ...prev,
+                              maintenance_due_at: selectedDate.toISOString().split('T')[0],
+                            }));
+                          }
+                        }}
+                      />
+                    )}
+                  </>
+                )}
+                <View style={styles.fieldRow}>
+                  <Text style={styles.fieldLabel}>Status</Text>
+                  <View style={styles.statusList}>
+                    {statusOptions.map((status) => (
+                      <Pressable
+                        key={status}
+                        style={[
+                          styles.statusOption,
+                          formValues.status === status && styles.statusOptionSelected,
+                        ]}
+                        onPress={() => setFormValues((prev) => ({ ...prev, status }))}
+                      >
+                        <Text
+                          style={[
+                            styles.statusOptionText,
+                            formValues.status === status && styles.statusOptionTextSelected,
+                          ]}
+                        >
+                          {status}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
+                <Pressable style={styles.saveButton} onPress={handleSaveMachinery}>
+                  <Text style={styles.saveText}>Save Machine</Text>
+                </Pressable>
+              </ScrollView>
+            </View>
+          </View>
+        )}
+        <Modal visible={viewDetailsOpen} transparent animationType="fade" onRequestClose={() => setViewDetailsOpen(false)}>
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { backgroundColor: theme.background }]}>
+              <View style={styles.modalHeader}>
+                <ThemedText type="title">Machinery Details</ThemedText>
+                <Pressable onPress={() => setViewDetailsOpen(false)}>
+                  <Text style={styles.modalCloseButton}>?</Text>
+                </Pressable>
+              </View>
+              <ScrollView style={styles.modalBody}>
+                {selectedViewItem && (
+                  <>
+                    <View style={styles.detailRow}>
+                      <ThemedText type="smallBold" style={styles.detailLabel}>Name</ThemedText>
+                      <ThemedText>{selectedViewItem.name}</ThemedText>
+                    </View>
+                    <View style={styles.detailRow}>
+                      <ThemedText type="smallBold" style={styles.detailLabel}>Worksite</ThemedText>
+                      <ThemedText>{selectedViewItem.worksite?.name ?? 'Unassigned'}</ThemedText>
+                    </View>
+                    <View style={styles.detailRow}>
+                      <ThemedText type="smallBold" style={styles.detailLabel}>Status</ThemedText>
+                      <ThemedText>{selectedViewItem.status}</ThemedText>
+                    </View>
+                    <View style={styles.detailRow}>
+                      <ThemedText type="smallBold" style={styles.detailLabel}>Location</ThemedText>
+                      <ThemedText>{selectedViewItem.location ?? 'N/A'}</ThemedText>
+                    </View>
+                    <View style={styles.detailRow}>
+                      <ThemedText type="smallBold" style={styles.detailLabel}>Maintenance Due</ThemedText>
+                      <ThemedText>{selectedViewItem.maintenance_due_at ?? 'N/A'}</ThemedText>
+                    </View>
+                  </>
+                )}
+              </ScrollView>
+              <View style={styles.modalFooter}>
+                <Pressable style={[styles.modalButton, { backgroundColor: '#3b82f6' }]} onPress={() => setViewDetailsOpen(false)}>
+                  <Text style={styles.modalButtonText}>Close</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
+        <SuccessModal
+          visible={!!successMessage}
+          title={successMessage ?? ''}
+          onClose={() => setSuccessMessage(null)}
+        />
+      </SafeAreaView>
+    </ThemedView>
+  );
+}
+
+const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: Spacing.four,
+    paddingBottom: BottomTabInset,
+    backgroundColor: 'transparent',
+  },
+  safeArea: {
+    flex: 1,
+    gap: Spacing.three,
+  width: '100%',
+  maxWidth: MaxContentWidth,
+  alignSelf: 'center',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    marginTop: 40,
+  },
+  backButton: {
+    padding: Spacing.two,
+    borderRadius: 14,
+  },
+  pageTitle: {
+    flex: 1,
+    textAlign: 'center',
+    color: theme.text,
+  },
+  card: {
+    borderRadius: 30,
+    padding: Spacing.four,
+    gap: Spacing.three,
+    minHeight: 0,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 10,
+    backgroundColor: theme.backgroundElement,
+  },
+  topControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.three,
+    flexWrap: 'wrap',
+  },
+  addButton: {
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.four,
+    borderRadius: 24,
+    minWidth: 140,
+  },
+  searchInput: {
+    flex: 1,
+    minWidth: 160,
+    padding: Spacing.two,
+    borderRadius: 24,
+    backgroundColor: 'transparent',
+    color: theme.text,
+    fontSize: 13,
+ 

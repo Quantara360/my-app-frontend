@@ -76,8 +76,8 @@ export default function RegisterScreen() {
     isPasswordMatchValid;
 
   return (
-    <View style={[styles.page, { backgroundColor: theme.background }]}> 
-      <View style={[StyleSheet.absoluteFill, styles.backgroundLayerBackground, { backgroundColor: theme.background }]}> 
+    <View style={[styles.page, { backgroundColor: theme.background }]}>
+      <View style={[StyleSheet.absoluteFill, styles.backgroundLayerBackground, { backgroundColor: theme.background }]}>
         <View style={[styles.circle, styles.circleOne]} />
         <View style={[styles.circle, styles.circleTwo]} />
         <View style={[styles.circle, styles.circleThree]} />
@@ -85,221 +85,222 @@ export default function RegisterScreen() {
 
       <SafeAreaView style={styles.safeArea}>
         <ScrollView
+          style={{ flex: 1, width: '100%' }}
           contentContainerStyle={styles.formContainer}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}> 
+          <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}>
             <Text style={[styles.title, { color: theme.text }]}>Register</Text>
 
-          <View style={styles.roleRow}>
-            <Pressable
-              style={[
-                styles.roleButton,
-                role === "supervisor" && styles.roleButtonActive,
-                { backgroundColor: role === "supervisor" ? theme.backgroundSelected : theme.background },
-              ]}
-              onPress={() => setRole("supervisor")}
-            >
-              <Text style={[styles.roleButtonText, { color: theme.text }]}>Supervisor</Text>
-            </Pressable>
-            <Pressable
-              style={[
-                styles.roleButton,
-                role === "officeStaff" && styles.roleButtonActive,
-                { backgroundColor: role === "officeStaff" ? theme.backgroundSelected : theme.background },
-              ]}
-              onPress={() => setRole("officeStaff")}
-            >
-              <Text style={[styles.roleButtonText, { color: theme.text }]}>Office Staff</Text>
-            </Pressable>
-          </View>
-
-          <View style={styles.field}>
-            <Text style={[styles.label, { color: theme.textSecondary }]}>Full Name</Text>
-            <TextInput
-              value={userName}
-              onChangeText={setUserName}
-              placeholder="Enter your full name"
-              placeholderTextColor={theme.textSecondary}
-              style={[styles.input, !isUserNameValid && styles.inputError, { backgroundColor: theme.background, borderColor: theme.backgroundSelected, color: theme.text }]}
-              autoCapitalize="words"
-              keyboardType="default"
-              returnKeyType="next"
-            />
-            {!isUserNameValid && userName.length > 0 && (
-              <Text style={styles.errorText}>
-                Name must be at least 3 characters and contain letters
-              </Text>
-            )}
-          </View>
-
-          <View style={styles.field}>
-            <Text style={[styles.label, { color: theme.textSecondary }]}>Username</Text>
-            <TextInput
-              value={username}
-              onChangeText={setUsername}
-              placeholder="e.g. john_doe (no spaces)"
-              placeholderTextColor={theme.textSecondary}
-              style={[styles.input, !isUsernameValid && username.length > 0 && styles.inputError, { backgroundColor: theme.background, borderColor: theme.backgroundSelected, color: theme.text }]}
-              autoCapitalize="none"
-              keyboardType="default"
-              returnKeyType="next"
-            />
-            {!isUsernameValid && username.length > 0 && (
-              <Text style={styles.errorText}>
-                3–30 chars, letters/numbers/underscores/hyphens only
-              </Text>
-            )}
-          </View>
-
-          <View style={styles.field}>
-            <Text style={[styles.label, { color: theme.textSecondary }]}>Email</Text>
-            <TextInput
-              value={email}
-              onChangeText={setEmail}
-              placeholder="Enter your email"
-              placeholderTextColor={theme.textSecondary}
-              style={[styles.input, !isEmailValid && styles.inputError, { backgroundColor: theme.background, borderColor: theme.backgroundSelected, color: theme.text }]}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              returnKeyType="next"
-            />
-            {!isEmailValid && email.length > 0 && (
-              <Text style={styles.errorText}>
-                Please enter a valid email address
-              </Text>
-            )}
-          </View>
-
-          <View style={styles.field}>
-            <Text style={[styles.label, { color: theme.textSecondary }]}>Password</Text>
-            <View style={styles.passwordInputWrapper}>
-              <TextInput
-                value={password}
-                onChangeText={setPassword}
-                placeholder="Enter your password"
-                placeholderTextColor={theme.textSecondary}
+            <View style={styles.roleRow}>
+              <Pressable
                 style={[
-                  styles.input,
-                  styles.passwordInput,
-                  !isPasswordValid && styles.inputError,
-                  { backgroundColor: theme.background, borderColor: theme.backgroundSelected, color: theme.text },
+                  styles.roleButton,
+                  role === "supervisor" && styles.roleButtonActive,
+                  { backgroundColor: role === "supervisor" ? theme.backgroundSelected : theme.background },
                 ]}
-                secureTextEntry={!showPassword}
+                onPress={() => setRole("supervisor")}
+              >
+                <Text style={[styles.roleButtonText, { color: theme.text }]}>Supervisor</Text>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.roleButton,
+                  role === "officeStaff" && styles.roleButtonActive,
+                  { backgroundColor: role === "officeStaff" ? theme.backgroundSelected : theme.background },
+                ]}
+                onPress={() => setRole("officeStaff")}
+              >
+                <Text style={[styles.roleButtonText, { color: theme.text }]}>Office Staff</Text>
+              </Pressable>
+            </View>
+
+            <View style={styles.field}>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>Full Name</Text>
+              <TextInput
+                value={userName}
+                onChangeText={setUserName}
+                placeholder="Enter your full name"
+                placeholderTextColor={theme.textSecondary}
+                style={[styles.input, !isUserNameValid && styles.inputError, { backgroundColor: theme.background, borderColor: theme.backgroundSelected, color: theme.text }]}
+                autoCapitalize="words"
+                keyboardType="default"
                 returnKeyType="next"
               />
-              <Pressable
-                style={styles.eyeIcon}
-                onPress={() => setShowPassword(!showPassword)}
-              >
-                <Text style={styles.eyeIconText}>
-                  {showPassword ? "👁️" : "👁️‍🗨️"}
+              {!isUserNameValid && userName.length > 0 && (
+                <Text style={styles.errorText}>
+                  Name must be at least 3 characters and contain letters
                 </Text>
-              </Pressable>
+              )}
             </View>
-            {!isPasswordValid && password.length > 0 && (
-              <Text style={styles.errorText}>
-                Password must be at least 6 characters
-              </Text>
-            )}
-          </View>
 
-          <View style={styles.field}>
-            <Text style={[styles.label, { color: theme.textSecondary }]}>Confirm Password</Text>
-            <View style={styles.passwordInputWrapper}>
+            <View style={styles.field}>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>Username</Text>
               <TextInput
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                placeholder="Confirm your password"
+                value={username}
+                onChangeText={setUsername}
+                placeholder="e.g. john_doe (no spaces)"
                 placeholderTextColor={theme.textSecondary}
-                style={[
-                  styles.input,
-                  styles.passwordInput,
-                  !isPasswordMatchValid && styles.inputError,
-                  { backgroundColor: theme.background, borderColor: theme.backgroundSelected, color: theme.text },
-                ]}
-                secureTextEntry={!showConfirmPassword}
-                returnKeyType="done"
+                style={[styles.input, !isUsernameValid && username.length > 0 && styles.inputError, { backgroundColor: theme.background, borderColor: theme.backgroundSelected, color: theme.text }]}
+                autoCapitalize="none"
+                keyboardType="default"
+                returnKeyType="next"
               />
-              <Pressable
-                style={styles.eyeIcon}
-                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-              >
-                <Text style={styles.eyeIconText}>
-                  {showConfirmPassword ? "👁️" : "👁️‍🗨️"}
+              {!isUsernameValid && username.length > 0 && (
+                <Text style={styles.errorText}>
+                  3–30 chars, letters/numbers/underscores/hyphens only
                 </Text>
-              </Pressable>
+              )}
             </View>
-            {!isPasswordMatchValid && confirmPassword.length > 0 && (
-              <Text style={styles.errorText}>Passwords do not match</Text>
-            )}
-          </View>
 
-          {authError ? (
-            <Text style={styles.errorText}>{authError}</Text>
-          ) : null}
-
-          <Pressable
-            style={[styles.button, !canSubmit && styles.buttonDisabled]}
-            disabled={!canSubmit}
-            onPress={async () => {
-              if (!canSubmit) return;
-              setAuthError(null);
-
-              try {
-                await registerWithApi({
-                  name: userName,
-                  username,
-                  email,
-                  password,
-                  role,
-                });
-                setShowSuccess(true);
-              } catch (error) {
-                setAuthError(error instanceof Error ? error.message : 'Failed to register');
-              }
-            }}
-          >
-            <Text style={styles.buttonText}>Register</Text>
-          </Pressable>
-
-          <Modal visible={showSuccess} transparent animationType="fade">
-            <View style={styles.modalOverlay}>
-              <View style={[styles.modalCard, { backgroundColor: theme.backgroundElement }]}> 
-                <Pressable
-                  style={styles.modalClose}
-                  onPress={() => setShowSuccess(false)}
-                >
-                  <Text style={[styles.modalCloseText, { color: theme.textSecondary }]}>✕</Text>
-                </Pressable>
-
-                <View style={styles.checkCircle}>
-                  <Text style={styles.checkMark}>✓</Text>
-                </View>
-
-                <Text style={[styles.modalTitle, { color: theme.text }]}> 
-                  Details Saved Successfully!
+            <View style={styles.field}>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>Email</Text>
+              <TextInput
+                value={email}
+                onChangeText={setEmail}
+                placeholder="Enter your email"
+                placeholderTextColor={theme.textSecondary}
+                style={[styles.input, !isEmailValid && styles.inputError, { backgroundColor: theme.background, borderColor: theme.backgroundSelected, color: theme.text }]}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                returnKeyType="next"
+              />
+              {!isEmailValid && email.length > 0 && (
+                <Text style={styles.errorText}>
+                  Please enter a valid email address
                 </Text>
+              )}
+            </View>
 
-                <Text style={styles.modalSubtitle} />
-
+            <View style={styles.field}>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>Password</Text>
+              <View style={styles.passwordInputWrapper}>
+                <TextInput
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="Enter your password"
+                  placeholderTextColor={theme.textSecondary}
+                  style={[
+                    styles.input,
+                    styles.passwordInput,
+                    !isPasswordValid && styles.inputError,
+                    { backgroundColor: theme.background, borderColor: theme.backgroundSelected, color: theme.text },
+                  ]}
+                  secureTextEntry={!showPassword}
+                  returnKeyType="next"
+                />
                 <Pressable
-                  style={styles.modalOkButton}
-                  onPress={() => router.push("/login")}
+                  style={styles.eyeIcon}
+                  onPress={() => setShowPassword(!showPassword)}
                 >
-                  <Text style={styles.modalOkText}>OK</Text>
+                  <Text style={styles.eyeIconText}>
+                    {showPassword ? "👁️" : "👁️‍🗨️"}
+                  </Text>
                 </Pressable>
               </View>
+              {!isPasswordValid && password.length > 0 && (
+                <Text style={styles.errorText}>
+                  Password must be at least 6 characters
+                </Text>
+              )}
             </View>
-          </Modal>
 
-          <Link href="/login" asChild>
-            <Pressable style={styles.secondaryButton}>
-              <Text style={[styles.secondaryText, { color: accent }]}>Back to Login</Text>
+            <View style={styles.field}>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>Confirm Password</Text>
+              <View style={styles.passwordInputWrapper}>
+                <TextInput
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  placeholder="Confirm your password"
+                  placeholderTextColor={theme.textSecondary}
+                  style={[
+                    styles.input,
+                    styles.passwordInput,
+                    !isPasswordMatchValid && styles.inputError,
+                    { backgroundColor: theme.background, borderColor: theme.backgroundSelected, color: theme.text },
+                  ]}
+                  secureTextEntry={!showConfirmPassword}
+                  returnKeyType="done"
+                />
+                <Pressable
+                  style={styles.eyeIcon}
+                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  <Text style={styles.eyeIconText}>
+                    {showConfirmPassword ? "👁️" : "👁️‍🗨️"}
+                  </Text>
+                </Pressable>
+              </View>
+              {!isPasswordMatchValid && confirmPassword.length > 0 && (
+                <Text style={styles.errorText}>Passwords do not match</Text>
+              )}
+            </View>
+
+            {authError ? (
+              <Text style={styles.errorText}>{authError}</Text>
+            ) : null}
+
+            <Pressable
+              style={[styles.button, !canSubmit && styles.buttonDisabled]}
+              disabled={!canSubmit}
+              onPress={async () => {
+                if (!canSubmit) return;
+                setAuthError(null);
+
+                try {
+                  await registerWithApi({
+                    name: userName,
+                    username,
+                    email,
+                    password,
+                    role,
+                  });
+                  setShowSuccess(true);
+                } catch (error) {
+                  setAuthError(error instanceof Error ? error.message : 'Failed to register');
+                }
+              }}
+            >
+              <Text style={styles.buttonText}>Register</Text>
             </Pressable>
-          </Link>
-        </View>
+
+            <Modal visible={showSuccess} transparent animationType="fade">
+              <View style={styles.modalOverlay}>
+                <View style={[styles.modalCard, { backgroundColor: theme.backgroundElement }]}>
+                  <Pressable
+                    style={styles.modalClose}
+                    onPress={() => setShowSuccess(false)}
+                  >
+                    <Text style={[styles.modalCloseText, { color: theme.textSecondary }]}>✕</Text>
+                  </Pressable>
+
+                  <View style={styles.checkCircle}>
+                    <Text style={styles.checkMark}>✓</Text>
+                  </View>
+
+                  <Text style={[styles.modalTitle, { color: theme.text }]}>
+                    Details Saved Successfully!
+                  </Text>
+
+                  <Text style={styles.modalSubtitle} />
+
+                  <Pressable
+                    style={styles.modalOkButton}
+                    onPress={() => router.push("/login")}
+                  >
+                    <Text style={styles.modalOkText}>OK</Text>
+                  </Pressable>
+                </View>
+              </View>
+            </Modal>
+
+            <Link href="/login" asChild>
+              <Pressable style={styles.secondaryButton}>
+                <Text style={[styles.secondaryText, { color: accent }]}>Back to Login</Text>
+              </Pressable>
+            </Link>
+          </View>
         </ScrollView>
       </SafeAreaView>
     </View>
@@ -340,18 +341,16 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     width: "100%",
-    alignItems: "center",
-    justifyContent: "center",
     paddingHorizontal: 20,
-  maxWidth: MaxContentWidth,
-  alignSelf: 'center',
+    maxWidth: MaxContentWidth,
+    alignSelf: 'center',
   },
   formContainer: {
-    flex: 1,
+    flexGrow: 1,
     width: "100%",
-    justifyContent: "center",
     gap: 18,
-    paddingVertical: 24,
+    paddingTop: 60,
+    paddingBottom: 60,
   },
   card: {
     width: "100%",
@@ -375,14 +374,10 @@ const styles = StyleSheet.create({
   },
   roleRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
     gap: 12,
-    justifyContent: "space-between",
   },
   roleButton: {
-    flexBasis: "30%",
-    minWidth: 98,
-    flexGrow: 1,
+    flex: 1,
     borderRadius: 18,
     paddingVertical: 14,
     alignItems: "center",

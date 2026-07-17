@@ -1,0 +1,127 @@
+`
+      : `${API_BASE_URL}/machineries`;
+
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const savedMachinery = await response.json();
+      if (!response.ok) {
+        throw new Error(savedMachinery.message || 'Unable to save machinery');
+      }
+
+      const normalizedSavedMachinery = normalizeMachinery(savedMachinery);
+      setFormOpen(false);
+      setSelectedMachinery(null);
+      setIsEditing(false);
+      setMachineries((prev) => {
+        if (isEditing && selectedMachinery) {
+          return prev.map((machinery) => (
+            machinery.id === selectedMachinery.id ? normalizedSavedMachinery : machinery
+          ));
+        }
+        return [normalizedSavedMachinery, ...prev];
+      });
+      setSuccessMessage(isEditing ? 'Machine Updated Successfully!' : 'Machine Added Successfully!');
+    } catch (error) {
+      Alert.alert('Save failed', error instanceof Error ? error.message : 'Unable to save machinery.');
+    }
+  };
+
+  const handleDeleteMachinery = async (machineryId: number) => {
+    if (!token) {
+      return;
+    }
+
+    const res = await fetch(`${API_BASE_URL}/machineries/${machineryId}`, {
+      method: 'DELETE',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!res.ok) {
+      const errorBody = await res.json().catch(() => ({}));
+      Alert.alert('Delete failed', errorBody.message || 'Unable to delete machinery.');
+      return;
+    }
+
+    setMachineries((prev) => prev.filter((machinery) => machinery.id !== machineryId));
+    setSuccessMessage('Machine Deleted Successfully!');
+  };
+
+  const statusOptions = ['operational', 'maintenance', 'broken'];
+
+  return (
+    <ThemedView style={[styles.container, { backgroundColor: 'transparent' }]}>
+      <BackgroundPattern />
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.headerRow}>
+          <Pressable style={[styles.backButton, { backgroundColor: theme.backgroundSelected }]} onPress={handleGoBack}>
+            <Text style={{ fontSize: 20, color: '#555', fontWeight: 'bold' }}>←</Text>
+          </Pressable>
+          <ThemedText type="title" style={styles.pageTitle}>
+            Machineries
+          </ThemedText>
+        </View>
+
+        <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}> 
+          <View style={[styles.topControls, { zIndex: 10 }]}>
+            <Pressable style={[styles.addButton, { backgroundColor: theme.backgroundSelected }]} onPress={openAddMachinery}>
+              <ThemedText type="smallBold">+ Add Machine</ThemedText>
+            </Pressable>
+            
+            <View style={{ position: 'relative', zIndex: 10, flex: 1, minWidth: 140 }}>
+              <Pressable style={[styles.searchInput, { flex: 0, minHeight: 44, justifyContent: 'center' }]} onPress={() => setFilterPickerOpen((prev) => !prev)}>
+                <Text style={{ color: theme.text }} numberOfLines={1}>
+                  {siteFilter ? worksites.find((site) => site.id === siteFilter)?.name : 'Site Selection'}
+                </Text>
+              </Pressable>
+              {filterPickerOpen && (
+                <View style={[styles.statusOptions, { position: 'absolute', top: 40, left: 0, right: 0, zIndex: 20 }]}>
+                    <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled={true}> 
+                  <Pressable style={styles.statusOption} onPress={() => { setSiteFilter(null); setFilterPickerOpen(false); }}>
+                    <Text style={styles.statusOptionText} numberOfLines={1}>All Sites</Text>
+                  </Pressable>
+                  {worksites.map((site) => (
+                    <Pressable key={site.id} style={styles.statusOption} onPress={() => { setSiteFilter(site.id); setFilterPickerOpen(false); }}>
+                      <Text style={styles.statusOptionText} numberOfLines={1}>{site.name}</Text>
+                    </Pressable>
+                  ))}
+                
+                    </ScrollView>
+                  </View>
+              )}
+            </View>
+
+            
+          </View>
+
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={{ minWidth: '100%' }}>
+              <View style={styles.tableHeader}>
+            <Text style={[styles.columnHeader, { width: 60, minWidth: 60, flex: 0 }]}>ID</Text>
+            <Text style={[styles.columnHeader, { width: 150, minWidth: 150, flex: 0 }]}>Machine</Text>
+            <Text style={[styles.columnHeader, { width: 120, minWidth: 120, flex: 0 }]}>Site</Text>
+            <Text style={[styles.columnHeader, { width: 120, minWidth: 120, flex: 0 }]}>Status</Text>
+            <Text style={[styles.columnHeader, { width: 120, minWidth: 120, flex: 0 }]}>Due</Text>
+            <Text style={styles.columnHeaderRight}>Actions</Text>
+          </View>
+
+          <ScrollView style={styles.tableBody} showsVerticalScrollIndicator={false}>
+            {filteredMachineries.map((machinery) => (
+              <View key={machinery.id} style={styles.tableRow}>
+                <Text style={[styles.rowCell, { width: 60, minWidth: 60, flex: 0 }]} numberOfLines={1}>{machinery.id}</Text>
+                <Text style={[styles.rowCell, { width: 150, minWidth: 150, flex: 0 }]} numberOfLines={1}>{machinery.name}</Text>
+                <Text style={[styles.rowCell, { width: 120, minWidth: 120, flex: 0 }]} numberOfLines={1}>{machinery.worksite?.name ?? 'Unassigned'}</Text>
+                <Text style={[styles.rowCell, { width: 120, minWidth: 120, flex: 0 }]} numberOfLines={1}>{machinery.status}</Text>
+                <Text style={[styles.rowCell, { width: 120, minWidth: 120, flex: 0 }]} numberOfLines={1}>{machinery.maintenance_due_at ?? 'N/A'}</Text>
+                <View style={styles.action

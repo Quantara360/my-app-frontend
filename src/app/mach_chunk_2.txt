@@ -1,0 +1,126 @@
+sColumn}>
+                  <Pressable style={styles.actionButtonIcon} onPress={() => { setSelectedViewItem(machinery); setViewDetailsOpen(true); }}>
+                    <Text style={styles.actionIcon}>??</Text>
+                  </Pressable>
+                  <Pressable style={styles.actionButtonIcon} onPress={() => openEditMachinery(machinery)}>
+                    <Text style={styles.actionIcon}>?</Text>
+                  </Pressable>
+                  <Pressable style={styles.actionButtonIconDelete} onPress={() => handleDeleteMachinery(machinery.id)}>
+                    <Text style={styles.actionIcon}>??</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+            </View>
+          </ScrollView>
+        </View>
+
+        {formOpen && (
+          <View style={styles.formOverlay}>
+            <View style={styles.formCard}>
+              <View style={styles.formHeader}>
+                <ThemedText type="title">{isEditing ? 'Update Machine' : 'Add Machine'}</ThemedText>
+                <Pressable onPress={() => setFormOpen(false)}>
+                  <Text style={styles.closeText}>?</Text>
+                </Pressable>
+              </View>
+
+              <ScrollView style={styles.formBody} showsVerticalScrollIndicator={false}>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="Machine Name"
+                  value={formValues.name}
+                  onChangeText={(value) => setFormValues((prev) => ({ ...prev, name: value }))}
+                />
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="Location"
+                  value={formValues.location}
+                  onChangeText={(value) => setFormValues((prev) => ({ ...prev, location: value }))}
+                />
+                <View style={[styles.fieldRow, { zIndex: sitePickerOpen ? 100 : 1 }]}>
+                  <Text style={styles.fieldLabel}>Site Selection</Text>
+                  <Pressable style={styles.selectInput} onPress={() => setSitePickerOpen((prev) => !prev)}>
+                    <Text style={styles.selectText} numberOfLines={1}>
+                      {formValues.worksite_id
+                        ? worksites.find((site) => site.id === formValues.worksite_id)?.name
+                        : 'Site Selection'}
+                    </Text>
+                  </Pressable>
+                  {sitePickerOpen && (
+                    <View style={[styles.statusOptions, { position: 'absolute', top: 75, left: 0, right: 0, zIndex: 100 }]}>
+                    <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled={true}>
+                      {worksites.map((site) => (
+                        <Pressable
+                          key={site.id}
+                          style={styles.statusOption}
+                          onPress={() => {
+                            setFormValues((prev) => ({ ...prev, worksite_id: site.id }));
+                            setSitePickerOpen(false);
+                          }}
+                        >
+                          <Text style={styles.statusOptionText} numberOfLines={1}>{site.name}</Text>
+                        </Pressable>
+                      ))}
+                    
+                    </ScrollView>
+                  </View>
+                  )}
+                </View>
+                {Platform.OS === 'web' ? (
+                  <View style={styles.fieldRow}>
+                    <Text style={styles.fieldLabel}>Maintenance Due</Text>
+                    <Pressable
+                      style={[styles.pill, { backgroundColor: theme.background }]}
+                      onPress={() => {
+                        webDateInputRef.current?.showPicker?.();
+                        webDateInputRef.current?.click();
+                      }}
+                    >
+                      <Text style={styles.pillText}>
+                        {formValues.maintenance_due_at || maintenanceDate.toISOString().split('T')[0]}
+                      </Text>
+                    </Pressable>
+                    <input
+                      ref={webDateInputRef}
+                      type="date"
+                      value={formValues.maintenance_due_at || maintenanceDate.toISOString().split('T')[0]}
+                      onChange={(event) => {
+                        const value = event.currentTarget.value;
+                        setFormValues((prev) => ({ ...prev, maintenance_due_at: value }));
+                        const parsedDate = new Date(value);
+                        if (!Number.isNaN(parsedDate.getTime())) {
+                          setMaintenanceDate(parsedDate);
+                        }
+                      }}
+                      style={{
+                        position: 'absolute',
+                        opacity: 0,
+                        width: 1,
+                        height: 1,
+                        zIndex: -1,
+                        pointerEvents: 'none',
+                      }}
+                    />
+                  </View>
+                ) : (
+                  <>
+                    <View style={styles.fieldRow}>
+                      <Text style={styles.fieldLabel}>Maintenance Due</Text>
+                      <Pressable
+                        style={[styles.pill, { backgroundColor: theme.background }]}
+                        onPress={() => setShowMaintenancePicker(true)}
+                      >
+                        <Text style={styles.pillText}>
+                          {maintenanceDate.toLocaleDateString('en-US', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                          })}
+                        </Text>
+                      </Pressable>
+                    </View>
+                    {showMaintenancePicker && (
+                      <DateTimePicker
+                        value={mainte

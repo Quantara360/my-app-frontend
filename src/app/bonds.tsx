@@ -28,14 +28,18 @@ export default function BondsPage() {
         <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}>
           <View style={styles.tileGrid}>
             <Pressable style={styles.tile} onPress={() => router.push('/bid-bonds')}>
-              <View style={[styles.imagePlaceholder, { backgroundColor: '#4f8ef7' }]} />
+              <View style={{ width: '100%', alignItems: 'center', marginBottom: Spacing.two, marginTop: 16 }}>
+                <View style={[styles.imagePlaceholder, { backgroundColor: '#4f8ef7' }]} />
+              </View>
               <View style={styles.tileText}>
                 <ThemedText type="subtitle" style={styles.tileTitle}>Bid Bonds</ThemedText>
               </View>
             </Pressable>
 
             <Pressable style={styles.tile} onPress={() => router.push('/performance-bonds')}>
-              <View style={[styles.imagePlaceholder, { backgroundColor: '#28a745' }]} />
+              <View style={{ width: '100%', alignItems: 'center', marginBottom: Spacing.two, marginTop: 16 }}>
+                <View style={[styles.imagePlaceholder, { backgroundColor: '#28a745' }]} />
+              </View>
               <View style={styles.tileText}>
                 <ThemedText type="subtitle" style={styles.tileTitle}>Performance Bonds</ThemedText>
               </View>
@@ -48,15 +52,15 @@ export default function BondsPage() {
 }
 
 const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
-  container: { flex: 1, padding: Spacing.four, paddingBottom: BottomTabInset, backgroundColor: 'transparent' },
+  container: { flex: 1, padding: Spacing.four, paddingTop: 80, paddingBottom: BottomTabInset, backgroundColor: 'transparent' },
   safeArea: { flex: 1, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, marginBottom: Spacing.four },
   backButton: { padding: Spacing.two, borderRadius: 16 },
   pageTitle: { flex: 1, textAlign: 'center', color: theme.text },
   card: { width: '100%', borderRadius: 28, padding: Spacing.four, backgroundColor: theme.backgroundElement, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 18, shadowOffset: { width: 0, height: 12 }, elevation: 10 },
-  tileGrid: { width: '100%', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'stretch' },
-  tile: { flexBasis: '48%', maxWidth: '48%', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', paddingVertical: Spacing.four, paddingHorizontal: Spacing.three, backgroundColor: 'transparent', borderRadius: 24, borderWidth: 1, borderColor: theme.backgroundSelected, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 6 }, elevation: 3, marginBottom: Spacing.three },
-  imagePlaceholder: { width: 48, height: 48, borderRadius: 14, marginBottom: Spacing.two },
-  tileText: { alignItems: 'center' },
-  tileTitle: { fontSize: 15, fontWeight: '700', color: theme.text, textAlign: 'center' },
+  tileGrid: { width: '100%', flexDirection: 'column', gap: Spacing.three },
+  tile: { width: '100%', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', paddingVertical: Spacing.four, paddingHorizontal: Spacing.three, backgroundColor: 'transparent', borderRadius: 24, borderWidth: 1, borderColor: theme.backgroundSelected, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 6 }, elevation: 3, minHeight: 130 },
+  imagePlaceholder: { width: 48, height: 48, borderRadius: 14, marginBottom: Spacing.two, alignSelf: 'center' },
+  tileText: { alignItems: 'center', width: '100%' },
+  tileTitle: { fontSize: 15, fontWeight: '700', color: theme.text, textAlign: 'center', flexWrap: 'wrap' },
 });

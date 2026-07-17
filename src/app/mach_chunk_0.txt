@@ -1,0 +1,173 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'expo-router';
+import { Alert, Modal, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { BackgroundPattern } from '@/components/BackgroundPattern';
+import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
+import { SuccessModal } from '@/components/success-modal';
+import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
+import { API_BASE_URL } from '@/services/authService';
+import { useAuth } from '@/contexts/AuthContext';
+import { useGoBack } from "@/hooks/use-go-back";
+
+type Worksite = {
+  id: number;
+  name: string;
+};
+
+type Machinery = {
+  id: number;
+  name: string;
+  status: string;
+  location?: string;
+  maintenance_due_at?: string;
+  worksite_id?: number | null;
+  worksite?: Worksite;
+};
+
+const initialFormState = {
+  name: '',
+  status: 'operational',
+  location: '',
+  maintenance_due_at: '',
+  worksite_id: null as number | null,
+};
+
+const normalizeMachinery = (machinery: any): Machinery => ({
+  id: Number(machinery.id ?? 0),
+  name: String(machinery.name ?? ''),
+  status: String(machinery.status ?? 'operational'),
+  location: machinery.location ? String(machinery.location) : undefined,
+  maintenance_due_at: machinery.maintenance_due_at ? String(machinery.maintenance_due_at) : undefined,
+  worksite_id: machinery.worksite_id ? Number(machinery.worksite_id) : null,
+  worksite: machinery.worksite,
+});
+
+export default function MachineriesPage() {
+  const goBack = useGoBack();
+  const router = useRouter();
+  const theme = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+  const { token } = useAuth();
+
+  const [machineries, setMachineries] = useState<Machinery[]>([]);
+  const [search, setSearch] = useState('');
+  const [formOpen, setFormOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [selectedMachinery, setSelectedMachinery] = useState<Machinery | null>(null);
+  const [formValues, setFormValues] = useState(initialFormState);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [maintenanceDate, setMaintenanceDate] = useState<Date>(new Date());
+  const [showMaintenancePicker, setShowMaintenancePicker] = useState(false);
+  const webDateInputRef = React.useRef<HTMLInputElement | null>(null);
+  const [viewDetailsOpen, setViewDetailsOpen] = useState(false);
+  const [selectedViewItem, setSelectedViewItem] = useState<Machinery | null>(null);
+  const [worksites, setWorksites] = useState<Worksite[]>([]);
+  const [siteFilter, setSiteFilter] = useState<number | null>(null);
+  const [sitePickerOpen, setSitePickerOpen] = useState(false);
+  const [filterPickerOpen, setFilterPickerOpen] = useState(false);
+
+  useEffect(() => {
+    if (!token) {
+      return;
+    }
+
+    const fetchMachineries = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/machineries`, {
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data = await response.json();
+        const normalized = Array.isArray(data) ? data.map(normalizeMachinery) : (data.data || []).map(normalizeMachinery);
+        setMachineries(normalized);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    const fetchWorksites = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/worksites`, {
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data = await response.json();
+        setWorksites(Array.isArray(data) ? data : data.data || []);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchMachineries();
+    fetchWorksites();
+  }, [token]);
+
+  const filteredMachineries = useMemo(() => {
+    return machineries.filter((machinery) => {
+      const matchesSearch = machinery.name.toLowerCase().includes(search.toLowerCase());
+      const matchesSite = siteFilter ? machinery.worksite_id === siteFilter : true;
+      return matchesSearch && matchesSite;
+    });
+  }, [machineries, search, siteFilter]);
+
+  const handleGoBack = () => {
+    if (router.canGoBack?.()) {
+      goBack();
+    } else {
+      router.replace('/dashboard');
+    }
+  };
+
+  const openAddMachinery = () => {
+    setSelectedMachinery(null);
+    setIsEditing(false);
+    setFormValues(initialFormState);
+    setMaintenanceDate(new Date());
+    setShowMaintenancePicker(false);
+    setFormOpen(true);
+  };
+
+  const openEditMachinery = (machinery: Machinery) => {
+    setSelectedMachinery(machinery);
+    setIsEditing(true);
+    setFormValues({
+      name: machinery.name,
+      status: machinery.status,
+      location: machinery.location ?? '',
+      maintenance_due_at: machinery.maintenance_due_at ?? '',
+      worksite_id: machinery.worksite_id ?? null,
+    });
+    const parsedDate = machinery.maintenance_due_at ? new Date(machinery.maintenance_due_at) : new Date();
+    setMaintenanceDate(parsedDate);
+    setShowMaintenancePicker(false);
+    setFormOpen(true);
+  };
+
+  const handleSaveMachinery = async () => {
+    if (!token) {
+      return;
+    }
+
+    if (!formValues.name.trim()) {
+      Alert.alert('Validation error', 'Machine name is required.');
+      return;
+    }
+
+    const payload = {
+      name: formValues.name,
+      status: formValues.status,
+      location: formValues.location || null,
+      maintenance_due_at: formValues.maintenance_due_at || maintenanceDate.toISOString().split('T')[0],
+      worksite_id: formValues.worksite_id,
+    };
+
+    const method = isEditing ? 'PUT' : 'POST';
+    const url = isEditing && selectedMachinery
+      ? `${API_BASE_URL}/machineries/${selectedMachinery.id}
