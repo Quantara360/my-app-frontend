@@ -358,7 +358,6 @@ export default function FaceRecognition() {
               style={styles.camera}
               ref={cameraRef}
               onCameraReady={() => setCameraReady(true)}
-              ratio="4:3"
               facing={cameraFacing}
             />
           )}

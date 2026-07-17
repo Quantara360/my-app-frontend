@@ -810,7 +810,6 @@ export default function WorkersPage() {
                           cameraRef.current = ref;
                         }}
                         onCameraReady={() => setCameraReady(true)}
-                        ratio="4:3"
                         facing={cameraFacing}
                       >
                         {!cameraReady && (
