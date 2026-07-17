@@ -7,8 +7,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  View,
-} from "react-native";
+  View,Platform} from "react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/hooks/use-theme";
 import { MaxContentWidth, rf } from '@/constants/theme';

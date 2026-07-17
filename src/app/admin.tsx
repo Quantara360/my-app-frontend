@@ -1493,14 +1493,16 @@ export default function AdminDashboard() {
           value={attendanceDateFilter}
           onChange={(e: any) => setAttendanceDateFilter(e.target.value)}
           style={{
-            backgroundColor: "transparent",
-            color: isDark ? "#ffffff" : "#333",
-            border: `1px solid ${isDark ? "#333" : "#ccc"}`,
+            backgroundColor: theme.backgroundSelected,
+            color: theme.text,
+            border: `1px solid ${theme.border || "#ccc"}`,
             borderRadius: 8,
             padding: "8px 12px",
             fontSize: 14,
             colorScheme: isDark ? "dark" : "light",
-            minWidth: 130,
+            minWidth: 140,
+            minHeight: 40,
+            display: 'block',
           }}
         />
       </View>
@@ -2610,18 +2612,19 @@ export default function AdminDashboard() {
           </Pressable>
         </View>
 
-        <View style={styles.personalSelectionHeader}>
+        <View style={[styles.personalSelectionHeader, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
           <Pressable
             onPress={() => {
               setSelectedView("dashboard");
             }}
             style={styles.backButton}
           >
-            <Text style={styles.backButtonIcon}>‹</Text>
+            <Text style={styles.backButtonIcon}>{"←"}</Text>
           </Pressable>
-          <ThemedText type="subtitle" style={styles.personalSelectionTitle}>
+          <ThemedText type="subtitle" style={[styles.personalSelectionTitle, { flex: 1, textAlign: 'center' }]}>
             Personal
           </ThemedText>
+          <View style={{ width: 36 }} />
         </View>
 
         <View style={styles.personalSelectionContent}>
@@ -2696,41 +2699,17 @@ export default function AdminDashboard() {
           </Pressable>
         </View>
 
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            marginBottom: 16,
-            gap: 12,
-          }}
-        >
-          <Pressable
-            onPress={() => setSelectedView("personalSelection")}
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 20,
-              backgroundColor: isDark ? "#333" : "#e0e0e0",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 22,
-                color: isDark ? "#fff" : "#333",
-                fontWeight: "600",
-                includeFontPadding: false,
-                textAlignVertical: "center",
-              }}
+        <View style={styles.personalDocumentsHeader}>
+            <Pressable
+              onPress={() => setSelectedView("personalSelection")}
+              style={styles.backButton}
             >
-              {"←"}
-            </Text>
-          </Pressable>
-          <ThemedText type="subtitle" style={styles.personalDocumentsTitle}>
-            Personal Details & Documents
-          </ThemedText>
-        </View>
+              <Text style={styles.backButtonIcon}>{"←"}</Text>
+            </Pressable>
+            <ThemedText type="subtitle" style={styles.personalDocumentsTitle}>
+              Personal Details & Documents
+            </ThemedText>
+          </View>
 
         <View style={styles.personalDocumentsSection}>
           {/* NOTES */}

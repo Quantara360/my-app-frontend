@@ -220,9 +220,9 @@ export default function AttendancesPage() {
   }
 
   const selectStyle: any = {
-    backgroundColor: isDark ? "#1e1e1e" : "#ffffff",
-    color: isDark ? "#ffffff" : "#333",
-    border: `1px solid ${isDark ? "#333" : "#ccc"}`,
+    backgroundColor: theme.backgroundSelected,
+    color: theme.text,
+    border: `1px solid ${theme.border || "#ccc"}`,
     borderRadius: 8,
     padding: "8px 12px",
     fontSize: 14,
@@ -362,7 +362,9 @@ export default function AttendancesPage() {
             style={{
               ...selectStyle,
               colorScheme: isDark ? "dark" : "light",
-              minWidth: 130,
+              minWidth: 140,
+              minHeight: 40,
+              display: 'block',
             }}
           />
         </View>

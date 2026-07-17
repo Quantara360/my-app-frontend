@@ -486,7 +486,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) =>
     actionButtonIcon: { width: 24, height: 24, borderRadius: 12, backgroundColor: '#10b981', justifyContent: 'center', alignItems: 'center' },
     actionButtonIconDelete: { width: 24, height: 24, borderRadius: 12, backgroundColor: '#ef4444', justifyContent: 'center', alignItems: 'center' },
     actionIcon: { color: '#fff', fontWeight: '700', fontSize: 12 },
-    formOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'transparent', justifyContent: 'center', alignItems: 'center', padding: Spacing.four },
+    formOverlay: { position: Platform.OS === 'web' ? 'fixed' : 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.4)', justifyContent: 'center', alignItems: 'center', padding: Spacing.four },
     formCard: { width: '100%', maxHeight: '85%', borderRadius: 28, backgroundColor: theme.backgroundElement, padding: Spacing.four, gap: Spacing.three },
     formHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     closeText: { fontSize: 20, color: theme.text },
