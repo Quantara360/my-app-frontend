@@ -780,7 +780,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) =>
     },
     modalOverlay: {
       flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      backgroundColor: 'transparent',
       justifyContent: 'center',
       alignItems: 'center',
     },
@@ -839,3 +839,4 @@ const createStyles = (theme: ReturnType<typeof useTheme>) =>
       fontWeight: '600',
     },
   });
+

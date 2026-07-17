@@ -498,16 +498,17 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'flex-start',
     gap: Spacing.two,
     marginTop: 40,
+    width: '100%',
   },
   backButton: {
     padding: Spacing.two,
     borderRadius: 14,
   },
   pageTitle: {
-    flex: 1,
-    textAlign: 'center',
+    textAlign: 'left',
     color: theme.text,
   },
   card: {
@@ -718,7 +719,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -777,3 +778,4 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     fontWeight: '600',
   },
 });
+

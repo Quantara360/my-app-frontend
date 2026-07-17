@@ -384,10 +384,10 @@ export default function AdminDashboard() {
             type: newFileType,
             ...(pickedFileUri
               ? {
-                  fileUri: pickedFileUri,
-                  fileMimeType: pickedFileMime || undefined,
-                  fileActualName: pickedFileActualName || undefined,
-                }
+                fileUri: pickedFileUri,
+                fileMimeType: pickedFileMime || undefined,
+                fileActualName: pickedFileActualName || undefined,
+              }
               : {}),
           },
         );
@@ -537,7 +537,7 @@ export default function AdminDashboard() {
     const dateMatch =
       attendanceDateFilter === "" ||
       (item.date && item.date.startsWith(attendanceDateFilter));
-      
+
     // Tab filter:
     // IN tab  → show everyone who has clocked IN (marked_at), including absent synthetic rows
     // OUT tab → show only workers who have been clocked OUT (out_marked_at is set)
@@ -545,7 +545,7 @@ export default function AdminDashboard() {
       attendanceTab === "IN"
         ? (item.status || "").toLowerCase() === "absent" || !!item.marked_at
         : !!item.out_marked_at;
-        
+
     return searchMatch && shiftMatch && statusMatch && dateMatch && tabMatch;
   });
 
@@ -685,11 +685,11 @@ export default function AdminDashboard() {
         current.map((asset) =>
           asset.id === selectedAsset.id
             ? {
-                ...asset,
-                name: editName,
-                count: Number(editCount) || 0,
-                value: editValue,
-              }
+              ...asset,
+              name: editName,
+              count: Number(editCount) || 0,
+              value: editValue,
+            }
             : asset,
         ),
       );
@@ -768,11 +768,11 @@ export default function AdminDashboard() {
       current.map((a) =>
         a.id === selectedAttendance.id
           ? {
-              ...a,
-              shift: editAttendanceShift,
-              date: editAttendanceDate,
-              status: editAttendanceStatus,
-            }
+            ...a,
+            shift: editAttendanceShift,
+            date: editAttendanceDate,
+            status: editAttendanceStatus,
+          }
           : a,
       ),
     );
@@ -1417,6 +1417,7 @@ export default function AdminDashboard() {
         <ThemedText type="subtitle" style={styles.machineriesTitle}>
           Attendances
         </ThemedText>
+        <View style={{ width: 44 }} />
       </View>
 
       {/* IN / OUT Tab Toggle */}
@@ -1533,110 +1534,110 @@ export default function AdminDashboard() {
             {filteredAttendanceData.map((item, index) => {
               const isAbsent = (item.status || "").toLowerCase() === "absent";
               return (
-              <View
-                key={String(item.id)}
-                style={[
-                  styles.tableRow,
-                  isAbsent && { backgroundColor: isDark ? "#2a2000" : "#fffbe6" },
-                  index !== filteredAttendanceData.length - 1 && {
-                    borderBottomWidth: 1,
-                    borderBottomColor: "#e5e7eb",
-                  },
-                ]}
-              >
-                <Text style={[styles.tableCell, { flex: 1 }]}>{item.id}</Text>
-                <Text style={[styles.tableCell, { flex: 2 }]}>
-                  {item.worker?.name || `Worker #${item.worker_id}`}
-                </Text>
-                <Text style={[styles.tableCell, { flex: 2 }]}>
-                  {item.date ? item.date.split("T")[0] : ""}
-                </Text>
-                <Text style={[styles.tableCell, { flex: 2 }]}>
-                  {item.shift}
-                </Text>
-                <Text style={[styles.tableCell, { flex: 2 }]}>
-                  {attendanceTab === "OUT"
-                    ? item.out_marked_at
-                      ? new Date(item.out_marked_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-                      : "—"
-                    : item.marked_at
-                    ? new Date(item.marked_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-                    : "—"}
-                </Text>
-                {(() => {
-                  // OUT tab only: show "Early" if worker left before shift end time
-                  if (attendanceTab === "OUT" && item.out_marked_at) {
-                    const shiftName = (item.shift || "").toLowerCase();
-                    const outTime = new Date(item.out_marked_at);
-                    const outHour = outTime.getHours();
-                    const isEarly =
-                      shiftName === "morning"
-                        ? outHour < 18  // Morning ends 18:00
-                        : outHour < 6;  // Evening ends 06:00
-                    if (isEarly) {
-                      return (
-                        <Text style={[styles.tableCell, { flex: 2, color: "#fa8c16", fontWeight: "600" }]}>
-                          Early
-                        </Text>
-                      );
-                    }
-                  }
-                  // Default: use original status
-                  const s = (item.status || "").toLowerCase();
-                  return (
-                    <Text
-                      style={[
-                        styles.tableCell,
-                        { flex: 2 },
-                        s === "present"
-                          ? { color: "#28a745" }
-                          : s === "late"
-                          ? { color: "#ff4d4f" }
-                          : isAbsent
-                          ? { color: "#faad14" }
-                          : { color: "#ff4d4f" },
-                      ]}
-                    >
-                      {s === "present" ? "Present" : s === "late" ? "Late" : isAbsent ? "Absent" : "Absent"}
-                    </Text>
-                  );
-                })()}
                 <View
+                  key={String(item.id)}
                   style={[
-                    styles.tableCell,
-                    { flex: 2, flexDirection: "row", gap: 6 },
+                    styles.tableRow,
+                    isAbsent && { backgroundColor: isDark ? "#2a2000" : "#fffbe6" },
+                    index !== filteredAttendanceData.length - 1 && {
+                      borderBottomWidth: 1,
+                      borderBottomColor: "#e5e7eb",
+                    },
                   ]}
                 >
-                  <Pressable
-                    onPress={() => openAttendanceEditModal(item)}
+                  <Text style={[styles.tableCell, { flex: 1 }]}>{item.id}</Text>
+                  <Text style={[styles.tableCell, { flex: 2 }]}>
+                    {item.worker?.name || `Worker #${item.worker_id}`}
+                  </Text>
+                  <Text style={[styles.tableCell, { flex: 2 }]}>
+                    {item.date ? item.date.split("T")[0] : ""}
+                  </Text>
+                  <Text style={[styles.tableCell, { flex: 2 }]}>
+                    {item.shift}
+                  </Text>
+                  <Text style={[styles.tableCell, { flex: 2 }]}>
+                    {attendanceTab === "OUT"
+                      ? item.out_marked_at
+                        ? new Date(item.out_marked_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                        : "—"
+                      : item.marked_at
+                        ? new Date(item.marked_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                        : "—"}
+                  </Text>
+                  {(() => {
+                    // OUT tab only: show "Early" if worker left before shift end time
+                    if (attendanceTab === "OUT" && item.out_marked_at) {
+                      const shiftName = (item.shift || "").toLowerCase();
+                      const outTime = new Date(item.out_marked_at);
+                      const outHour = outTime.getHours();
+                      const isEarly =
+                        shiftName === "morning"
+                          ? outHour < 18  // Morning ends 18:00
+                          : outHour < 6;  // Evening ends 06:00
+                      if (isEarly) {
+                        return (
+                          <Text style={[styles.tableCell, { flex: 2, color: "#fa8c16", fontWeight: "600" }]}>
+                            Early
+                          </Text>
+                        );
+                      }
+                    }
+                    // Default: use original status
+                    const s = (item.status || "").toLowerCase();
+                    return (
+                      <Text
+                        style={[
+                          styles.tableCell,
+                          { flex: 2 },
+                          s === "present"
+                            ? { color: "#28a745" }
+                            : s === "late"
+                              ? { color: "#ff4d4f" }
+                              : isAbsent
+                                ? { color: "#faad14" }
+                                : { color: "#ff4d4f" },
+                        ]}
+                      >
+                        {s === "present" ? "Present" : s === "late" ? "Late" : isAbsent ? "Absent" : "Absent"}
+                      </Text>
+                    );
+                  })()}
+                  <View
                     style={[
-                      styles.assetActionButtonEdit,
-                      {
-                        paddingHorizontal: 8,
-                        paddingVertical: 4,
-                        borderRadius: 8,
-                      },
+                      styles.tableCell,
+                      { flex: 2, flexDirection: "row", gap: 6 },
                     ]}
                   >
-                    <Text style={styles.assetActionIcon}>✏️</Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={() => handleDeleteAttendance(item)}
-                    style={[
-                      styles.assetActionButtonDelete,
-                      {
-                        paddingHorizontal: 8,
-                        paddingVertical: 4,
-                        borderRadius: 8,
-                      },
-                    ]}
-                  >
-                    <Text style={styles.assetActionIcon}>🗑️</Text>
-                  </Pressable>
+                    <Pressable
+                      onPress={() => openAttendanceEditModal(item)}
+                      style={[
+                        styles.assetActionButtonEdit,
+                        {
+                          paddingHorizontal: 8,
+                          paddingVertical: 4,
+                          borderRadius: 8,
+                        },
+                      ]}
+                    >
+                      <Text style={styles.assetActionIcon}>✏️</Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => handleDeleteAttendance(item)}
+                      style={[
+                        styles.assetActionButtonDelete,
+                        {
+                          paddingHorizontal: 8,
+                          paddingVertical: 4,
+                          borderRadius: 8,
+                        },
+                      ]}
+                    >
+                      <Text style={styles.assetActionIcon}>🗑️</Text>
+                    </Pressable>
+                  </View>
                 </View>
-              </View>
-            );
-          })}
+              );
+            })}
             {filteredAttendanceData.length === 0 && (
               <View style={styles.emptyRow}>
                 <Text style={styles.emptyText}>
@@ -1758,6 +1759,7 @@ export default function AdminDashboard() {
         <ThemedText type="subtitle" style={styles.machineriesTitle}>
           Machineries
         </ThemedText>
+        <View style={{ width: 44 }} />
       </View>
 
       <View style={styles.searchContainer}>
@@ -2145,99 +2147,97 @@ export default function AdminDashboard() {
     };
 
     return (
-    <View style={styles.manageSiteContainer}>
-      <View style={[styles.headerSection, styles.greetingContainer, { flexDirection: "row", justifyContent: "space-between", alignItems: "center" }]}>
-        <ThemedText type="subtitle" style={styles.greeting}>
-          Hii {user?.name || "Malith"}, Welcome!
-        </ThemedText>
-        <Pressable
-          onPress={async () => { await signOut(); router.replace("/"); }}
-          style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: isDark ? "#333" : "#e0e0e0", borderRadius: 8 }}
-        >
-          <Text style={{ fontSize: 13, fontWeight: "600", color: isDark ? "#fff" : "#000" }}>Sign Out</Text>
-        </Pressable>
-      </View>
-
-      <View style={styles.manageSiteHeader}>
-        <Pressable style={styles.backButton} onPress={handleBack}>
-          <Text style={styles.backButtonIcon}>‹</Text>
-        </Pressable>
-        <ThemedText type="subtitle" style={styles.manageSiteTitle}>
-          {screenTitle}
-        </ThemedText>
-      </View>
-
-      <ScrollView
-        style={styles.manageSiteList}
-        contentContainerStyle={{ paddingBottom: 40 }}
-        refreshControl={
-          <RefreshControl
-            refreshing={worksitesRefreshing}
-            onRefresh={loadWorksitesData}
-            colors={['#16a34a']}
-            tintColor={isDark ? '#16a34a' : '#16a34a'}
-          />
-        }
-      >
-        <View style={styles.manageSiteCardsContainer}>
-          {displayedSites.map((site) => (
-            <Pressable
-              key={`${site._level}-${site.id}`}
-              style={styles.manageSiteCard}
-              onPress={() => {
-                if (site._level === 'main') {
-                  setCurrentMainSiteId(Number(site.id));
-                  setDrillLevel('hospital');
-                } else if (site._level === 'hospital') {
-                  setCurrentHospitalId(Number(site.id));
-                  setDrillLevel('subsite');
-                }
-                // sub_site cards are not drillable
-              }}
-            >
-              <View style={styles.manageSiteCardTopRow}>
-                <View style={styles.manageSiteLogoWrapper}>
-                  {site.logo ? (
-                    <Image source={{ uri: site.logo.startsWith('http') ? site.logo : `${API_BASE_URL.replace(/\/api$/, '')}${site.logo}` }} style={{ width: 70, height: 70, borderRadius: 12 }} resizeMode="cover" />
-                  ) : (
-                    <Text style={styles.manageSiteLogoIcon}>
-                      {site._level === 'hospital' ? '🏥' : site._level === 'subsite' ? '📍' : '🏗️'}
-                    </Text>
-                  )}
-                </View>
-                <View style={{ flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
-                  <Pressable style={styles.manageSiteDeleteButton} onPress={() => handleDeleteSite(site)}>
-                    <Text style={styles.manageSiteDeleteIcon}>🗑️</Text>
-                  </Pressable>
-                  <Pressable style={styles.manageSiteDeleteButton} onPress={() => openEdit(site)}>
-                    <Text style={styles.manageSiteDeleteIcon}>✏️</Text>
-                  </Pressable>
-                </View>
-              </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 }}>
-                <Text style={styles.manageSiteCardLabel}>{site.name}</Text>
-                <Text style={{ fontSize: 10, color: isDark ? '#888' : '#aaa', textTransform: 'uppercase' }}>
-                  {site._level === 'hospital' ? 'HOSPITAL' : site._level === 'subsite' ? 'SUB SITE' : 'MAIN SITE'}
-                </Text>
-              </View>
-              {site._level !== 'subsite' && (
-                <Text style={{ fontSize: 11, color: isDark ? '#888' : '#aaa', marginTop: 8, textAlign: 'center' }}>
-                  Tap to manage ›
-                </Text>
-              )}
-            </Pressable>
-          ))}
-
+      <View style={styles.manageSiteContainer}>
+        <View style={[styles.headerSection, styles.greetingContainer, { flexDirection: "row", justifyContent: "space-between", alignItems: "center" }]}>
+          <ThemedText type="subtitle" style={styles.greeting}>
+            Hii {user?.name || "Malith"}, Welcome!
+          </ThemedText>
           <Pressable
-            style={[styles.manageSiteCard, styles.manageSiteAddCard]}
-            onPress={openAdd}
+            onPress={async () => { await signOut(); router.replace("/"); }}
+            style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: isDark ? "#333" : "#e0e0e0", borderRadius: 8 }}
           >
-            <Text style={styles.manageSiteAddIcon}>+</Text>
-            <Text style={{ marginTop: 8, color: '#16a34a', fontWeight: 'bold' }}>{addLabel}</Text>
+            <Text style={{ fontSize: 13, fontWeight: "600", color: isDark ? "#fff" : "#000" }}>Sign Out</Text>
           </Pressable>
         </View>
-      </ScrollView>
-    </View>
+
+        <View style={styles.manageSiteHeader}>
+          <Pressable style={styles.backButton} onPress={handleBack}>
+            <Text style={styles.backButtonIcon}>‹</Text>
+          </Pressable>
+          <ThemedText type="subtitle" style={styles.manageSiteTitle}>
+            {screenTitle}
+          </ThemedText>
+          <View style={{ width: 44 }} />
+        </View>
+
+        <ScrollView
+          style={styles.manageSiteList}
+          contentContainerStyle={{ paddingBottom: 40 }}
+          refreshControl={
+            <RefreshControl
+              refreshing={worksitesRefreshing}
+              onRefresh={loadWorksitesData}
+              colors={['#16a34a']}
+              tintColor={isDark ? '#16a34a' : '#16a34a'}
+            />
+          }
+        >
+          <View style={styles.manageSiteCardsContainer}>
+            {displayedSites.map((site) => (
+              <Pressable
+                key={`${site._level}-${site.id}`}
+                style={styles.manageSiteCard}
+                onPress={() => {
+                  if (site._level === 'main') {
+                    setCurrentMainSiteId(Number(site.id));
+                    setDrillLevel('hospital');
+                  } else if (site._level === 'hospital') {
+                    setCurrentHospitalId(Number(site.id));
+                    setDrillLevel('subsite');
+                  }
+                  // sub_site cards are not drillable
+                }}
+              >
+                <View style={styles.manageSiteCardTopRow}>
+                  <View style={styles.manageSiteLogoWrapper}>
+                    {site.logo ? (
+                      <Image source={{ uri: site.logo.startsWith('http') ? site.logo : `${API_BASE_URL.replace(/\/api$/, '')}${site.logo}` }} style={{ width: 70, height: 70, borderRadius: 12 }} resizeMode="cover" />
+                    ) : (
+                      <Text style={styles.manageSiteLogoIcon}>
+                        {site._level === 'hospital' ? '🏥' : site._level === 'subsite' ? '📍' : '🏗️'}
+                      </Text>
+                    )}
+                  </View>
+                  <View style={{ flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                    <Pressable style={styles.manageSiteDeleteButton} onPress={() => handleDeleteSite(site)}>
+                      <Text style={styles.manageSiteDeleteIcon}>🗑️</Text>
+                    </Pressable>
+                    <Pressable style={styles.manageSiteDeleteButton} onPress={() => openEdit(site)}>
+                      <Text style={styles.manageSiteDeleteIcon}>✏️</Text>
+                    </Pressable>
+                  </View>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12 }}>
+                  <Text style={styles.manageSiteCardLabel}>{site.name}</Text>
+                </View>
+                {site._level !== 'subsite' && (
+                  <Text style={{ fontSize: 11, color: isDark ? '#888' : '#aaa', marginTop: 8, textAlign: 'center' }}>
+                    Tap to manage ›
+                  </Text>
+                )}
+              </Pressable>
+            ))}
+
+            <Pressable
+              style={[styles.manageSiteCard, styles.manageSiteAddCard]}
+              onPress={openAdd}
+            >
+              <Text style={styles.manageSiteAddIcon}>+</Text>
+              <Text style={{ marginTop: 8, color: '#16a34a', fontWeight: 'bold' }}>{addLabel}</Text>
+            </Pressable>
+          </View>
+        </ScrollView>
+      </View>
     );
   };
 
@@ -2249,72 +2249,72 @@ export default function AdminDashboard() {
     };
     const iconMap = { main: '🏗️', hospital: '🏥', subsite: '📍' };
     return (
-    <Modal
-      visible={showAddSiteModal}
-      transparent
-      animationType="fade"
-      onRequestClose={() => setShowAddSiteModal(false)}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{titleMap[drillLevel]}</Text>
-            <Pressable onPress={() => setShowAddSiteModal(false)} style={styles.modalClose}>
-              <Text style={styles.modalCloseText}>✕</Text>
-            </Pressable>
-          </View>
-
-          {/* Type indicator — read only, locked by screen context */}
-          <View style={[styles.formRow, { marginBottom: 8 }]}>
-            <Text style={{ fontSize: 13, color: isDark ? '#aaa' : '#666', textAlign: 'center', flex: 1 }}>
-              {iconMap[drillLevel]}{' '}
-              {drillLevel === 'main' ? 'Will be saved as a Main Site'
-                : drillLevel === 'hospital' ? `Will be saved under ${mainSites.find(s => Number(s.id) === currentMainSiteId)?.name || 'selected site'}`
-                : `Will be saved under ${hospitals.find(h => Number(h.id) === currentHospitalId)?.name || 'selected hospital'}`}
-            </Text>
-          </View>
-
-          <View style={styles.formRow}>
-            <Text style={styles.formLabel}>Name</Text>
-            <TextInput
-              value={newSiteName}
-              onChangeText={setNewSiteName}
-              placeholder="Enter name"
-              placeholderTextColor={isDark ? "#b0b0b0" : "#8a8a8f"}
-              style={styles.formInput}
-              autoFocus
-            />
-          </View>
-
-          {drillLevel === 'main' && (
-            <View style={styles.formRow}>
-              <Text style={styles.formLabel}>Logo (Optional)</Text>
-              <Pressable
-                onPress={handlePickSiteLogo}
-                style={[styles.formInput, { alignItems: 'center', justifyContent: 'center', padding: 12, borderStyle: 'dashed', borderWidth: 1 }]}
-              >
-                {siteLogoUri ? (
-                  <Image source={{ uri: siteLogoUri }} style={{ width: 100, height: 100, borderRadius: 8 }} />
-                ) : (
-                  <Text style={{ color: isDark ? '#aaa' : '#666' }}>Tap to select an image</Text>
-                )}
+      <Modal
+        visible={showAddSiteModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowAddSiteModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{titleMap[drillLevel]}</Text>
+              <Pressable onPress={() => setShowAddSiteModal(false)} style={styles.modalClose}>
+                <Text style={styles.modalCloseText}>✕</Text>
               </Pressable>
-              <input
-                type="file"
-                ref={siteLogoInputRef as any}
-                style={{ display: 'none' }}
-                accept="image/*"
-                onChange={handleSiteLogoFileChange}
+            </View>
+
+            {/* Type indicator — read only, locked by screen context */}
+            <View style={[styles.formRow, { marginBottom: 8 }]}>
+              <Text style={{ fontSize: 13, color: isDark ? '#aaa' : '#666', textAlign: 'center', flex: 1 }}>
+                {iconMap[drillLevel]}{' '}
+                {drillLevel === 'main' ? 'Will be saved as a Main Site'
+                  : drillLevel === 'hospital' ? `Will be saved under ${mainSites.find(s => Number(s.id) === currentMainSiteId)?.name || 'selected site'}`
+                    : `Will be saved under ${hospitals.find(h => Number(h.id) === currentHospitalId)?.name || 'selected hospital'}`}
+              </Text>
+            </View>
+
+            <View style={styles.formRow}>
+              <Text style={styles.formLabel}>Name</Text>
+              <TextInput
+                value={newSiteName}
+                onChangeText={setNewSiteName}
+                placeholder="Enter name"
+                placeholderTextColor={isDark ? "#b0b0b0" : "#8a8a8f"}
+                style={styles.formInput}
+                autoFocus
               />
             </View>
-          )}
 
-          <Pressable onPress={handleAddSite} style={styles.addSiteButton}>
-            <Text style={styles.addSiteButtonText}>Add</Text>
-          </Pressable>
+            {drillLevel === 'main' && (
+              <View style={styles.formRow}>
+                <Text style={styles.formLabel}>Logo (Optional)</Text>
+                <Pressable
+                  onPress={handlePickSiteLogo}
+                  style={[styles.formInput, { alignItems: 'center', justifyContent: 'center', padding: 12, borderStyle: 'dashed', borderWidth: 1 }]}
+                >
+                  {siteLogoUri ? (
+                    <Image source={{ uri: siteLogoUri }} style={{ width: 100, height: 100, borderRadius: 8 }} />
+                  ) : (
+                    <Text style={{ color: isDark ? '#aaa' : '#666' }}>Tap to select an image</Text>
+                  )}
+                </Pressable>
+                <input
+                  type="file"
+                  ref={siteLogoInputRef as any}
+                  style={{ display: 'none' }}
+                  accept="image/*"
+                  onChange={handleSiteLogoFileChange}
+                />
+              </View>
+            )}
+
+            <Pressable onPress={handleAddSite} style={styles.addSiteButton}>
+              <Text style={styles.addSiteButtonText}>Add</Text>
+            </Pressable>
+          </View>
         </View>
-      </View>
-    </Modal>
+      </Modal>
     );
   };
 
@@ -2453,6 +2453,7 @@ export default function AdminDashboard() {
         <ThemedText type="subtitle" style={styles.assetsTitle}>
           Assets
         </ThemedText>
+        <View style={{ width: 44 }} />
       </View>
 
       <View style={styles.searchContainer}>
@@ -2933,6 +2934,7 @@ export default function AdminDashboard() {
           <ThemedText type="subtitle" style={styles.personalTitle}>
             Personal Assets
           </ThemedText>
+          <View style={{ width: 44 }} />
         </View>
 
         <View style={styles.personalTabRow}>
@@ -3653,6 +3655,7 @@ export default function AdminDashboard() {
         <ThemedText type="subtitle" style={styles.chemicalsTitle}>
           Chemicals
         </ThemedText>
+        <View style={{ width: 44 }} />
       </View>
 
       <View style={styles.searchContainer}>
@@ -3778,6 +3781,7 @@ export default function AdminDashboard() {
         <ThemedText type="subtitle" style={styles.approvalsTitle}>
           Approvals
         </ThemedText>
+        <View style={{ width: 44 }} />
       </View>
 
       <View style={styles.searchContainer}>
@@ -3960,6 +3964,7 @@ export default function AdminDashboard() {
         <ThemedText type="subtitle" style={styles.workersTitle}>
           Workers
         </ThemedText>
+        <View style={{ width: 44 }} />
       </View>
 
       <View style={styles.searchContainer}>
@@ -4027,6 +4032,7 @@ export default function AdminDashboard() {
                   styles.tableCell,
                   styles.tableHeaderCell,
                   styles.workerCellActions,
+                  { textAlign: 'center' },
                 ]}
               >
                 Actions
@@ -4124,6 +4130,7 @@ export default function AdminDashboard() {
         <ThemedText type="subtitle" style={styles.personalTitle}>
           Admin Profile
         </ThemedText>
+        <View style={{ width: 44 }} />
       </View>
       <View style={styles.formRow}>
         <Text style={styles.formLabel}>Name</Text>
@@ -4243,6 +4250,7 @@ const createStyles = (isDark: boolean) =>
     container: {
       flex: 1,
       padding: Spacing.four,
+      paddingTop: Platform.select({ web: 20, default: 60 }),
       paddingBottom: BottomTabInset,
       backgroundColor: "transparent",
       overflow: 'hidden',
@@ -4355,15 +4363,17 @@ const createStyles = (isDark: boolean) =>
     },
     workersHeader: {
       flexDirection: "row",
-      justifyContent: "center",
+      justifyContent: "flex-start",
       alignItems: "center",
       marginBottom: Spacing.two,
-      position: "relative",
+      width: "100%",
     },
     workersTitle: {
+      flex: 1,
       fontSize: 22,
       fontWeight: "700",
       color: isDark ? "#ffffff" : "#1f1d21",
+      textAlign: "center",
     },
     tableScrollContainer: {
       flex: 1,
@@ -4371,24 +4381,24 @@ const createStyles = (isDark: boolean) =>
     },
     machineriesHeader: {
       flexDirection: "row",
-      justifyContent: "center",
+      justifyContent: "flex-start",
       alignItems: "center",
       marginBottom: Spacing.two,
-      position: "relative",
+      width: "100%",
     },
     assetsHeader: {
       flexDirection: "row",
-      justifyContent: "center",
+      justifyContent: "flex-start",
       alignItems: "center",
       marginBottom: Spacing.two,
-      position: "relative",
+      width: "100%",
     },
     chemicalsHeader: {
       flexDirection: "row",
-      justifyContent: "center",
+      justifyContent: "flex-start",
       alignItems: "center",
       marginBottom: Spacing.two,
-      position: "relative",
+      width: "100%",
     },
     backButton: {
       width: 36,
@@ -4407,31 +4417,39 @@ const createStyles = (isDark: boolean) =>
       marginTop: -4,
     },
     machineriesTitle: {
+      flex: 1,
       fontSize: 22,
       fontWeight: "700",
       color: isDark ? "#ffffff" : "#1f1d21",
+      textAlign: "center",
     },
     assetsTitle: {
+      flex: 1,
       fontSize: 22,
       fontWeight: "700",
       color: isDark ? "#ffffff" : "#1f1d21",
+      textAlign: "center",
     },
     chemicalsTitle: {
+      flex: 1,
       fontSize: 22,
       fontWeight: "700",
       color: isDark ? "#ffffff" : "#1f1d21",
+      textAlign: "center",
     },
     personalHeader: {
       flexDirection: "row",
-      justifyContent: "center",
+      justifyContent: "flex-start",
       alignItems: "center",
       marginBottom: Spacing.two,
-      position: "relative",
+      width: "100%",
     },
     personalTitle: {
+      flex: 1,
       fontSize: 22,
       fontWeight: "700",
       color: isDark ? "#ffffff" : "#1f1d21",
+      textAlign: "center",
     },
     machineriesSubtitle: {
       fontSize: 13,
@@ -4555,7 +4573,7 @@ const createStyles = (isDark: boolean) =>
     },
     modalOverlay: {
       flex: 1,
-      backgroundColor: "rgba(0,0,0,0.35)",
+      backgroundColor: "transparent",
       justifyContent: "center",
       alignItems: "center",
       padding: Spacing.four,
@@ -4760,14 +4778,16 @@ const createStyles = (isDark: boolean) =>
     manageSiteHeader: {
       flexDirection: "row",
       alignItems: "center",
-      justifyContent: "center",
+      justifyContent: "flex-start",
       marginBottom: Spacing.four,
-      position: "relative",
+      width: "100%",
     },
     manageSiteTitle: {
+      flex: 1,
       fontSize: 22,
       fontWeight: "700",
       color: isDark ? "#ffffff" : "#1f1d21",
+      textAlign: "center",
     },
     manageSiteCardsContainer: {
       gap: Spacing.four,
@@ -4914,15 +4934,17 @@ const createStyles = (isDark: boolean) =>
     },
     approvalsHeader: {
       flexDirection: "row",
-      justifyContent: "center",
+      justifyContent: "flex-start",
       alignItems: "center",
       marginBottom: Spacing.two,
-      position: "relative",
+      width: "100%",
     },
     approvalsTitle: {
+      flex: 1,
       fontSize: 22,
       fontWeight: "700",
       color: isDark ? "#ffffff" : "#1f1d21",
+      textAlign: "center",
     },
     approvalCellID: {
       minWidth: 50,
