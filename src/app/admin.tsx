@@ -1488,6 +1488,7 @@ export default function AdminDashboard() {
           <option value="absent">Absent</option>
           <option value="late">Late</option>
         </select>
+      <View style={{ position: 'relative', minWidth: 140 }}>
         <input
           type="date"
           value={attendanceDateFilter}
@@ -1505,7 +1506,22 @@ export default function AdminDashboard() {
             display: 'block',
           }}
         />
+        {!attendanceDateFilter && (
+          <Text
+            pointerEvents="none"
+            style={{
+              position: 'absolute',
+              left: 12,
+              top: 10,
+              fontSize: 14,
+              color: isDark ? '#888' : '#999',
+            }}
+          >
+            mm/dd/yyyy
+          </Text>
+        )}
       </View>
+    </View>
 
       {attendanceTab === "IN" && selectedSiteId && attendanceDateFilter !== "" && attendanceShiftFilter !== "All" && (
         <View style={{ backgroundColor: isDark ? "#2a2000" : "#fffbe6", borderRadius: 8, padding: 10, marginBottom: 10, borderLeftWidth: 3, borderLeftColor: "#faad14" }}>

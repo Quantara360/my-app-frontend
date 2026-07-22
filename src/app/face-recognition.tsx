@@ -344,7 +344,7 @@ export default function FaceRecognition() {
           <View style={{ flex: 1 }} />
           <ThemedText type="smallBold" style={{ flex: 2, textAlign: "center" }}>Keep Your eyes open</ThemedText>
           <View style={{ flex: 1, alignItems: "flex-end" }}>
-            <Pressable style={styles.flipButton} onPress={() => setCameraFacing(prev => prev === 'front' ? 'back' : 'front')}>
+        <Pressable style={styles.flipButton} onPress={() => { setCameraReady(false); setCameraFacing(prev => prev === 'front' ? 'back' : 'front'); }}>
               <ThemedText style={styles.flipText}>🔄</ThemedText>
             </Pressable>
           </View>
@@ -354,11 +354,12 @@ export default function FaceRecognition() {
           {photoUri ? (
             <Image source={{ uri: photoUri }} style={styles.previewImage} />
           ) : (
-            <CameraView
-              style={styles.camera}
-              ref={cameraRef}
-              onCameraReady={() => setCameraReady(true)}
-              facing={cameraFacing}
+          <CameraView
+            key={cameraFacing}
+            style={styles.camera}
+            ref={cameraRef}
+            onCameraReady={() => setCameraReady(true)}
+            facing={cameraFacing}
             />
           )}
           {!photoUri && !cameraReady && (

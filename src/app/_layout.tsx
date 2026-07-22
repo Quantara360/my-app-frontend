@@ -2,6 +2,7 @@ import { Slot } from "expo-router";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { useMemo, useEffect } from "react";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { ErrorBoundary } from "@/components/error-boundary";
 
 export default function RootLayout() {
   const scheme = useColorScheme();
@@ -27,9 +28,11 @@ export default function RootLayout() {
 
   const authProvider = useMemo(
     () => (
-      <AuthProvider>
-        <Slot />
-      </AuthProvider>
+      <ErrorBoundary>
+        <AuthProvider>
+          <Slot />
+        </AuthProvider>
+      </ErrorBoundary>
     ),
     []
   );

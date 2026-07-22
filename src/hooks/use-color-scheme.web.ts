@@ -14,7 +14,9 @@ export function useColorScheme() {
       const saved = window.localStorage.getItem('theme') as 'light' | 'dark' | null;
       if (saved) {
         setStoredScheme(saved);
-        Appearance.setColorScheme(saved);
+        if (typeof Appearance.setColorScheme === 'function') {
+          Appearance.setColorScheme(saved);
+        }
       }
     }
     setHasHydrated(true);
