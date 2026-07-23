@@ -151,7 +151,57 @@ export default function AdminDashboard() {
     | "personalDocuments"
     | "manageSite"
     | "attendance"
+    | "adminAccounts"
+    | "adminCashInHand"
+    | "adminBank"
   >("dashboard");
+
+  // ── Admin Accounts: Cash-in-Hand state ────────────────────────────────────
+  type AdminCashEntry = {
+    id: number;
+    date: string;
+    chequeNo: string;
+    description: string;
+    debit: number | null;
+    credit: number | null;
+    balance: number;
+  };
+  type AdminBankEntry = AdminCashEntry;
+
+  const getAdminSriLankaDate = (): string => {
+    const now = new Date();
+    const local = new Date(now.getTime() + 330 * 60 * 1000);
+    return local.toISOString().slice(0, 10);
+  };
+
+  const [adminCashEntries, setAdminCashEntries] = useState<AdminCashEntry[]>([]);
+  const [adminCashSearch, setAdminCashSearch] = useState("");
+  const [adminCashSortOrder, setAdminCashSortOrder] = useState<"asc" | "desc">("asc");
+  const [adminCashAddModalOpen, setAdminCashAddModalOpen] = useState(false);
+  const [adminCashSuccessVisible, setAdminCashSuccessVisible] = useState(false);
+  const [adminCashTransactionType, setAdminCashTransactionType] = useState<"debit" | "credit">("debit");
+  const [adminCashForm, setAdminCashForm] = useState({
+    date: "",
+    chequeNo: "",
+    description: "",
+    amount: "",
+    prevBalance: "0.00",
+  });
+
+  const [adminBankEntries, setAdminBankEntries] = useState<AdminBankEntry[]>([]);
+  const [adminBankSearch, setAdminBankSearch] = useState("");
+  const [adminBankSortOrder, setAdminBankSortOrder] = useState<"asc" | "desc">("asc");
+  const [adminBankAddModalOpen, setAdminBankAddModalOpen] = useState(false);
+  const [adminBankSuccessVisible, setAdminBankSuccessVisible] = useState(false);
+  const [adminBankTransactionType, setAdminBankTransactionType] = useState<"debit" | "credit">("debit");
+  const [adminBankForm, setAdminBankForm] = useState({
+    date: "",
+    chequeNo: "",
+    description: "",
+    amount: "",
+    prevBalance: "0.00",
+  });
+  // ──────────────────────────────────────────────────────────────────────────
 
   // API data state
   const [machineries, setMachineries] = useState<MachineryRecord[]>([]);
@@ -2056,7 +2106,7 @@ export default function AdminDashboard() {
           })}
         </View>
 
-        {/* Peticash & Bonds - Side by Side Row */}
+        {/* Accounts & Bonds - Side by Side Row */}
         <View style={styles.cardsRow}>
           {(() => {
             const scaleValue = getCardScaleValue("petacash");
@@ -2067,14 +2117,18 @@ export default function AdminDashboard() {
                   styles.card,
                   { backgroundColor: "#b2f0b2", transform: [{ scale: scaleValue }] },
                 ]}
-                onPress={() => router.push("/peticash" as any)}
+                onPress={() => {
+                  setAdminCashForm((p) => ({ ...p, date: getAdminSriLankaDate() }));
+                  setAdminBankForm((p) => ({ ...p, date: getAdminSriLankaDate() }));
+                  setSelectedView("adminAccounts");
+                }}
               >
                 <Text style={styles.cardIcon}>💰</Text>
                 <ThemedText
                   type="smallBold"
                   style={[styles.cardTitle, { color: "#1f1d21" }]}
                 >
-                  Peticash
+                  Accounts
                 </ThemedText>
               </AnimatedPressable>
             );
@@ -2716,16 +2770,16 @@ export default function AdminDashboard() {
         </View>
 
         <View style={styles.personalDocumentsHeader}>
-            <Pressable
-              onPress={() => setSelectedView("personalSelection")}
-              style={styles.backButton}
-            >
-              <Text style={styles.backButtonIcon}>{"←"}</Text>
-            </Pressable>
-            <ThemedText type="subtitle" style={styles.personalDocumentsTitle}>
-              Personal Details & Documents
-            </ThemedText>
-          </View>
+          <Pressable
+            onPress={() => setSelectedView("personalSelection")}
+            style={styles.backButton}
+          >
+            <Text style={styles.backButtonIcon}>{"←"}</Text>
+          </Pressable>
+          <ThemedText type="subtitle" style={styles.personalDocumentsTitle}>
+            Personal Details & Documents
+          </ThemedText>
+        </View>
 
         <View style={styles.personalDocumentsSection}>
           {/* NOTES */}
@@ -3900,6 +3954,173 @@ export default function AdminDashboard() {
           </View>
         </ScrollView>
       </ScrollView>
+
+      {/* Approval History Grid */}
+      <View
+        style={[
+          {
+            backgroundColor: isDark ? "#1e1e1e" : "#fff",
+            borderRadius: 12,
+            padding: 12,
+            marginTop: 8,
+            marginHorizontal: 0,
+          },
+        ]}
+      >
+        <ThemedText
+          type="subtitle"
+          style={{ marginBottom: 12, color: isDark ? "#fff" : "#1f1d21" }}
+        >
+          Approval History
+        </ThemedText>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <View style={{ minWidth: "100%" }}>
+            <View
+              style={[
+                styles.tableCard,
+                { borderColor: "#16a34a", borderWidth: 2 },
+              ]}
+            >
+              {/* Header */}
+              <View style={[styles.tableRow, styles.tableHeaderRow]}>
+                <Text
+                  style={[
+                    styles.tableCell,
+                    styles.tableHeaderCell,
+                    styles.approvalCellID,
+                  ]}
+                >
+                  ID
+                </Text>
+                <Text
+                  style={[
+                    styles.tableCell,
+                    styles.tableHeaderCell,
+                    styles.approvalCellDescription,
+                  ]}
+                >
+                  Description
+                </Text>
+                <Text
+                  style={[
+                    styles.tableCell,
+                    styles.tableHeaderCell,
+                    styles.approvalCellAmount,
+                  ]}
+                >
+                  Amount
+                </Text>
+                <Text
+                  style={[
+                    styles.tableCell,
+                    styles.tableHeaderCell,
+                    styles.approvalCellDate,
+                  ]}
+                >
+                  Date
+                </Text>
+                <Text
+                  style={[
+                    styles.tableCell,
+                    styles.tableHeaderCell,
+                    styles.approvalCellHolder,
+                  ]}
+                >
+                  Holder
+                </Text>
+              </View>
+
+              {/* Rows */}
+              <ScrollView
+                style={{ maxHeight: 240 }}
+                showsVerticalScrollIndicator={false}
+                nestedScrollEnabled
+              >
+                {filteredApprovals.filter(
+                  (a: any) => a.status?.toLowerCase() === "approved"
+                ).length === 0 ? (
+                  <View
+                    style={{ paddingVertical: 16, alignItems: "center" }}
+                  >
+                    <Text
+                      style={{
+                        color: isDark ? "#aaa" : "#888",
+                        fontSize: 13,
+                      }}
+                    >
+                      No approved records yet.
+                    </Text>
+                  </View>
+                ) : (
+                  filteredApprovals
+                    .filter(
+                      (a: any) => a.status?.toLowerCase() === "approved"
+                    )
+                    .map((item: any, index: number) => (
+                      <View
+                        key={item.id}
+                        style={[
+                          styles.tableRow,
+                          index % 2 === 0
+                            ? {
+                              backgroundColor: isDark
+                                ? "#2a2a2a"
+                                : "#f9f9f9",
+                            }
+                            : {
+                              backgroundColor: isDark ? "#1e1e1e" : "#fff",
+                            },
+                          { borderLeftWidth: 3, borderLeftColor: "#16a34a" },
+                        ]}
+                      >
+                        <Text
+                          style={[styles.tableCell, styles.approvalCellID]}
+                          numberOfLines={1}
+                        >
+                          {item.id}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.tableCell,
+                            styles.approvalCellDescription,
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {item.description}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.tableCell,
+                            styles.approvalCellAmount,
+                            { color: "#16a34a", fontWeight: "600" },
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {item.amount ?? "-"}
+                        </Text>
+                        <Text
+                          style={[styles.tableCell, styles.approvalCellDate]}
+                          numberOfLines={1}
+                        >
+                          {item.date ?? "-"}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.tableCell,
+                            styles.approvalCellHolder,
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {item.holder ?? "-"}
+                        </Text>
+                      </View>
+                    ))
+                )}
+              </ScrollView>
+            </View>
+          </View>
+        </ScrollView>
+      </View>
     </View>
   );
 
@@ -4175,6 +4396,577 @@ export default function AdminDashboard() {
     </View>
   );
 
+  // ── renderAdminAccountsView ─────────────────────────────────────────────
+  const renderAdminAccountsView = () => (
+    <View style={styles.personalContainer}>
+      {/* Greeting + Sign Out */}
+      <View style={[styles.headerSection, styles.greetingContainer, { flexDirection: "row", justifyContent: "space-between", alignItems: "center" }]}>
+        <ThemedText type="subtitle" style={styles.greeting}>
+          Hii {user?.name || "Admin"}, Welcome!
+        </ThemedText>
+        <Pressable
+          onPress={async () => { await signOut(); router.replace("/"); }}
+          style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: isDark ? "#333" : "#e0e0e0", borderRadius: 8 }}
+        >
+          <Text style={{ fontSize: 13, fontWeight: "600", color: isDark ? "#fff" : "#000" }}>Sign Out</Text>
+        </Pressable>
+      </View>
+
+      {/* Header row with Back */}
+      <View style={styles.personalHeader}>
+        <Pressable style={styles.backButton} onPress={() => setSelectedView("dashboard")}>
+          <Text style={styles.backButtonIcon}>‹</Text>
+        </Pressable>
+        <ThemedText type="subtitle" style={styles.personalTitle}>Accounts</ThemedText>
+        <View style={{ width: 44 }} />
+      </View>
+
+      {/* Tile buttons */}
+      <View style={[styles.tableCard, { padding: 24, gap: 16 }]}>
+        <Pressable
+          style={[
+            styles.addSiteButton,
+            { backgroundColor: "#c0392b", paddingVertical: 22, borderRadius: 16 },
+          ]}
+          onPress={() => {
+            setAdminCashForm((p) => ({ ...p, date: getAdminSriLankaDate(), prevBalance: "0.00" }));
+            setSelectedView("adminCashInHand");
+          }}
+        >
+          <Text style={[styles.addSiteButtonText, { fontSize: 16 }]}>💵  Cash in Hand</Text>
+        </Pressable>
+
+        <Pressable
+          style={[
+            styles.addSiteButton,
+            { backgroundColor: "#a89080", paddingVertical: 22, borderRadius: 16 },
+          ]}
+          onPress={() => {
+            setAdminBankForm((p) => ({ ...p, date: getAdminSriLankaDate(), prevBalance: "0.00" }));
+            setSelectedView("adminBank");
+          }}
+        >
+          <Text style={[styles.addSiteButtonText, { fontSize: 16 }]}>{"🏦  Bank"}</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+
+  // ── renderAdminCashInHandView ───────────────────────────────────────────
+  const renderAdminCashInHandView = () => {
+    const totalDebit = adminCashEntries.reduce((s, e) => s + (e.debit ?? 0), 0);
+    const totalCredit = adminCashEntries.reduce((s, e) => s + (e.credit ?? 0), 0);
+    const currentBalance = totalCredit - totalDebit;
+
+    const filtered = adminCashEntries
+      .filter(
+        (e) =>
+          e.chequeNo.toLowerCase().includes(adminCashSearch.toLowerCase()) ||
+          e.description.toLowerCase().includes(adminCashSearch.toLowerCase())
+      )
+      .sort((a, b) => {
+        const da = new Date(a.date).getTime();
+        const db = new Date(b.date).getTime();
+        return adminCashSortOrder === "asc" ? da - db : db - da;
+      });
+
+    const handleAdd = () => {
+      if (!adminCashForm.date) { Alert.alert("Validation", "Date is required."); return; }
+      const debit = adminCashTransactionType === "debit" && adminCashForm.amount ? parseFloat(adminCashForm.amount) : null;
+      const credit = adminCashTransactionType === "credit" && adminCashForm.amount ? parseFloat(adminCashForm.amount) : null;
+      const prev = parseFloat(adminCashForm.prevBalance || "0");
+      const newBalance = prev + (credit ?? 0) - (debit ?? 0);
+      const entry: AdminCashEntry = {
+        id: Date.now(),
+        date: adminCashForm.date,
+        chequeNo: adminCashForm.chequeNo,
+        description: adminCashForm.description,
+        debit,
+        credit,
+        balance: newBalance,
+      };
+      setAdminCashEntries((prev2) => [...prev2, entry]);
+      setAdminCashForm({ date: getAdminSriLankaDate(), chequeNo: "", description: "", amount: "", prevBalance: "0.00" });
+      setAdminCashTransactionType("debit");
+      setAdminCashAddModalOpen(false);
+      setAdminCashSuccessVisible(true);
+    };
+
+    const columns = ["Date", "Cheque No", "Description", "Debit", "Credit", "Balance"];
+
+    return (
+      <View style={styles.personalContainer}>
+        {/* Greeting */}
+        <View style={[styles.headerSection, styles.greetingContainer, { flexDirection: "row", justifyContent: "space-between", alignItems: "center" }]}>
+          <ThemedText type="subtitle" style={styles.greeting}>
+            Hii {user?.name || "Admin"}, Welcome!
+          </ThemedText>
+          <Pressable
+            onPress={async () => { await signOut(); router.replace("/"); }}
+            style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: isDark ? "#333" : "#e0e0e0", borderRadius: 8 }}
+          >
+            <Text style={{ fontSize: 13, fontWeight: "600", color: isDark ? "#fff" : "#000" }}>Sign Out</Text>
+          </Pressable>
+        </View>
+
+        {/* Header */}
+        <View style={styles.personalHeader}>
+          <Pressable style={styles.backButton} onPress={() => setSelectedView("adminAccounts")}>
+            <Text style={styles.backButtonIcon}>‹</Text>
+          </Pressable>
+          <ThemedText type="subtitle" style={styles.personalTitle}>Cash In Hand</ThemedText>
+          <View style={{ width: 44 }} />
+        </View>
+
+        {/* Main card */}
+        <View style={[styles.tableCard, { padding: 16, gap: 12 }]}>
+          {/* Controls */}
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <View style={[styles.searchContainer, { flex: 1, minWidth: 120 }]}>
+              <Text style={styles.searchIcon}>🔍</Text>
+              <TextInput
+                value={adminCashSearch}
+                onChangeText={setAdminCashSearch}
+                placeholder="Search Cheque No"
+                placeholderTextColor={isDark ? "#b0b0b0" : "#8a8a8f"}
+                style={styles.searchInput}
+              />
+            </View>
+            <Pressable
+              style={[styles.addSiteButton, { backgroundColor: adminCashSortOrder === "asc" ? "#6366f1" : "#f59e0b", paddingVertical: 9, paddingHorizontal: 14, borderRadius: 20 }]}
+              onPress={() => setAdminCashSortOrder((p) => (p === "asc" ? "desc" : "asc"))}
+            >
+              <Text style={styles.addSiteButtonText}>{adminCashSortOrder === "asc" ? "↑ Asc" : "↓ Desc"}</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.addSiteButton, { backgroundColor: "#3b82f6", paddingVertical: 9, paddingHorizontal: 14, borderRadius: 20 }]}
+              onPress={() => { setAdminCashForm((p) => ({ ...p, date: getAdminSriLankaDate() })); setAdminCashAddModalOpen(true); }}
+            >
+              <Text style={styles.addSiteButtonText}>＋ Add</Text>
+            </Pressable>
+          </View>
+
+          {/* Table */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={{ minWidth: 540 }}>
+              <View style={[styles.tableRow, styles.tableHeaderRow]}>
+                {columns.map((col) => (
+                  <Text key={col} style={[styles.tableCell, styles.tableHeaderCell, { width: 90, textAlign: "center" }]}>{col}</Text>
+                ))}
+              </View>
+              <ScrollView style={{ maxHeight: 280 }} showsVerticalScrollIndicator={false} nestedScrollEnabled>
+                {filtered.length === 0 ? (
+                  <View style={styles.emptyRow}><Text style={styles.emptyText}>No records found</Text></View>
+                ) : (
+                  filtered.map((entry, idx) => (
+                    <View key={entry.id} style={[styles.tableRow, { backgroundColor: idx % 2 === 0 ? (isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)") : "transparent" }]}>
+                      <Text style={[styles.tableCell, { width: 90, textAlign: "center" }]} numberOfLines={1}>{entry.date}</Text>
+                      <Text style={[styles.tableCell, { width: 90, textAlign: "center" }]} numberOfLines={1}>{entry.chequeNo || "-"}</Text>
+                      <Text style={[styles.tableCell, { width: 90, textAlign: "center" }]} numberOfLines={1}>{entry.description || "-"}</Text>
+                      <Text style={[styles.tableCell, { width: 90, textAlign: "center" }]} numberOfLines={1}>{entry.debit != null ? entry.debit.toFixed(2) : "-"}</Text>
+                      <Text style={[styles.tableCell, { width: 90, textAlign: "center" }]} numberOfLines={1}>{entry.credit != null ? entry.credit.toFixed(2) : "-"}</Text>
+                      <Text style={[styles.tableCell, { width: 90, textAlign: "center" }]} numberOfLines={1}>{entry.balance.toFixed(2)}</Text>
+                    </View>
+                  ))
+                )}
+              </ScrollView>
+            </View>
+          </ScrollView>
+
+          {/* Summary */}
+          <View style={{ borderTopWidth: 1, borderTopColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.07)", paddingTop: 12, gap: 8 }}>
+            {[
+              { label: "Total Debit Balance", value: totalDebit },
+              { label: "Total Credit Balance", value: totalCredit },
+              { label: "Current Cash Balance", value: currentBalance },
+            ].map((row) => (
+              <View key={row.label} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                <Text style={{ fontSize: 14, fontWeight: "500", color: isDark ? "#e0e0e0" : "#1f1d21" }}>{row.label}</Text>
+                <View style={{ borderRadius: 20, paddingHorizontal: 18, paddingVertical: 7, minWidth: 110, alignItems: "center", backgroundColor: isDark ? "#333" : "#e5e7eb" }}>
+                  <Text style={{ fontSize: 13, fontWeight: "600", color: isDark ? "#fff" : "#1f1d21" }}>{row.value.toFixed(2)}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Add Modal */}
+        <Modal visible={adminCashAddModalOpen} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalCard, { backgroundColor: isDark ? "#1e1e1e" : "#fff" }]}>
+              <View style={styles.modalHeader}>
+                <ThemedText type="title">Add Entry</ThemedText>
+                <Pressable style={styles.modalClose} onPress={() => setAdminCashAddModalOpen(false)}>
+                  <Text style={styles.modalCloseText}>✕</Text>
+                </Pressable>
+              </View>
+              <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+                {/* Prev Balance */}
+                <View style={styles.formRow}>
+                  <Text style={styles.formLabel}>Previous Month Cash In Hand Balance</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="0.00"
+                    placeholderTextColor="#aaa"
+                    keyboardType="decimal-pad"
+                    value={adminCashForm.prevBalance}
+                    onChangeText={(v) => setAdminCashForm((p) => ({ ...p, prevBalance: v }))}
+                  />
+                </View>
+                {/* Date */}
+                <View style={styles.formRow}>
+                  <Text style={styles.formLabel}>Date (YYYY-MM-DD)</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor="#aaa"
+                    value={adminCashForm.date}
+                    onChangeText={(v) => setAdminCashForm((p) => ({ ...p, date: v }))}
+                  />
+                </View>
+                {/* Cheque No */}
+                <View style={styles.formRow}>
+                  <Text style={styles.formLabel}>Cheque No</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="e.g. CHQ-001"
+                    placeholderTextColor="#aaa"
+                    value={adminCashForm.chequeNo}
+                    onChangeText={(v) => setAdminCashForm((p) => ({ ...p, chequeNo: v }))}
+                  />
+                </View>
+                {/* Description */}
+                <View style={styles.formRow}>
+                  <Text style={styles.formLabel}>Description</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="Enter description"
+                    placeholderTextColor="#aaa"
+                    value={adminCashForm.description}
+                    onChangeText={(v) => setAdminCashForm((p) => ({ ...p, description: v }))}
+                  />
+                </View>
+                {/* Transaction Type */}
+                <View style={styles.formRow}>
+                  <Text style={styles.formLabel}>Transaction Type</Text>
+                  <View style={{ flexDirection: "row", gap: 10, marginTop: 4 }}>
+                    <Pressable
+                      onPress={() => setAdminCashTransactionType("debit")}
+                      style={[{ paddingVertical: 9, paddingHorizontal: 20, borderRadius: 24, borderWidth: 1.5, alignItems: "center", minWidth: 90 },
+                      adminCashTransactionType === "debit" ? { backgroundColor: "#ef4444", borderColor: "#ef4444" } : { backgroundColor: "transparent", borderColor: "#ef4444" }]}
+                    >
+                      <Text style={{ fontWeight: "700", fontSize: 14, color: adminCashTransactionType === "debit" ? "#fff" : "#ef4444" }}>Debit</Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => setAdminCashTransactionType("credit")}
+                      style={[{ paddingVertical: 9, paddingHorizontal: 20, borderRadius: 24, borderWidth: 1.5, alignItems: "center", minWidth: 90 },
+                      adminCashTransactionType === "credit" ? { backgroundColor: "#22c55e", borderColor: "#22c55e" } : { backgroundColor: "transparent", borderColor: "#22c55e" }]}
+                    >
+                      <Text style={{ fontWeight: "700", fontSize: 14, color: adminCashTransactionType === "credit" ? "#fff" : "#22c55e" }}>Credit</Text>
+                    </Pressable>
+                  </View>
+                </View>
+                {/* Amount */}
+                <View style={styles.formRow}>
+                  <Text style={[styles.formLabel, { color: adminCashTransactionType === "debit" ? "#ef4444" : "#22c55e" }]}>
+                    {adminCashTransactionType === "debit" ? "Debit Amount" : "Credit Amount"}
+                  </Text>
+                  <TextInput
+                    style={[styles.formInput, { borderColor: adminCashTransactionType === "debit" ? "#ef4444" : "#22c55e", borderWidth: 1.5 }]}
+                    placeholder="0.00"
+                    placeholderTextColor="#aaa"
+                    keyboardType="decimal-pad"
+                    value={adminCashForm.amount}
+                    onChangeText={(v) => setAdminCashForm((p) => ({ ...p, amount: v }))}
+                  />
+                </View>
+              </ScrollView>
+              <View style={styles.modalFooter}>
+                <Pressable style={[styles.addSiteButton, { backgroundColor: "#3b82f6" }]} onPress={handleAdd}>
+                  <Text style={styles.addSiteButtonText}>Save Entry</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Success banner */}
+        {adminCashSuccessVisible && (
+          <Modal visible transparent animationType="fade">
+            <View style={styles.modalOverlay}>
+              <View style={[styles.modalCard, { backgroundColor: isDark ? "#1e1e1e" : "#fff", padding: 28, alignItems: "center" }]}>
+                <Text style={{ fontSize: 32, marginBottom: 8 }}>✅</Text>
+                <ThemedText type="title" style={{ marginBottom: 6 }}>Entry Added!</ThemedText>
+                <Text style={{ color: isDark ? "#ccc" : "#666", marginBottom: 20, textAlign: "center" }}>The new cash-in-hand entry has been saved successfully.</Text>
+                <Pressable style={[styles.addSiteButton, { backgroundColor: "#3b82f6" }]} onPress={() => setAdminCashSuccessVisible(false)}>
+                  <Text style={styles.addSiteButtonText}>OK</Text>
+                </Pressable>
+              </View>
+            </View>
+          </Modal>
+        )}
+      </View>
+    );
+  };
+
+  // ── renderAdminBankView ─────────────────────────────────────────────────
+  const renderAdminBankView = () => {
+    const totalDebit = adminBankEntries.reduce((s, e) => s + (e.debit ?? 0), 0);
+    const totalCredit = adminBankEntries.reduce((s, e) => s + (e.credit ?? 0), 0);
+    const currentBalance = totalCredit - totalDebit;
+
+    const filtered = adminBankEntries
+      .filter(
+        (e) =>
+          e.chequeNo.toLowerCase().includes(adminBankSearch.toLowerCase()) ||
+          e.description.toLowerCase().includes(adminBankSearch.toLowerCase())
+      )
+      .sort((a, b) => {
+        const da = new Date(a.date).getTime();
+        const db = new Date(b.date).getTime();
+        return adminBankSortOrder === "asc" ? da - db : db - da;
+      });
+
+    const handleAdd = () => {
+      if (!adminBankForm.date) { Alert.alert("Validation", "Date is required."); return; }
+      const debit = adminBankTransactionType === "debit" && adminBankForm.amount ? parseFloat(adminBankForm.amount) : null;
+      const credit = adminBankTransactionType === "credit" && adminBankForm.amount ? parseFloat(adminBankForm.amount) : null;
+      const prev = parseFloat(adminBankForm.prevBalance || "0");
+      const newBalance = prev + (credit ?? 0) - (debit ?? 0);
+      const entry: AdminBankEntry = {
+        id: Date.now(),
+        date: adminBankForm.date,
+        chequeNo: adminBankForm.chequeNo,
+        description: adminBankForm.description,
+        debit,
+        credit,
+        balance: newBalance,
+      };
+      setAdminBankEntries((prev2) => [...prev2, entry]);
+      setAdminBankForm({ date: getAdminSriLankaDate(), chequeNo: "", description: "", amount: "", prevBalance: "0.00" });
+      setAdminBankTransactionType("debit");
+      setAdminBankAddModalOpen(false);
+      setAdminBankSuccessVisible(true);
+    };
+
+    const columns = ["Date", "Cheque No", "Description", "Debit", "Credit", "Balance"];
+
+    return (
+      <View style={styles.personalContainer}>
+        {/* Greeting */}
+        <View style={[styles.headerSection, styles.greetingContainer, { flexDirection: "row", justifyContent: "space-between", alignItems: "center" }]}>
+          <ThemedText type="subtitle" style={styles.greeting}>
+            Hii {user?.name || "Admin"}, Welcome!
+          </ThemedText>
+          <Pressable
+            onPress={async () => { await signOut(); router.replace("/"); }}
+            style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: isDark ? "#333" : "#e0e0e0", borderRadius: 8 }}
+          >
+            <Text style={{ fontSize: 13, fontWeight: "600", color: isDark ? "#fff" : "#000" }}>Sign Out</Text>
+          </Pressable>
+        </View>
+
+        {/* Header */}
+        <View style={styles.personalHeader}>
+          <Pressable style={styles.backButton} onPress={() => setSelectedView("adminAccounts")}>
+            <Text style={styles.backButtonIcon}>‹</Text>
+          </Pressable>
+          <ThemedText type="subtitle" style={styles.personalTitle}>Bank</ThemedText>
+          <View style={{ width: 44 }} />
+        </View>
+
+        {/* Main card */}
+        <View style={[styles.tableCard, { padding: 16, gap: 12 }]}>
+          {/* Controls */}
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <View style={[styles.searchContainer, { flex: 1, minWidth: 120 }]}>
+              <Text style={styles.searchIcon}>🔍</Text>
+              <TextInput
+                value={adminBankSearch}
+                onChangeText={setAdminBankSearch}
+                placeholder="Search Cheque No"
+                placeholderTextColor={isDark ? "#b0b0b0" : "#8a8a8f"}
+                style={styles.searchInput}
+              />
+            </View>
+            <Pressable
+              style={[styles.addSiteButton, { backgroundColor: adminBankSortOrder === "asc" ? "#6366f1" : "#f59e0b", paddingVertical: 9, paddingHorizontal: 14, borderRadius: 20 }]}
+              onPress={() => setAdminBankSortOrder((p) => (p === "asc" ? "desc" : "asc"))}
+            >
+              <Text style={styles.addSiteButtonText}>{adminBankSortOrder === "asc" ? "↑ Asc" : "↓ Desc"}</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.addSiteButton, { backgroundColor: "#3b82f6", paddingVertical: 9, paddingHorizontal: 14, borderRadius: 20 }]}
+              onPress={() => { setAdminBankForm((p) => ({ ...p, date: getAdminSriLankaDate() })); setAdminBankAddModalOpen(true); }}
+            >
+              <Text style={styles.addSiteButtonText}>＋ Add</Text>
+            </Pressable>
+          </View>
+
+          {/* Table */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={{ minWidth: 540 }}>
+              <View style={[styles.tableRow, styles.tableHeaderRow]}>
+                {columns.map((col) => (
+                  <Text key={col} style={[styles.tableCell, styles.tableHeaderCell, { width: 90, textAlign: "center" }]}>{col}</Text>
+                ))}
+              </View>
+              <ScrollView style={{ maxHeight: 280 }} showsVerticalScrollIndicator={false} nestedScrollEnabled>
+                {filtered.length === 0 ? (
+                  <View style={styles.emptyRow}><Text style={styles.emptyText}>No records found</Text></View>
+                ) : (
+                  filtered.map((entry, idx) => (
+                    <View key={entry.id} style={[styles.tableRow, { backgroundColor: idx % 2 === 0 ? (isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)") : "transparent" }]}>
+                      <Text style={[styles.tableCell, { width: 90, textAlign: "center" }]} numberOfLines={1}>{entry.date}</Text>
+                      <Text style={[styles.tableCell, { width: 90, textAlign: "center" }]} numberOfLines={1}>{entry.chequeNo || "-"}</Text>
+                      <Text style={[styles.tableCell, { width: 90, textAlign: "center" }]} numberOfLines={1}>{entry.description || "-"}</Text>
+                      <Text style={[styles.tableCell, { width: 90, textAlign: "center" }]} numberOfLines={1}>{entry.debit != null ? entry.debit.toFixed(2) : "-"}</Text>
+                      <Text style={[styles.tableCell, { width: 90, textAlign: "center" }]} numberOfLines={1}>{entry.credit != null ? entry.credit.toFixed(2) : "-"}</Text>
+                      <Text style={[styles.tableCell, { width: 90, textAlign: "center" }]} numberOfLines={1}>{entry.balance.toFixed(2)}</Text>
+                    </View>
+                  ))
+                )}
+              </ScrollView>
+            </View>
+          </ScrollView>
+
+          {/* Summary */}
+          <View style={{ borderTopWidth: 1, borderTopColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.07)", paddingTop: 12, gap: 8 }}>
+            {[
+              { label: "Total Debit Balance", value: totalDebit },
+              { label: "Total Credit Balance", value: totalCredit },
+              { label: "Current Bank Balance", value: currentBalance },
+            ].map((row) => (
+              <View key={row.label} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                <Text style={{ fontSize: 14, fontWeight: "500", color: isDark ? "#e0e0e0" : "#1f1d21" }}>{row.label}</Text>
+                <View style={{ borderRadius: 20, paddingHorizontal: 18, paddingVertical: 7, minWidth: 110, alignItems: "center", backgroundColor: isDark ? "#333" : "#e5e7eb" }}>
+                  <Text style={{ fontSize: 13, fontWeight: "600", color: isDark ? "#fff" : "#1f1d21" }}>{row.value.toFixed(2)}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Add Modal */}
+        <Modal visible={adminBankAddModalOpen} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalCard, { backgroundColor: isDark ? "#1e1e1e" : "#fff" }]}>
+              <View style={styles.modalHeader}>
+                <ThemedText type="title">Add Entry</ThemedText>
+                <Pressable style={styles.modalClose} onPress={() => setAdminBankAddModalOpen(false)}>
+                  <Text style={styles.modalCloseText}>✕</Text>
+                </Pressable>
+              </View>
+              <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+                {/* Prev Balance */}
+                <View style={styles.formRow}>
+                  <Text style={styles.formLabel}>Previous Month Bank Balance</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="0.00"
+                    placeholderTextColor="#aaa"
+                    keyboardType="decimal-pad"
+                    value={adminBankForm.prevBalance}
+                    onChangeText={(v) => setAdminBankForm((p) => ({ ...p, prevBalance: v }))}
+                  />
+                </View>
+                {/* Date */}
+                <View style={styles.formRow}>
+                  <Text style={styles.formLabel}>Date (YYYY-MM-DD)</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor="#aaa"
+                    value={adminBankForm.date}
+                    onChangeText={(v) => setAdminBankForm((p) => ({ ...p, date: v }))}
+                  />
+                </View>
+                {/* Cheque No */}
+                <View style={styles.formRow}>
+                  <Text style={styles.formLabel}>Cheque No</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="e.g. CHQ-001"
+                    placeholderTextColor="#aaa"
+                    value={adminBankForm.chequeNo}
+                    onChangeText={(v) => setAdminBankForm((p) => ({ ...p, chequeNo: v }))}
+                  />
+                </View>
+                {/* Description */}
+                <View style={styles.formRow}>
+                  <Text style={styles.formLabel}>Description</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="Enter description"
+                    placeholderTextColor="#aaa"
+                    value={adminBankForm.description}
+                    onChangeText={(v) => setAdminBankForm((p) => ({ ...p, description: v }))}
+                  />
+                </View>
+                {/* Transaction Type */}
+                <View style={styles.formRow}>
+                  <Text style={styles.formLabel}>Transaction Type</Text>
+                  <View style={{ flexDirection: "row", gap: 10, marginTop: 4 }}>
+                    <Pressable
+                      onPress={() => setAdminBankTransactionType("debit")}
+                      style={[{ paddingVertical: 9, paddingHorizontal: 20, borderRadius: 24, borderWidth: 1.5, alignItems: "center", minWidth: 90 },
+                      adminBankTransactionType === "debit" ? { backgroundColor: "#ef4444", borderColor: "#ef4444" } : { backgroundColor: "transparent", borderColor: "#ef4444" }]}
+                    >
+                      <Text style={{ fontWeight: "700", fontSize: 14, color: adminBankTransactionType === "debit" ? "#fff" : "#ef4444" }}>Debit</Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => setAdminBankTransactionType("credit")}
+                      style={[{ paddingVertical: 9, paddingHorizontal: 20, borderRadius: 24, borderWidth: 1.5, alignItems: "center", minWidth: 90 },
+                      adminBankTransactionType === "credit" ? { backgroundColor: "#22c55e", borderColor: "#22c55e" } : { backgroundColor: "transparent", borderColor: "#22c55e" }]}
+                    >
+                      <Text style={{ fontWeight: "700", fontSize: 14, color: adminBankTransactionType === "credit" ? "#fff" : "#22c55e" }}>Credit</Text>
+                    </Pressable>
+                  </View>
+                </View>
+                {/* Amount */}
+                <View style={styles.formRow}>
+                  <Text style={[styles.formLabel, { color: adminBankTransactionType === "debit" ? "#ef4444" : "#22c55e" }]}>
+                    {adminBankTransactionType === "debit" ? "Debit Amount" : "Credit Amount"}
+                  </Text>
+                  <TextInput
+                    style={[styles.formInput, { borderColor: adminBankTransactionType === "debit" ? "#ef4444" : "#22c55e", borderWidth: 1.5 }]}
+                    placeholder="0.00"
+                    placeholderTextColor="#aaa"
+                    keyboardType="decimal-pad"
+                    value={adminBankForm.amount}
+                    onChangeText={(v) => setAdminBankForm((p) => ({ ...p, amount: v }))}
+                  />
+                </View>
+              </ScrollView>
+              <View style={styles.modalFooter}>
+                <Pressable style={[styles.addSiteButton, { backgroundColor: "#3b82f6" }]} onPress={handleAdd}>
+                  <Text style={styles.addSiteButtonText}>Save Entry</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Success banner */}
+        {adminBankSuccessVisible && (
+          <Modal visible transparent animationType="fade">
+            <View style={styles.modalOverlay}>
+              <View style={[styles.modalCard, { backgroundColor: isDark ? "#1e1e1e" : "#fff", padding: 28, alignItems: "center" }]}>
+                <Text style={{ fontSize: 32, marginBottom: 8 }}>✅</Text>
+                <ThemedText type="title" style={{ marginBottom: 6 }}>Entry Added!</ThemedText>
+                <Text style={{ color: isDark ? "#ccc" : "#666", marginBottom: 20, textAlign: "center" }}>The new bank entry has been saved successfully.</Text>
+                <Pressable style={[styles.addSiteButton, { backgroundColor: "#3b82f6" }]} onPress={() => setAdminBankSuccessVisible(false)}>
+                  <Text style={styles.addSiteButtonText}>OK</Text>
+                </Pressable>
+              </View>
+            </View>
+          </Modal>
+        )}
+      </View>
+    );
+  };
+  // ───────────────────────────────────────────────────────────────────────
+
   return (
     <ThemedView style={styles.container}>
       <View style={[styles.background, { backgroundColor: isDark ? "#121212" : "#F1E7DF" }]} />
@@ -4212,7 +5004,13 @@ export default function AdminDashboard() {
                             ? renderPersonalDocumentsView()
                             : selectedView === "manageSite"
                               ? renderManageSiteView()
-                              : null}
+                              : selectedView === "adminAccounts"
+                                ? renderAdminAccountsView()
+                                : selectedView === "adminCashInHand"
+                                  ? renderAdminCashInHandView()
+                                  : selectedView === "adminBank"
+                                    ? renderAdminBankView()
+                                    : null}
         </ScrollView>
       )}
       {renderUpdateModal()}
@@ -4582,6 +5380,27 @@ const createStyles = (isDark: boolean) =>
       shadowOffset: { width: 0, height: 12 },
       elevation: 8,
     },
+    modalCard: {
+      width: "100%",
+      maxHeight: "85%" as any,
+      borderRadius: 28,
+      overflow: "hidden" as const,
+      shadowColor: "#000",
+      shadowOpacity: 0.15,
+      shadowRadius: 24,
+      shadowOffset: { width: 0, height: 12 },
+      elevation: 10,
+    },
+    modalBody: {
+      paddingHorizontal: Spacing.four,
+      paddingVertical: Spacing.three,
+    },
+    modalFooter: {
+      paddingHorizontal: Spacing.four,
+      paddingVertical: Spacing.three,
+      borderTopWidth: 1,
+      borderTopColor: "rgba(0,0,0,0.1)",
+    },
     modalHeader: {
       flexDirection: "row",
       justifyContent: "center",
@@ -4596,8 +5415,8 @@ const createStyles = (isDark: boolean) =>
     },
     modalClose: {
       position: "absolute",
-      right: 0,
-      top: 0,
+      right: 10,
+      top: 10,
       width: 32,
       height: 32,
       borderRadius: 16,

@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
-import { Pressable, SafeAreaView, StyleSheet, View, Platform} from 'react-native';
+import { Pressable, SafeAreaView, StyleSheet, View, Platform, Image } from 'react-native';
 import { BackgroundPattern } from '@/components/BackgroundPattern';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -25,11 +25,15 @@ export default function BondsPage() {
           <ThemedText type="title" style={styles.pageTitle}>Bonds</ThemedText>
         </View>
 
-        <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}>
+        <View style={styles.card}>
           <View style={styles.tileGrid}>
             <Pressable style={styles.tile} onPress={() => router.push('/bid-bonds')}>
               <View style={{ width: '100%', alignItems: 'center', marginBottom: Spacing.two, marginTop: 16 }}>
-                <View style={[styles.imagePlaceholder, { backgroundColor: '#4f8ef7' }]} />
+                <Image
+                  source={require('../../assets/images/Bid Bond.png')}
+                  style={styles.imagePlaceholder}
+                  resizeMode="contain"
+                />
               </View>
               <View style={styles.tileText}>
                 <ThemedText type="subtitle" style={styles.tileTitle}>Bid Bonds</ThemedText>
@@ -38,7 +42,11 @@ export default function BondsPage() {
 
             <Pressable style={styles.tile} onPress={() => router.push('/performance-bonds')}>
               <View style={{ width: '100%', alignItems: 'center', marginBottom: Spacing.two, marginTop: 16 }}>
-                <View style={[styles.imagePlaceholder, { backgroundColor: '#28a745' }]} />
+                <Image
+                  source={require('../../assets/images/Performance Bond.png')}
+                  style={styles.imagePlaceholder}
+                  resizeMode="contain"
+                />
               </View>
               <View style={styles.tileText}>
                 <ThemedText type="subtitle" style={styles.tileTitle}>Performance Bonds</ThemedText>
@@ -57,9 +65,9 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, marginBottom: Spacing.four },
   backButton: { padding: Spacing.two, borderRadius: 16 },
   pageTitle: { flex: 1, textAlign: 'center', color: theme.text },
-  card: { width: '100%', borderRadius: 28, padding: Spacing.four, backgroundColor: theme.backgroundElement, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 18, shadowOffset: { width: 0, height: 12 }, elevation: 10 },
+  card: { width: '100%', borderRadius: 28, padding: Spacing.four, backgroundColor: '#ffffff', shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 18, shadowOffset: { width: 0, height: 12 }, elevation: 10 },
   tileGrid: { width: '100%', flexDirection: 'column', gap: Spacing.three },
-  tile: { width: '100%', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', paddingVertical: Spacing.four, paddingHorizontal: Spacing.three, backgroundColor: 'transparent', borderRadius: 24, borderWidth: 1, borderColor: theme.backgroundSelected, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 6 }, elevation: 3, minHeight: 130 },
+  tile: { width: '100%', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', paddingVertical: Spacing.four, paddingHorizontal: Spacing.three, backgroundColor: 'transparent', borderRadius: 1, borderWidth: 0.8, borderColor: 'rgba(0, 0, 0, 0.1)', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 6 }, elevation: 3, minHeight: 130 },
   imagePlaceholder: { width: 48, height: 48, borderRadius: 14, marginBottom: Spacing.two, alignSelf: 'center' },
   tileText: { alignItems: 'center', width: '100%' },
   tileTitle: { fontSize: 15, fontWeight: '700', color: theme.text, textAlign: 'center', flexWrap: 'wrap' },

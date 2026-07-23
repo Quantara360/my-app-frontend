@@ -221,7 +221,7 @@ export default function PeticashPage() {
             <Text style={{ fontSize: 20, color: '#555', fontWeight: 'bold' }}>{'\u2190'}</Text>
           </Pressable>
           <ThemedText type="title" style={styles.pageTitle}>
-            Peticash
+            Accounts
           </ThemedText>
         </View>
 
@@ -235,21 +235,22 @@ export default function PeticashPage() {
               </Pressable>
               {filterPickerOpen && (
                 <View style={[styles.statusOptions, { position: 'absolute', top: 40, left: 0, right: 0, zIndex: 20 }]}>
-                    <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled={true}> 
-                  <Pressable style={styles.statusOption} onPress={() => { setSiteFilter(null); setFilterPickerOpen(false); }}>
-                    <Text style={styles.statusOptionText} numberOfLines={1}>All Sites</Text>
-                  </Pressable>
-                  {worksites.map((site) => (
-                    <Pressable key={site.id} style={styles.statusOption} onPress={() => { setSiteFilter(site.id); setFilterPickerOpen(false); }}>
-                      <Text style={styles.statusOptionText} numberOfLines={1}>{site.name}</Text>
+                  <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled={true}>
+                    <Pressable style={styles.statusOption} onPress={() => { setSiteFilter(null); setFilterPickerOpen(false); }}>
+                      <Text style={styles.statusOptionText} numberOfLines={1}>All Sites</Text>
                     </Pressable>
-                  ))}
-                
-                    </ScrollView>
-                  </View>
+                    {worksites.map((site) => (
+                      <Pressable key={site.id} style={styles.statusOption} onPress={() => { setSiteFilter(site.id); setFilterPickerOpen(false); }}>
+                        <Text style={styles.statusOptionText} numberOfLines={1}>{site.name}</Text>
+                      </Pressable>
+                    ))}
+
+                  </ScrollView>
+                </View>
               )}
             </View>
-            
+
+
             {!isAdmin && (
               <Pressable style={[styles.addButton, { backgroundColor: theme.backgroundSelected }]} onPress={openAddTransaction}>
                 <ThemedText type="smallBold">+ Add</ThemedText>
@@ -260,50 +261,50 @@ export default function PeticashPage() {
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View style={{ minWidth: '100%' }}>
               <View style={styles.tableHeader}>
-            <Text style={[styles.columnHeader, { width: 60, minWidth: 60, flex: 0 }]}>ID</Text>
-            <Text style={[styles.columnHeader, { width: 120, minWidth: 120, flex: 0 }]}>Site</Text>
-            <Text style={[styles.columnHeader, { width: 120, minWidth: 120, flex: 0 }]}>Type</Text>
-            <Text style={[styles.columnHeader, { width: 120, minWidth: 120, flex: 0 }]}>Amount</Text>
-            <Text style={[styles.columnHeader, { width: 120, minWidth: 120, flex: 0 }]}>Date</Text>
-            <Text style={styles.columnHeaderRight}>Actions</Text>
-          </View>
-
-          <ScrollView style={styles.tableBody} showsVerticalScrollIndicator={false}>
-            {filteredTransactions.map((t) => (
-              <View key={t.id} style={styles.tableRow}>
-                <Text style={[styles.rowCell, { width: 60, minWidth: 60, flex: 0 }]} numberOfLines={1}>
-                  {t.id}
-                </Text>
-                <Text style={[styles.rowCell, { width: 120, minWidth: 120, flex: 0 }]} numberOfLines={1}>
-                  {t.worksite?.name ?? 'Unassigned'}
-                </Text>
-                <Text style={[styles.rowCell, { width: 120, minWidth: 120, flex: 0 }]} numberOfLines={1}>
-                  {t.type}
-                </Text>
-                <Text style={[styles.rowCell, { width: 120, minWidth: 120, flex: 0 }]} numberOfLines={1}>
-                  {t.amount}
-                </Text>
-                <Text style={[styles.rowCell, { width: 120, minWidth: 120, flex: 0 }]} numberOfLines={1}>
-                  {t.transaction_date}
-                </Text>
-                <View style={styles.actionsColumn}>
-                  <Pressable style={styles.actionButtonIcon} onPress={() => { setSelectedViewItem(t); setViewDetailsOpen(true); }}>
-                    <Text style={styles.actionIcon}>{'\u{1F441}'}</Text>
-                  </Pressable>
-                  {!isAdmin && (
-                    <>
-                      <Pressable style={styles.actionButtonIcon} onPress={() => openEditTransaction(t)}>
-                        <Text style={styles.actionIcon}>{'\u270F'}</Text>
-                      </Pressable>
-                      <Pressable style={styles.actionButtonIconDelete} onPress={() => handleDeleteTransaction(t.id)}>
-                        <Text style={styles.actionIcon}>{'\u2715'}</Text>
-                      </Pressable>
-                    </>
-                  )}
-                </View>
+                <Text style={[styles.columnHeader, { width: 60, minWidth: 60, flex: 0 }]}>ID</Text>
+                <Text style={[styles.columnHeader, { width: 120, minWidth: 120, flex: 0 }]}>Site</Text>
+                <Text style={[styles.columnHeader, { width: 120, minWidth: 120, flex: 0 }]}>Type</Text>
+                <Text style={[styles.columnHeader, { width: 120, minWidth: 120, flex: 0 }]}>Amount</Text>
+                <Text style={[styles.columnHeader, { width: 120, minWidth: 120, flex: 0 }]}>Date</Text>
+                <Text style={styles.columnHeaderRight}>Actions</Text>
               </View>
-            ))}
-          </ScrollView>
+
+              <ScrollView style={styles.tableBody} showsVerticalScrollIndicator={false}>
+                {filteredTransactions.map((t) => (
+                  <View key={t.id} style={styles.tableRow}>
+                    <Text style={[styles.rowCell, { width: 60, minWidth: 60, flex: 0 }]} numberOfLines={1}>
+                      {t.id}
+                    </Text>
+                    <Text style={[styles.rowCell, { width: 120, minWidth: 120, flex: 0 }]} numberOfLines={1}>
+                      {t.worksite?.name ?? 'Unassigned'}
+                    </Text>
+                    <Text style={[styles.rowCell, { width: 120, minWidth: 120, flex: 0 }]} numberOfLines={1}>
+                      {t.type}
+                    </Text>
+                    <Text style={[styles.rowCell, { width: 120, minWidth: 120, flex: 0 }]} numberOfLines={1}>
+                      {t.amount}
+                    </Text>
+                    <Text style={[styles.rowCell, { width: 120, minWidth: 120, flex: 0 }]} numberOfLines={1}>
+                      {t.transaction_date}
+                    </Text>
+                    <View style={styles.actionsColumn}>
+                      <Pressable style={styles.actionButtonIcon} onPress={() => { setSelectedViewItem(t); setViewDetailsOpen(true); }}>
+                        <Text style={styles.actionIcon}>{'\u{1F441}'}</Text>
+                      </Pressable>
+                      {!isAdmin && (
+                        <>
+                          <Pressable style={styles.actionButtonIcon} onPress={() => openEditTransaction(t)}>
+                            <Text style={styles.actionIcon}>{'\u270F'}</Text>
+                          </Pressable>
+                          <Pressable style={styles.actionButtonIconDelete} onPress={() => handleDeleteTransaction(t.id)}>
+                            <Text style={styles.actionIcon}>{'\u2715'}</Text>
+                          </Pressable>
+                        </>
+                      )}
+                    </View>
+                  </View>
+                ))}
+              </ScrollView>
             </View>
           </ScrollView>
         </View>
@@ -370,22 +371,22 @@ export default function PeticashPage() {
                   </Pressable>
                   {sitePickerOpen && (
                     <View style={[styles.statusOptions, { position: 'absolute', top: 75, left: 0, right: 0, zIndex: 100 }]}>
-                    <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled={true}>
-                      {worksites.map((site) => (
-                        <Pressable
-                          key={site.id}
-                          style={styles.statusOption}
-                          onPress={() => {
-                            setFormValues((prev) => ({ ...prev, worksite_id: site.id }));
-                            setSitePickerOpen(false);
-                          }}
-                        >
-                          <Text style={styles.statusOptionText} numberOfLines={1}>{site.name}</Text>
-                        </Pressable>
-                      ))}
-                    
-                    </ScrollView>
-                  </View>
+                      <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled={true}>
+                        {worksites.map((site) => (
+                          <Pressable
+                            key={site.id}
+                            style={styles.statusOption}
+                            onPress={() => {
+                              setFormValues((prev) => ({ ...prev, worksite_id: site.id }));
+                              setSitePickerOpen(false);
+                            }}
+                          >
+                            <Text style={styles.statusOptionText} numberOfLines={1}>{site.name}</Text>
+                          </Pressable>
+                        ))}
+
+                      </ScrollView>
+                    </View>
                   )}
                 </View>
 
@@ -567,16 +568,28 @@ const createStyles = (theme: ReturnType<typeof useTheme>) =>
     },
     topControls: {
       flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: Spacing.three,
-    flexWrap: 'wrap',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: Spacing.three,
+      flexWrap: 'wrap',
     },
     addButton: {
       paddingVertical: Spacing.two,
       paddingHorizontal: Spacing.four,
       borderRadius: 24,
       minWidth: 80,
+    },
+    invoiceButton: {
+      paddingVertical: 9,
+      paddingHorizontal: Spacing.three,
+      borderRadius: 24,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    invoiceButtonText: {
+      color: '#fff',
+      fontWeight: '700',
+      fontSize: 13,
     },
     searchInput: {
       flex: 1,
@@ -606,12 +619,12 @@ const createStyles = (theme: ReturnType<typeof useTheme>) =>
       fontSize: 13,
     },
     columnHeaderRight: {
-    minWidth: 120,
-    textAlign: 'center',
-    fontWeight: '700',
-    color: theme.text,
-    fontSize: 13,
-  },
+      minWidth: 120,
+      textAlign: 'center',
+      fontWeight: '700',
+      color: theme.text,
+      fontSize: 13,
+    },
     tableBody: {
       marginTop: Spacing.two,
       maxHeight: 420,
@@ -631,14 +644,14 @@ const createStyles = (theme: ReturnType<typeof useTheme>) =>
       color: theme.text,
       fontSize: 13,
     },
-      
-    
+
+
     actionsColumn: {
-    minWidth: 120,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: Spacing.one,
-  },
+      minWidth: 120,
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: Spacing.one,
+    },
     actionButtonIcon: {
       width: 24,
       height: 24,

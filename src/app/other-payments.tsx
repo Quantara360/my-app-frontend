@@ -189,56 +189,69 @@ export default function OtherPaymentsPage() {
           <Pressable style={[styles.backButton, { backgroundColor: theme.backgroundSelected }]} onPress={() => goBack()}>
             <Text style={{ fontSize: 20, color: '#555', fontWeight: 'bold' }}>{'\u2190'}</Text>
           </Pressable>
-          <ThemedText type="title" style={styles.pageTitle}>Other Payments</ThemedText>
+          <ThemedText type="title" style={styles.pageTitle}>Peticash</ThemedText>
         </View>
 
-        <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}> 
+        <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}>
           <View style={styles.topControls}>
             <TextInput
               style={styles.searchInput}
-              placeholder="Search payments"
+              placeholder="Search Peticash"
               placeholderTextColor={theme.textSecondary}
               value={search}
               onChangeText={setSearch}
             />
-            <Pressable style={[styles.addButton, { backgroundColor: theme.backgroundSelected }]} onPress={openAddPayment}>
-              <ThemedText type="smallBold">+ Add</ThemedText>
+            <Pressable style={[styles.exportButton, { backgroundColor: '#22c55e' }]}>
+              <Text style={styles.exportButtonText}>🧾 Generate Invoice</Text>
+            </Pressable>
+            <Pressable style={[styles.addButton, { backgroundColor: '#3b82f6' }]} onPress={openAddPayment}>
+              <Text style={styles.addButtonText}>＋ Add</Text>
             </Pressable>
           </View>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={{ flexDirection: "column" }}>
+            <View style={{ flexDirection: "column", minWidth: 660 }}>
               <View style={styles.tableHeader}>
-            <Text style={[styles.columnHeader, { width: 30, flex: 0, minWidth: 30 }]}>ID</Text>
-            <Text style={[styles.columnHeader, { width: 100, minWidth: 100, flex: 0 }]}>Description</Text>
-            <Text style={[styles.columnHeader, { width: 120, minWidth: 120, flex: 0 }]}>Date</Text>
-            <Text style={[styles.columnHeader, { width: 120, minWidth: 120, flex: 0 }]}>Amount</Text>
-            <Text style={[styles.columnHeader, { width: 100, minWidth: 100, flex: 0 }]}>Note</Text>
-            <Text style={styles.columnHeaderRight}>Actions</Text>
-          </View>
-
-          <ScrollView style={styles.tableBody} showsVerticalScrollIndicator={false}>
-            {filteredPayments.map((payment) => (
-              <View key={payment.id} style={styles.tableRow}>
-                <Text style={[styles.rowCell, { width: 30, flex: 0, minWidth: 30 }]} numberOfLines={1}>{payment.id}</Text>
-                <Text style={[styles.rowCell, { width: 100, minWidth: 100, flex: 0 }]} numberOfLines={1}>{payment.description}</Text>
-                <Text style={[styles.rowCell, { width: 120, minWidth: 120, flex: 0 }]} numberOfLines={1}>{payment.date}</Text>
-                <Text style={[styles.rowCell, { width: 120, minWidth: 120, flex: 0 }]} numberOfLines={1}>{payment.amount}</Text>
-                <Text style={[styles.rowCell, { width: 100, minWidth: 100, flex: 0 }]} numberOfLines={1}>{payment.anouny}</Text>
-                <View style={styles.actionsColumn}>
-                  <Pressable style={styles.actionButtonIcon} onPress={() => { setSelectedViewItem(payment); setViewDetailsOpen(true); }}>
-                    <Text style={styles.actionIcon}>{'\u{1F441}'}</Text>
-                  </Pressable>
-                  <Pressable style={styles.actionButtonIcon} onPress={() => openEditPayment(payment)}>
-                    <Text style={styles.actionIcon}>{'\u270F'}</Text>
-                  </Pressable>
-                  <Pressable style={styles.actionButtonIconDelete} onPress={() => handleDeletePayment(payment.id)}>
-                    <Text style={styles.actionIcon}>{'\u2715'}</Text>
-                  </Pressable>
-                </View>
+                <Text style={[styles.columnHeader, { width: 30, flex: 0, minWidth: 30, textAlign: 'center' }]}>ID</Text>
+                <Text style={[styles.columnHeader, { width: 100, minWidth: 100, flex: 0, textAlign: 'center' }]}>Description</Text>
+                <Text style={[styles.columnHeader, { width: 120, minWidth: 120, flex: 0, textAlign: 'center' }]}>Date</Text>
+                <Text style={[styles.columnHeader, { width: 120, minWidth: 120, flex: 0, textAlign: 'center' }]}>Amount</Text>
+                <Text style={[styles.columnHeader, { width: 100, minWidth: 100, flex: 0, textAlign: 'center' }]}>Note</Text>
+                <Text style={styles.columnHeaderRight}>Actions</Text>
               </View>
-            ))}
-          </ScrollView>
+
+              <ScrollView style={styles.tableBody} showsVerticalScrollIndicator={false}>
+                {filteredPayments.map((payment) => (
+                  <View key={payment.id} style={styles.tableRow}>
+                    <View style={{ width: 30, minWidth: 30, maxWidth: 30, overflow: 'hidden', alignItems: 'center' }}>
+                      <Text style={styles.rowCell} numberOfLines={1}>{payment.id}</Text>
+                    </View>
+                    <View style={{ width: 100, minWidth: 100, maxWidth: 100, overflow: 'hidden', alignItems: 'center' }}>
+                      <Text style={styles.rowCell} numberOfLines={1}>{payment.description}</Text>
+                    </View>
+                    <View style={{ width: 120, minWidth: 120, maxWidth: 120, overflow: 'hidden', alignItems: 'center' }}>
+                      <Text style={styles.rowCell} numberOfLines={1}>{payment.date}</Text>
+                    </View>
+                    <View style={{ width: 120, minWidth: 120, maxWidth: 120, overflow: 'hidden', alignItems: 'center' }}>
+                      <Text style={styles.rowCell} numberOfLines={1}>{payment.amount}</Text>
+                    </View>
+                    <View style={{ width: 100, minWidth: 100, maxWidth: 100, overflow: 'hidden', alignItems: 'center' }}>
+                      <Text style={styles.rowCell} numberOfLines={1}>{payment.anouny}</Text>
+                    </View>
+                    <View style={styles.actionsColumn}>
+                      <Pressable style={styles.actionButtonIcon} onPress={() => { setSelectedViewItem(payment); setViewDetailsOpen(true); }}>
+                        <Text style={styles.actionIcon}>{'\u{1F441}'}</Text>
+                      </Pressable>
+                      <Pressable style={styles.actionButtonIcon} onPress={() => openEditPayment(payment)}>
+                        <Text style={styles.actionIcon}>{'\u270F'}</Text>
+                      </Pressable>
+                      <Pressable style={styles.actionButtonIconDelete} onPress={() => handleDeletePayment(payment.id)}>
+                        <Text style={styles.actionIcon}>{'\u2715'}</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                ))}
+              </ScrollView>
             </View>
           </ScrollView>
         </View>
@@ -392,34 +405,38 @@ const createStyles = (theme: ReturnType<typeof useTheme>) =>
     pageTitle: { flex: 1, textAlign: 'center', color: theme.text },
     card: { borderRadius: 30, padding: Spacing.four, gap: Spacing.three, minHeight: 0, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 18, shadowOffset: { width: 0, height: 12 }, elevation: 10, backgroundColor: theme.backgroundElement },
     topControls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.three, flexWrap: 'wrap' },
-    addButton: { paddingVertical: Spacing.two, paddingHorizontal: Spacing.four, borderRadius: 24, minWidth: 80 },
+    addButton: { paddingVertical: 9, paddingHorizontal: Spacing.three, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+    addButtonText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+    exportButton: { paddingVertical: 9, paddingHorizontal: Spacing.three, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+    exportButtonText: { color: '#fff', fontWeight: '700', fontSize: 13 },
     searchInput: { flex: 1, minWidth: 160, padding: Spacing.two, borderRadius: 24, backgroundColor: 'transparent', color: theme.text, fontSize: 13, borderWidth: 1, borderColor: theme.backgroundSelected },
     tableHeader: { flexDirection: 'row', paddingVertical: Spacing.three, paddingHorizontal: Spacing.two, borderBottomWidth: 2, borderColor: theme.backgroundSelected, backgroundColor: 'transparent', gap: Spacing.two },
     columnHeader: {
       flex: 1,
-      minWidth: 120, fontWeight: '700', color: theme.text, fontSize: 13 },
+      minWidth: 120, fontWeight: '700', color: theme.text, fontSize: 13, textAlign: 'center'
+    },
     columnHeaderRight: {
-    width: 110,
-    flex: 0,
-    textAlign: 'center',
-    fontWeight: '700',
-    color: theme.text,
-    fontSize: 13,
-  },
+      width: 110,
+      flex: 0,
+      textAlign: 'center',
+      fontWeight: '700',
+      color: theme.text,
+      fontSize: 13,
+    },
     tableBody: { marginTop: Spacing.two, maxHeight: 420 },
-    tableRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.two, paddingHorizontal: Spacing.two, borderBottomWidth: 1, borderColor: theme.backgroundSelected, gap: Spacing.one },
+    tableRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.two, paddingHorizontal: Spacing.two, borderBottomWidth: 1, borderColor: theme.backgroundSelected, gap: Spacing.two },
     rowCell: {
-      flex: 1,
-      minWidth: 120, color: theme.text, fontSize: 13,  
+      color: theme.text, fontSize: 13, textAlign: 'center', overflow: 'hidden',
     },
     actionsColumn: {
-    width: 110,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 6,
-    flex: 0,
-  },
+      width: 110,
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: 6,
+      flex: 0,
+      marginLeft: 24,
+    },
     actionButtonIcon: { width: 22, height: 22, borderRadius: 11, backgroundColor: '#10b981', justifyContent: 'center', alignItems: 'center' },
     actionButtonIconDelete: { width: 22, height: 22, borderRadius: 11, backgroundColor: '#ef4444', justifyContent: 'center', alignItems: 'center' },
     actionIcon: { color: '#fff', fontWeight: '700', fontSize: 12 },

@@ -18,61 +18,17 @@ interface WorksiteTile {
 }
 
 const officeStaffTiles = [
-  {
-    id: "workers",
-    title: "Workers",
-    route: "/workers",
-  },
-  {
-    id: "assets",
-    title: "Assets",
-    route: "/assets",
-  },
-  {
-    id: "machineries",
-    title: "Machineries",
-    route: "/machineries",
-  },
-  {
-    id: "chemicals",
-    title: "Chemicals",
-    route: "/chemicals",
-  },
-  {
-    id: "approvals",
-    title: "Approvals",
-    route: "/approvals",
-  },
-  {
-    id: "salaries",
-    title: "Salaries",
-    route: "/salaries",
-  },
-  {
-    id: "other-payments",
-    title: "Payments",
-    route: "/other-payments",
-  },
-  {
-    id: "attendances",
-    title: "Attendances",
-    route: "/attendances",
-  },
-  {
-    id: "peticash",
-    title: "Peticash",
-    route: "/peticash",
-  },
-  {
-    id: "template",
-    title: "Template",
-    route: "/template",
-  },
-  {
-    id: "bonds",
-    title: "Bonds",
-    route: "/bonds",
-  },
+  { id: "workers",       title: "Workers",     route: "/workers",       color: "#FFD6D6", icon: "\u{1F477}" },
+  { id: "assets",        title: "Assets",      route: "/assets",        color: "#D6EAFF", icon: "\u{1F4E6}" },
+  { id: "machineries",   title: "Machineries", route: "/machineries",   color: "#D6FFE4", icon: "\u2699\uFE0F" },
+  { id: "chemicals",     title: "Chemicals",   route: "/chemicals",     color: "#FFF3D6", icon: "\u{1F9EA}" },
+  { id: "approvals",     title: "Approvals",   route: "/approvals",     color: "#EDD6FF", icon: "\u2705" },
+  { id: "salaries",      title: "Salaries",    route: "/salaries",      color: "#D6FFF9", icon: "\u{1F4B5}" },
+  { id: "other-payments",title: "Peticash",    route: "/other-payments",color: "#FFE8D6", icon: "\u{1F4B0}" },
+  { id: "attendances",   title: "Attendances", route: "/attendances",   color: "#D6F0FF", icon: "\u{1F465}" },
+  { id: "peticash",      title: "Accounts",    route: "/accounts",      color: "#F5FFD6", icon: "\u{1F3E6}" },
+  { id: "template",      title: "Template",    route: "/template",      color: "#FFD6F0", icon: "\u{1F4CB}" },
+  { id: "bonds",         title: "Bonds",       route: "/bonds",         color: "#D6D6FF", icon: "\u{1F4C4}" },
 ];
 
 export default function DashboardScreen() {
@@ -185,15 +141,16 @@ export default function DashboardScreen() {
                       styles.staffCard,
                       tile.id === "bonds" ? { width: "100%" } : {},
                       {
-                        backgroundColor: theme.background,
-                        borderColor: theme.backgroundSelected,
+                        backgroundColor: tile.color,
+                        borderColor: tile.color,
                       },
                       pressed && styles.staffCardPressed,
                     ]}
                     onPress={() => router.push(tile.route as any)}
                   >
+                    <Text style={{ fontSize: 28, marginBottom: 4 }}>{tile.icon}</Text>
                     <Text
-                      style={[styles.staffCardTitle, { color: theme.text }]}
+                      style={[styles.staffCardTitle, { color: '#3D3D3D' }]}
                     >
                       {tile.title}
                     </Text>

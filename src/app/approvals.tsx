@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View, Platform} from 'react-native';
+import { Alert, Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View, Platform } from 'react-native';
 import { BackgroundPattern } from '@/components/BackgroundPattern';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -23,19 +23,19 @@ export default function ApprovalsPage() {
     name: string;
   };
 
-    type Approval = {
-      id: number;
-      title: string;
-      description?: string;
-      status: string;
-      amount?: string;
-      date?: string;
-      holder?: string;
-      requested_by?: number | null;
-      approved_by?: number | null;
-      worksite_id?: number | null;
-      worksite?: Worksite;
-    };
+  type Approval = {
+    id: number;
+    title: string;
+    description?: string;
+    status: string;
+    amount?: string;
+    date?: string;
+    holder?: string;
+    requested_by?: number | null;
+    approved_by?: number | null;
+    worksite_id?: number | null;
+    worksite?: Worksite;
+  };
 
   const initialFormState = {
     title: '',
@@ -253,7 +253,7 @@ export default function ApprovalsPage() {
           </ThemedText>
         </View>
 
-        <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}> 
+        <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}>
           {!token && (
             <Text style={styles.noticeText}>
               You must be logged in to load, create, or save approvals.
@@ -274,43 +274,83 @@ export default function ApprovalsPage() {
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View style={{ minWidth: '100%' }}>
-          <View style={[styles.tableCard, { borderColor: '#1f1f1f', borderWidth: 2 }]}>
-            <View style={styles.tableHeader}>
-              <Text style={[styles.columnHeader, { flex: 0.5, textAlign: 'center' }]}>ID</Text>
-              <Text style={[styles.columnHeader, { flex: 1.5, textAlign: 'center' }]}>Description</Text>
-              <Text style={[styles.columnHeader, { flex: 1.5, textAlign: 'center' }]}>Amount</Text>
-              <Text style={[styles.columnHeader, { flex: 1.5, textAlign: 'center' }]}>Date</Text>
-              <Text style={[styles.columnHeader, { flex: 1.5, textAlign: 'center' }]}>Holder</Text>
-              <Text style={[styles.columnHeader, { flex: 1.5, textAlign: 'center' }]}>Status</Text>
-              <Text style={[styles.columnHeader, { flex: 1, textAlign: 'center' }]}>Action</Text>
-            </View>
-            <ScrollView style={styles.tableBody} showsVerticalScrollIndicator={false}>
-              {filteredApprovals.map((a, index) => (
-                <View key={a.id} style={[styles.tableRow, index % 2 === 0 ? styles.rowEven : styles.rowOdd]}>
-                  <Text style={[styles.rowCell, { flex: 0.5, textAlign: 'center' }]} numberOfLines={1}>{a.id}</Text>
-                  <Text style={[styles.rowCell, { flex: 1.5, textAlign: 'center' }]} numberOfLines={1}>{a.title}</Text>
-                  <Text style={[styles.rowCell, { flex: 1.5, textAlign: 'center' }]} numberOfLines={1}>{a.amount ?? '—'}</Text>
-                  <Text style={[styles.rowCell, { flex: 1.5, textAlign: 'center' }]} numberOfLines={1}>{a.date ?? '—'}</Text>
-                  <Text style={[styles.rowCell, { flex: 1.5, textAlign: 'center' }]} numberOfLines={1}>{a.holder ?? '—'}</Text>
-                  <View style={[styles.rowCell, { flex: 1.5, alignItems: 'center' }]}>
-                    <View style={[styles.statusPill, a.status.toLowerCase() === 'approved' ? styles.statusPillGreen : a.status.toLowerCase() === 'reject' || a.status.toLowerCase() === 'rejected' ? styles.statusPillRed : styles.statusPillYellow]}>
-                      <Text style={styles.statusPillText}>{a.status}</Text>
-                    </View>
-                  </View>
-                  <View style={[styles.rowCell, { flex: 1, flexDirection: 'row', justifyContent: 'center', gap: 8 }]}>
-                    {a.status.toLowerCase() === 'pending' && (
-                    <Pressable style={[styles.actionButtonIconDelete, { backgroundColor: '#3b82f6' }]} onPress={() => openEditApproval(a)}>
-                       <Text style={styles.actionIcon}>{'\u2713'}</Text>
-                    </Pressable>
-                    )}
-                    <Pressable style={styles.actionButtonIconDelete} onPress={() => handleDeleteApproval(a.id)}>
-                       <Text style={styles.actionIcon}>{'\u2715'}</Text>
-                    </Pressable>
-                  </View>
+              <View style={[styles.tableCard, { borderColor: '#1f1f1f', borderWidth: 2 }]}>
+                <View style={styles.tableHeader}>
+                  <Text style={[styles.columnHeader, { flex: 0.5, textAlign: 'center' }]}>ID</Text>
+                  <Text style={[styles.columnHeader, { flex: 1.5, textAlign: 'center' }]}>Description</Text>
+                  <Text style={[styles.columnHeader, { flex: 1.5, textAlign: 'center' }]}>Amount</Text>
+                  <Text style={[styles.columnHeader, { flex: 1.5, textAlign: 'center' }]}>Date</Text>
+                  <Text style={[styles.columnHeader, { flex: 1.5, textAlign: 'center' }]}>Holder</Text>
+                  <Text style={[styles.columnHeader, { flex: 1.5, textAlign: 'center' }]}>Status</Text>
+                  <Text style={[styles.columnHeader, { flex: 1, textAlign: 'center' }]}>Action</Text>
                 </View>
-              ))}
-            </ScrollView>
-          </View>
+                <ScrollView style={styles.tableBody} showsVerticalScrollIndicator={false}>
+                  {filteredApprovals.map((a, index) => (
+                    <View key={a.id} style={[styles.tableRow, index % 2 === 0 ? styles.rowEven : styles.rowOdd]}>
+                      <Text style={[styles.rowCell, { flex: 0.5, textAlign: 'center' }]} numberOfLines={1}>{a.id}</Text>
+                      <Text style={[styles.rowCell, { flex: 1.5, textAlign: 'center' }]} numberOfLines={1}>{a.title}</Text>
+                      <Text style={[styles.rowCell, { flex: 1.5, textAlign: 'center' }]} numberOfLines={1}>{a.amount ?? 'ï¿½'}</Text>
+                      <Text style={[styles.rowCell, { flex: 1.5, textAlign: 'center' }]} numberOfLines={1}>{a.date ?? 'ï¿½'}</Text>
+                      <Text style={[styles.rowCell, { flex: 1.5, textAlign: 'center' }]} numberOfLines={1}>{a.holder ?? 'ï¿½'}</Text>
+                      <View style={[styles.rowCell, { flex: 1.5, alignItems: 'center' }]}>
+                        <View style={[styles.statusPill, a.status.toLowerCase() === 'approved' ? styles.statusPillGreen : a.status.toLowerCase() === 'reject' || a.status.toLowerCase() === 'rejected' ? styles.statusPillRed : styles.statusPillYellow]}>
+                          <Text style={styles.statusPillText}>{a.status}</Text>
+                        </View>
+                      </View>
+                      <View style={[styles.rowCell, { flex: 1, flexDirection: 'row', justifyContent: 'center', gap: 8 }]}>
+                        {a.status.toLowerCase() === 'pending' && (
+                          <Pressable style={[styles.actionButtonIconDelete, { backgroundColor: '#3b82f6' }]} onPress={() => openEditApproval(a)}>
+                            <Text style={styles.actionIcon}>{'\u2713'}</Text>
+                          </Pressable>
+                        )}
+                        <Pressable style={styles.actionButtonIconDelete} onPress={() => handleDeleteApproval(a.id)}>
+                          <Text style={styles.actionIcon}>{'\u2715'}</Text>
+                        </Pressable>
+                      </View>
+                    </View>
+                  ))}
+                </ScrollView>
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+
+
+        {/* Approved History Grid */}
+        <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}>
+          <ThemedText type="subtitle" style={{ marginBottom: Spacing.three, color: theme.text }}>
+            Approval History
+          </ThemedText>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={{ minWidth: '100%' }}>
+              <View style={[styles.tableCard, { borderColor: '#16a34a', borderWidth: 2 }]}>
+                <View style={styles.tableHeader}>
+                  <Text style={[styles.columnHeader, { flex: 0.5, textAlign: 'center' }]}>ID</Text>
+                  <Text style={[styles.columnHeader, { flex: 1.5, textAlign: 'center' }]}>Description</Text>
+                  <Text style={[styles.columnHeader, { flex: 1.5, textAlign: 'center' }]}>Amount</Text>
+                  <Text style={[styles.columnHeader, { flex: 1.5, textAlign: 'center' }]}>Date</Text>
+                  <Text style={[styles.columnHeader, { flex: 1.5, textAlign: 'center' }]}>Holder</Text>
+                </View>
+                <ScrollView style={styles.tableBody} showsVerticalScrollIndicator={false}>
+                  {approvals.filter((a) => a.status.toLowerCase() === 'approved').length === 0 ? (
+                    <View style={{ paddingVertical: Spacing.four, alignItems: 'center' }}>
+                      <Text style={{ color: theme.textSecondary, fontSize: 13 }}>No approved records yet.</Text>
+                    </View>
+                  ) : (
+                    approvals
+                      .filter((a) => a.status.toLowerCase() === 'approved')
+                      .map((a, index) => (
+                        <View key={a.id} style={[styles.tableRow, index % 2 === 0 ? styles.rowEven : styles.rowOdd, { borderLeftWidth: 3, borderLeftColor: '#16a34a' }]}>
+                          <Text style={[styles.rowCell, { flex: 0.5, textAlign: 'center' }]} numberOfLines={1}>{a.id}</Text>
+                          <Text style={[styles.rowCell, { flex: 1.5, textAlign: 'center' }]} numberOfLines={1}>{a.title}</Text>
+                          <Text style={[styles.rowCell, { flex: 1.5, textAlign: 'center', color: '#16a34a', fontWeight: '600' }]} numberOfLines={1}>{a.amount ?? '-'}</Text>
+                          <Text style={[styles.rowCell, { flex: 1.5, textAlign: 'center' }]} numberOfLines={1}>{a.date ?? '-'}</Text>
+                          <Text style={[styles.rowCell, { flex: 1.5, textAlign: 'center' }]} numberOfLines={1}>{a.holder ?? '-'}</Text>
+                        </View>
+                      ))
+                  )}
+                </ScrollView>
+              </View>
             </View>
           </ScrollView>
         </View>
@@ -361,39 +401,39 @@ export default function ApprovalsPage() {
                   </Pressable>
                   {sitePickerOpen && (
                     <View style={[styles.statusOptions, { position: 'absolute', top: 75, left: 0, right: 0, zIndex: 100 }]}>
-                    <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled={true}>
-                      {worksites.map((site) => (
-                        <Pressable
-                          key={site.id}
-                          style={styles.statusOption}
-                          onPress={() => {
-                            setFormValues((prev: any) => ({ ...prev, worksite_id: site.id }));
-                            setSitePickerOpen(false);
-                          }}
-                        >
-                          <Text style={styles.statusOptionText} numberOfLines={1}>{site.name}</Text>
-                        </Pressable>
-                      ))}
-                    
-                    </ScrollView>
-                  </View>
+                      <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled={true}>
+                        {worksites.map((site) => (
+                          <Pressable
+                            key={site.id}
+                            style={styles.statusOption}
+                            onPress={() => {
+                              setFormValues((prev: any) => ({ ...prev, worksite_id: site.id }));
+                              setSitePickerOpen(false);
+                            }}
+                          >
+                            <Text style={styles.statusOptionText} numberOfLines={1}>{site.name}</Text>
+                          </Pressable>
+                        ))}
+
+                      </ScrollView>
+                    </View>
                   )}
                 </View>
                 {!isEditing && (
-                <View style={styles.fieldRow}>
-                  <Text style={styles.fieldLabel}>Status</Text>
-                  <View style={styles.statusList}>
-                    {['Pending', 'Approved', 'Reject'].map((s) => (
-                      <Pressable
-                        key={s}
-                        style={[styles.statusOption, formValues.status.toLowerCase() === s.toLowerCase() && styles.statusOptionSelected]}
-                        onPress={() => setFormValues((p: any) => ({ ...p, status: s }))}
-                      >
-                        <Text style={[styles.statusOptionText, formValues.status.toLowerCase() === s.toLowerCase() && styles.statusOptionTextSelected]}>{s}</Text>
-                      </Pressable>
-                    ))}
+                  <View style={styles.fieldRow}>
+                    <Text style={styles.fieldLabel}>Status</Text>
+                    <View style={styles.statusList}>
+                      {['Pending', 'Approved', 'Reject'].map((s) => (
+                        <Pressable
+                          key={s}
+                          style={[styles.statusOption, formValues.status.toLowerCase() === s.toLowerCase() && styles.statusOptionSelected]}
+                          onPress={() => setFormValues((p: any) => ({ ...p, status: s }))}
+                        >
+                          <Text style={[styles.statusOptionText, formValues.status.toLowerCase() === s.toLowerCase() && styles.statusOptionTextSelected]}>{s}</Text>
+                        </Pressable>
+                      ))}
+                    </View>
                   </View>
-                </View>
                 )}
                 <Pressable
                   style={styles.saveButton}
@@ -431,7 +471,7 @@ export default function ApprovalsPage() {
                     </View>
                     <View style={styles.detailRow}>
                       <ThemedText type="subtitle" style={styles.detailLabel}>Description</ThemedText>
-                      <ThemedText>{selectedViewApproval.description ?? '—'}</ThemedText>
+                      <ThemedText>{selectedViewApproval.description ?? 'ï¿½'}</ThemedText>
                     </View>
                     <View style={styles.detailRow}>
                       <ThemedText type="subtitle" style={styles.detailLabel}>Status</ThemedText>
@@ -439,11 +479,11 @@ export default function ApprovalsPage() {
                     </View>
                     <View style={styles.detailRow}>
                       <ThemedText type="subtitle" style={styles.detailLabel}>Requested By</ThemedText>
-                      <ThemedText>{selectedViewApproval.requested_by ?? '—'}</ThemedText>
+                      <ThemedText>{selectedViewApproval.requested_by ?? 'ï¿½'}</ThemedText>
                     </View>
                     <View style={styles.detailRow}>
                       <ThemedText type="subtitle" style={styles.detailLabel}>Approved By</ThemedText>
-                      <ThemedText>{selectedViewApproval.approved_by ?? '—'}</ThemedText>
+                      <ThemedText>{selectedViewApproval.approved_by ?? 'ï¿½'}</ThemedText>
                     </View>
                   </>
                 )}
@@ -476,9 +516,9 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   safeArea: {
     flex: 1,
     gap: Spacing.three,
-  width: '100%',
-  maxWidth: MaxContentWidth,
-  alignSelf: 'center',
+    width: '100%',
+    maxWidth: MaxContentWidth,
+    alignSelf: 'center',
   },
   headerRow: {
     flexDirection: 'row',
@@ -546,8 +586,8 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     borderBottomColor: 'rgba(150,150,150,0.2)',
   },
   columnHeader: {
-      flex: 1,
-      minWidth: 120,
+    flex: 1,
+    minWidth: 120,
     fontWeight: '700',
     color: theme.text,
     fontSize: 13,
@@ -570,13 +610,13 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     paddingHorizontal: Spacing.two,
   },
   rowCell: {
-      flex: 1,
-      minWidth: 120,
+    flex: 1,
+    minWidth: 120,
     color: theme.text,
     fontSize: 13,
-    },
-    
-  
+  },
+
+
   actionsColumn: {
     minWidth: 120,
     flexDirection: 'row',

@@ -8,7 +8,8 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  View,Platform} from "react-native";
+  View, Platform
+} from "react-native";
 import { registerWithApi, type UserRole } from "@/services/authService";
 import { useTheme } from "@/hooks/use-theme";
 import { MaxContentWidth, rf } from '@/constants/theme';
