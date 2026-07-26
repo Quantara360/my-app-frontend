@@ -16,6 +16,7 @@ import * as PersonalAssetsService from "@/services/adminPersonalAssetsService";
 import * as PersonalDocumentsService from "@/services/adminPersonalDocumentsService";
 import * as AttendancesService from "@/services/adminAttendancesService";
 import { getCashInHandEntries, createCashInHandEntry, getBankEntries, createBankEntry } from "@/services/accountsService";
+import { exportLedgerToExcel } from "@/utils/exportLedger";
 import { useAuth } from "@/contexts/AuthContext";
 import { API_BASE_URL, getAuthHeaders } from "@/services/authService";
 import { useTheme } from "@/hooks/use-theme";
@@ -560,6 +561,8 @@ export default function AdminDashboard() {
   });
 
   const filteredApprovalData = filteredApprovals.filter((item) => {
+    if (item.status.toLowerCase() === 'approved') return false;
+
     const query = approvalSearch.trim().toLowerCase();
     if (!query) return true;
     return (
@@ -4567,28 +4570,57 @@ export default function AdminDashboard() {
         {/* Main card */}
         <View style={[styles.tableCard, { padding: 16, gap: 12 }]}>
           {/* Controls */}
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-            <View style={[styles.searchContainer, { flex: 1, minWidth: 120 }]}>
-              <Text style={styles.searchIcon}>🔍</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 8 }}>
+            {/* Search */}
+            <View style={{ flexDirection: "row", alignItems: "center", flex: 1, minWidth: 160, padding: 8, borderRadius: 24, backgroundColor: "transparent", borderWidth: 1, borderColor: isDark ? "#333" : "#e5e5e5" }}>
               <TextInput
                 value={adminCashSearch}
                 onChangeText={setAdminCashSearch}
                 placeholder="Search Cheque No"
                 placeholderTextColor={isDark ? "#b0b0b0" : "#8a8a8f"}
-                style={styles.searchInput}
+                style={{ flex: 1, paddingVertical: 2, paddingHorizontal: 4, color: isDark ? "#fff" : "#000", fontSize: 13 }}
               />
+              <Text style={{ fontSize: 16, color: "#aaa", marginLeft: 8 }}>🔍</Text>
             </View>
+
+            {/* Sort toggle */}
             <Pressable
-              style={[styles.addSiteButton, { backgroundColor: adminCashSortOrder === "asc" ? "#6366f1" : "#f59e0b", paddingVertical: 9, paddingHorizontal: 14, borderRadius: 20 }]}
+              style={{ backgroundColor: adminCashSortOrder === "asc" ? "#6366f1" : "#f59e0b", paddingVertical: 9, paddingHorizontal: 16, borderRadius: 24, alignItems: "center", justifyContent: "center" }}
               onPress={() => setAdminCashSortOrder((p) => (p === "asc" ? "desc" : "asc"))}
             >
-              <Text style={styles.addSiteButtonText}>{adminCashSortOrder === "asc" ? "↑ Asc" : "↓ Desc"}</Text>
+              <Text style={{ color: "#fff", fontWeight: "700", fontSize: 13 }}>{adminCashSortOrder === "asc" ? "↑ Asc" : "↓ Desc"}</Text>
             </Pressable>
+
+            {/* Export button */}
             <Pressable
-              style={[styles.addSiteButton, { backgroundColor: "#3b82f6", paddingVertical: 9, paddingHorizontal: 14, borderRadius: 20 }]}
+              style={{ backgroundColor: "#22c55e", paddingVertical: 9, paddingHorizontal: 16, borderRadius: 24, alignItems: "center", justifyContent: "center" }}
+              onPress={() => {
+                const now = new Date();
+                const offset = 330;
+                const local = new Date(now.getTime() + offset * 60 * 1000);
+                const year = local.getUTCFullYear();
+                const month = local.getUTCMonth();
+                const prevMonthStart = new Date(Date.UTC(month === 0 ? year - 1 : year, month === 0 ? 11 : month - 1, 1));
+                const prevMonthEnd = new Date(Date.UTC(year, month, 1));
+                const prevMonthEntries = adminCashEntries
+                  .filter((e) => {
+                    const d = new Date(e.date);
+                    return d >= prevMonthStart && d < prevMonthEnd;
+                  })
+                  .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+                const prevBalance = prevMonthEntries.length > 0 ? prevMonthEntries[prevMonthEntries.length - 1].balance : 0;
+                exportLedgerToExcel('Admin_Cash_In_Hand', filtered, prevBalance);
+              }}
+            >
+              <Text style={{ color: "#fff", fontWeight: "700", fontSize: 13 }}>⬇ Export</Text>
+            </Pressable>
+
+            {/* Add button */}
+            <Pressable
+              style={{ backgroundColor: "#3b82f6", paddingVertical: 9, paddingHorizontal: 16, borderRadius: 24, alignItems: "center", justifyContent: "center" }}
               onPress={() => { setAdminCashForm((p) => ({ ...p, date: getAdminSriLankaDate() })); setAdminCashAddModalOpen(true); }}
             >
-              <Text style={styles.addSiteButtonText}>＋ Add</Text>
+              <Text style={{ color: "#fff", fontWeight: "700", fontSize: 13 }}>＋ Add</Text>
             </Pressable>
           </View>
 
@@ -4833,28 +4865,57 @@ export default function AdminDashboard() {
         {/* Main card */}
         <View style={[styles.tableCard, { padding: 16, gap: 12 }]}>
           {/* Controls */}
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-            <View style={[styles.searchContainer, { flex: 1, minWidth: 120 }]}>
-              <Text style={styles.searchIcon}>🔍</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 8 }}>
+            {/* Search */}
+            <View style={{ flexDirection: "row", alignItems: "center", flex: 1, minWidth: 160, padding: 8, borderRadius: 24, backgroundColor: "transparent", borderWidth: 1, borderColor: isDark ? "#333" : "#e5e5e5" }}>
               <TextInput
                 value={adminBankSearch}
                 onChangeText={setAdminBankSearch}
                 placeholder="Search Cheque No"
                 placeholderTextColor={isDark ? "#b0b0b0" : "#8a8a8f"}
-                style={styles.searchInput}
+                style={{ flex: 1, paddingVertical: 2, paddingHorizontal: 4, color: isDark ? "#fff" : "#000", fontSize: 13 }}
               />
+              <Text style={{ fontSize: 16, color: "#aaa", marginLeft: 8 }}>🔍</Text>
             </View>
+
+            {/* Sort toggle */}
             <Pressable
-              style={[styles.addSiteButton, { backgroundColor: adminBankSortOrder === "asc" ? "#6366f1" : "#f59e0b", paddingVertical: 9, paddingHorizontal: 14, borderRadius: 20 }]}
+              style={{ backgroundColor: adminBankSortOrder === "asc" ? "#6366f1" : "#f59e0b", paddingVertical: 9, paddingHorizontal: 16, borderRadius: 24, alignItems: "center", justifyContent: "center" }}
               onPress={() => setAdminBankSortOrder((p) => (p === "asc" ? "desc" : "asc"))}
             >
-              <Text style={styles.addSiteButtonText}>{adminBankSortOrder === "asc" ? "↑ Asc" : "↓ Desc"}</Text>
+              <Text style={{ color: "#fff", fontWeight: "700", fontSize: 13 }}>{adminBankSortOrder === "asc" ? "↑ Asc" : "↓ Desc"}</Text>
             </Pressable>
+
+            {/* Export button */}
             <Pressable
-              style={[styles.addSiteButton, { backgroundColor: "#3b82f6", paddingVertical: 9, paddingHorizontal: 14, borderRadius: 20 }]}
+              style={{ backgroundColor: "#22c55e", paddingVertical: 9, paddingHorizontal: 16, borderRadius: 24, alignItems: "center", justifyContent: "center" }}
+              onPress={() => {
+                const now = new Date();
+                const offset = 330;
+                const local = new Date(now.getTime() + offset * 60 * 1000);
+                const year = local.getUTCFullYear();
+                const month = local.getUTCMonth();
+                const prevMonthStart = new Date(Date.UTC(month === 0 ? year - 1 : year, month === 0 ? 11 : month - 1, 1));
+                const prevMonthEnd = new Date(Date.UTC(year, month, 1));
+                const prevMonthEntries = adminBankEntries
+                  .filter((e) => {
+                    const d = new Date(e.date);
+                    return d >= prevMonthStart && d < prevMonthEnd;
+                  })
+                  .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+                const prevBalance = prevMonthEntries.length > 0 ? prevMonthEntries[prevMonthEntries.length - 1].balance : 0;
+                exportLedgerToExcel('Admin_Bank', filtered, prevBalance);
+              }}
+            >
+              <Text style={{ color: "#fff", fontWeight: "700", fontSize: 13 }}>⬇ Export</Text>
+            </Pressable>
+
+            {/* Add button */}
+            <Pressable
+              style={{ backgroundColor: "#3b82f6", paddingVertical: 9, paddingHorizontal: 16, borderRadius: 24, alignItems: "center", justifyContent: "center" }}
               onPress={() => { setAdminBankForm((p) => ({ ...p, date: getAdminSriLankaDate() })); setAdminBankAddModalOpen(true); }}
             >
-              <Text style={styles.addSiteButtonText}>＋ Add</Text>
+              <Text style={{ color: "#fff", fontWeight: "700", fontSize: 13 }}>＋ Add</Text>
             </Pressable>
           </View>
 

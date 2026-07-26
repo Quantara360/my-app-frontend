@@ -101,7 +101,8 @@ export default function ApprovalsPage() {
     return approvals.filter((a) => {
       const matchesSearch = a.title.toLowerCase().includes(search.toLowerCase());
       const matchesSite = siteFilter ? a.worksite_id === siteFilter : true;
-      return matchesSearch && matchesSite;
+      const isNotApproved = a.status.toLowerCase() !== 'approved';
+      return matchesSearch && matchesSite && isNotApproved;
     });
   }, [approvals, search, siteFilter]);
 
