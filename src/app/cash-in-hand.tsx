@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Alert,
   Modal,
@@ -18,6 +18,8 @@ import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useGoBack } from '@/hooks/use-go-back';
+import { getCashInHandEntries, createCashInHandEntry, updateCashInHandEntry, deleteCashInHandEntry } from '@/services/accountsService';
+import { exportLedgerToExcel } from '@/utils/exportLedger';
 
 type CashEntry = {
   id: number;
@@ -59,8 +61,66 @@ export default function CashInHandPage() {
 
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [transactionType, setTransactionType] = useState<'debit' | 'credit'>('debit');
+  const [editingId, setEditingId] = useState<number | null>(null);
 
-  const filtered = entries
+  // Load persisted entries from backend on mount
+  useEffect(() => {
+    getCashInHandEntries()
+      .then((rows) => {
+        const mapped = rows.map((r) => ({
+          id:          r.id,
+          date:        r.date,
+          chequeNo:    r.cheque_no ?? '',
+          description: r.description ?? '',
+          debit:       r.debit,
+          credit:      r.credit,
+          balance:     r.balance,
+        }));
+        setEntries(mapped);
+      })
+      .catch((err) => console.warn('[CashInHand] fetch error', err));
+  }, []);
+
+  // (Removed from here, moved below)
+
+  const totalDebit = entries.reduce((s, e) => s + (e.debit ?? 0), 0);
+  const totalCredit = entries.reduce((s, e) => s + (e.credit ?? 0), 0);
+  const currentBalance = totalCredit - totalDebit;
+
+  /** Closing balance = balance field of the last entry in the previous calendar month */
+  const prevMonthBalance = (() => {
+    const now = new Date();
+    const offset = 330; // Sri Lanka UTC+5:30
+    const local = new Date(now.getTime() + offset * 60 * 1000);
+    const year = local.getUTCFullYear();
+    const month = local.getUTCMonth(); // 0-indexed current month
+    // Previous month boundaries
+    const prevMonthStart = new Date(Date.UTC(month === 0 ? year - 1 : year, month === 0 ? 11 : month - 1, 1));
+    const prevMonthEnd = new Date(Date.UTC(year, month, 1)); // start of current month
+    // Find entries that fall within the previous month, sorted by date ascending
+    const prevMonthEntries = entries
+      .filter((e) => {
+        const d = new Date(e.date);
+        return d >= prevMonthStart && d < prevMonthEnd;
+      })
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    if (prevMonthEntries.length === 0) return 0;
+    // Return the balance of the last entry (closing balance of the previous month)
+    return prevMonthEntries[prevMonthEntries.length - 1].balance;
+  })();
+
+  // Calculate running balances chronologically first
+  const entriesWithBalances = [...entries]
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .reduce((acc, entry) => {
+      const prevBal = acc.length > 0 ? acc[acc.length - 1].runningBalance : prevMonthBalance;
+      const runningBalance = prevBal + (entry.credit ?? 0) - (entry.debit ?? 0);
+      acc.push({ ...entry, runningBalance });
+      return acc;
+    }, [] as (CashEntry & { runningBalance: number })[]);
+
+  // Then filter and sort for display
+  const filtered = entriesWithBalances
     .filter(
       (e) =>
         e.chequeNo.toLowerCase().includes(search.toLowerCase()) ||
@@ -72,53 +132,75 @@ export default function CashInHandPage() {
       return sortOrder === 'asc' ? da - db : db - da;
     });
 
-  const totalDebit = entries.reduce((s, e) => s + (e.debit ?? 0), 0);
-  const totalCredit = entries.reduce((s, e) => s + (e.credit ?? 0), 0);
-  const currentBalance = totalCredit - totalDebit;
-
-  /** Balance of all entries whose date falls in the previous calendar month */
-  const prevMonthBalance = (() => {
-    const now = new Date();
-    const offset = 330;
-    const local = new Date(now.getTime() + offset * 60 * 1000);
-    const year = local.getUTCFullYear();
-    const month = local.getUTCMonth(); // 0-indexed current month
-    // Previous month boundaries
-    const prevMonthStart = new Date(Date.UTC(month === 0 ? year - 1 : year, month === 0 ? 11 : month - 1, 1));
-    const prevMonthEnd = new Date(Date.UTC(year, month, 1)); // start of current month
-    let bal = 0;
-    entries.forEach((e) => {
-      const d = new Date(e.date);
-      if (d >= prevMonthStart && d < prevMonthEnd) {
-        bal += (e.credit ?? 0) - (e.debit ?? 0);
-      }
-    });
-    return bal;
-  })();
-
-  const handleAdd = () => {
+  const handleSave = () => {
     if (!form.date) { Alert.alert('Validation', 'Date is required.'); return; }
     const debit  = transactionType === 'debit'  && form.amount ? parseFloat(form.amount) : null;
     const credit = transactionType === 'credit' && form.amount ? parseFloat(form.amount) : null;
     const prevBalance = parseFloat(form.prevBalance || '0');
     const newBalance = prevBalance + (credit ?? 0) - (debit ?? 0);
-    const entry: CashEntry = {
-      id: Date.now(),
-      date: form.date,
-      chequeNo: form.chequeNo,
-      description: form.description,
-      debit,
-      credit,
-      balance: newBalance,
-    };
-    setEntries((prev) => [...prev, entry]);
+    
+    if (editingId) {
+      setEntries((prev) => prev.map((e) => e.id === editingId ? { ...e, date: form.date, chequeNo: form.chequeNo, description: form.description, debit, credit, balance: newBalance } : e));
+      updateCashInHandEntry(editingId, {
+        date:        form.date,
+        cheque_no:   form.chequeNo || null,
+        description: form.description || null,
+        debit:       debit,
+        credit:      credit,
+        balance:     newBalance,
+      }).catch((err) => console.warn('update error', err));
+    } else {
+      const entry = {
+        id: Date.now(),
+        date: form.date,
+        chequeNo: form.chequeNo,
+        description: form.description,
+        debit,
+        credit,
+        balance: newBalance,
+      };
+      setEntries((prev) => [...prev, entry]);
+      createCashInHandEntry({
+        date:        entry.date,
+        cheque_no:   entry.chequeNo || null,
+        description: entry.description || null,
+        debit:       entry.debit,
+        credit:      entry.credit,
+        balance:     entry.balance,
+      }).catch((err) => console.warn('save error', err));
+    }
+    
     setForm({ date: getSriLankaDate(), chequeNo: '', description: '', amount: '', prevBalance: prevMonthBalance.toFixed(2) });
     setTransactionType('debit');
+    setEditingId(null);
     setAddModalOpen(false);
     setSuccessVisible(true);
   };
 
-  const columns = ['Date', 'Cheque No', 'Description', 'Debit', 'Credit', 'Balance'];
+  const handleEdit = (entry: any) => {
+    setEditingId(entry.id);
+    setForm({
+      date: entry.date,
+      chequeNo: entry.chequeNo || '',
+      description: entry.description || '',
+      amount: (entry.debit || entry.credit || '').toString(),
+      prevBalance: prevMonthBalance.toFixed(2),
+    });
+    setTransactionType(entry.debit != null ? 'debit' : 'credit');
+    setAddModalOpen(true);
+  };
+
+  const handleDelete = (id: number) => {
+    Alert.alert('Delete', 'Are you sure you want to delete this entry?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => {
+        setEntries((prev) => prev.filter((e) => e.id !== id));
+        deleteCashInHandEntry(id).catch(err => console.warn('delete error', err));
+      } }
+    ]);
+  };
+
+  const columns = ['Date', 'Cheque No', 'Description', 'Credit', 'Debit', 'Balance', 'Actions'];
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: 'transparent' }]}>
@@ -171,7 +253,10 @@ export default function CashInHandPage() {
             </Pressable>
 
             {/* Export button */}
-            <Pressable style={[styles.actionBtn, { backgroundColor: '#22c55e' }]}>
+            <Pressable 
+              style={[styles.actionBtn, { backgroundColor: '#22c55e' }]}
+              onPress={() => exportLedgerToExcel('Cash_In_Hand', filtered, prevMonthBalance)}
+            >
               <Text style={styles.actionBtnText}>⬇ Export</Text>
             </Pressable>
 
@@ -179,7 +264,8 @@ export default function CashInHandPage() {
             <Pressable
               style={[styles.actionBtn, { backgroundColor: '#3b82f6' }]}
               onPress={() => {
-                setForm((prev) => ({ ...prev, prevBalance: prevMonthBalance.toFixed(2) }));
+                setEditingId(null);
+                setForm({ date: getSriLankaDate(), chequeNo: '', description: '', amount: '', prevBalance: prevMonthBalance.toFixed(2) });
                 setAddModalOpen(true);
               }}
             >
@@ -223,7 +309,15 @@ export default function CashInHandPage() {
                       <Text style={styles.rowCell} numberOfLines={1}>
                         {entry.credit != null ? entry.credit.toFixed(2) : '-'}
                       </Text>
-                      <Text style={styles.rowCell} numberOfLines={1}>{entry.balance.toFixed(2)}</Text>
+                      <Text style={styles.rowCell} numberOfLines={1}>{entry.runningBalance.toFixed(2)}</Text>
+                      <View style={[styles.rowCell, { flexDirection: 'row', justifyContent: 'center', gap: 10 }]}>
+                        <Pressable onPress={() => handleEdit(entry)} style={{ padding: 4, backgroundColor: 'rgba(59, 130, 246, 0.1)', borderRadius: 6 }}>
+                          <Text style={{ fontSize: 14 }}>✏️</Text>
+                        </Pressable>
+                        <Pressable onPress={() => handleDelete(entry.id)} style={{ padding: 4, backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: 6 }}>
+                          <Text style={{ fontSize: 14 }}>🗑️</Text>
+                        </Pressable>
+                      </View>
                     </View>
                   ))
                 )}
@@ -233,7 +327,7 @@ export default function CashInHandPage() {
           {/* Summary section — inside card, below grid */}
           <View style={[styles.summarySection, { borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.07)', paddingTop: Spacing.three }]}>
             <View style={styles.summaryRow}>
-              <Text style={[styles.summaryLabel, { color: theme.text }]}>Total Debit balance</Text>
+              <Text style={[styles.summaryLabel, { color: theme.text }]}>Total Credit balance</Text>
               <View style={[styles.summaryPill, { backgroundColor: theme.backgroundSelected }]}>
                 <Text style={[styles.summaryValue, { color: theme.text }]}>
                   {totalDebit.toFixed(2)}
@@ -241,7 +335,7 @@ export default function CashInHandPage() {
               </View>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={[styles.summaryLabel, { color: theme.text }]}>Total Credit balance</Text>
+              <Text style={[styles.summaryLabel, { color: theme.text }]}>Total Debit balance</Text>
               <View style={[styles.summaryPill, { backgroundColor: theme.backgroundSelected }]}>
                 <Text style={[styles.summaryValue, { color: theme.text }]}>
                   {totalCredit.toFixed(2)}
@@ -266,7 +360,7 @@ export default function CashInHandPage() {
         <View style={styles.modalOverlay}>
           <View style={[styles.modalCard, { backgroundColor: theme.backgroundElement }]}>
             <View style={styles.modalHeader}>
-              <ThemedText type="title">Add Entry</ThemedText>
+              <ThemedText type="title">{editingId ? 'Edit Entry' : 'Add Entry'}</ThemedText>
               <Pressable onPress={() => setAddModalOpen(false)}>
                 <Text style={{ fontSize: 20, color: theme.text }}>✕</Text>
               </Pressable>
@@ -280,12 +374,12 @@ export default function CashInHandPage() {
                   Previous Month Cash In Hand Balance
                 </Text>
                 <TextInput
-                  style={[styles.textInput, { color: theme.text, borderColor: theme.backgroundSelected }]}
+                  style={[styles.textInput, { color: theme.text, borderColor: theme.backgroundSelected, backgroundColor: 'rgba(0,0,0,0.05)' }]}
                   placeholder="0.00"
                   placeholderTextColor="#aaa"
                   keyboardType="decimal-pad"
                   value={form.prevBalance}
-                  onChangeText={(v) => setForm((prev) => ({ ...prev, prevBalance: v }))}
+                  editable={false}
                 />
               </View>
 
@@ -335,7 +429,7 @@ export default function CashInHandPage() {
                     <Text style={[
                       styles.typeToggleBtnText,
                       { color: transactionType === 'debit' ? '#fff' : '#ef4444' },
-                    ]}>Debit</Text>
+                    ]}>Credit</Text>
                   </Pressable>
 
                   <Pressable
@@ -350,7 +444,7 @@ export default function CashInHandPage() {
                     <Text style={[
                       styles.typeToggleBtnText,
                       { color: transactionType === 'credit' ? '#fff' : '#22c55e' },
-                    ]}>Credit</Text>
+                    ]}>Debit</Text>
                   </Pressable>
                 </View>
               </View>
@@ -358,7 +452,7 @@ export default function CashInHandPage() {
               {/* Amount input — label changes with selected type */}
               <View style={styles.fieldRow}>
                 <Text style={[styles.fieldLabel, { color: transactionType === 'debit' ? '#ef4444' : '#22c55e' }]}>
-                  {transactionType === 'debit' ? 'Debit Amount' : 'Credit Amount'}
+                  {transactionType === 'debit' ? 'Credit Amount' : 'Debit Amount'}
                 </Text>
                 <TextInput
                   style={[
@@ -381,9 +475,9 @@ export default function CashInHandPage() {
             <View style={styles.modalFooter}>
               <Pressable
                 style={[styles.saveBtn, { backgroundColor: '#3b82f6' }]}
-                onPress={handleAdd}
+                onPress={handleSave}
               >
-                <Text style={styles.saveBtnText}>Save Entry</Text>
+                <Text style={styles.saveBtnText}>{editingId ? 'Update Entry' : 'Save Entry'}</Text>
               </Pressable>
             </View>
           </View>

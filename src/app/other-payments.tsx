@@ -11,6 +11,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { API_BASE_URL } from '@/services/authService';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGoBack } from "@/hooks/use-go-back";
+import { generateAndShareVoucher } from '@/utils/pdfVoucher';
 
 type OtherPayment = {
   id: number;
@@ -57,6 +58,12 @@ export default function OtherPaymentsPage() {
   const webDateInputRef = useRef<HTMLInputElement | null>(null);
   const [viewDetailsOpen, setViewDetailsOpen] = useState(false);
   const [selectedViewItem, setSelectedViewItem] = useState<OtherPayment | null>(null);
+  const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
+  const [invoiceSearch, setInvoiceSearch] = useState('');
+  const [invoicePayee, setInvoicePayee] = useState('');
+  const [invoiceVatRegNo, setInvoiceVatRegNo] = useState('');
+  const [invoiceVatPaid, setInvoiceVatPaid] = useState('');
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -150,7 +157,8 @@ export default function OtherPaymentsPage() {
         throw new Error(data.message || 'Unable to save payment');
       }
 
-      const updated = normalizePayment(data);
+      const actualData = data.payment || data.data || data;
+      const updated = normalizePayment(actualData);
       setPayments((prev) => {
         if (isEditing && selectedPayment) {
           return prev.map((item) => (item.id === selectedPayment.id ? updated : item));
@@ -181,6 +189,35 @@ export default function OtherPaymentsPage() {
     setSuccessMessage('Payment deleted successfully!');
   };
 
+  const handleGenerateInvoice = () => {
+    if (!selectedInvoiceId) return;
+    const t = payments.find(tx => tx.id === selectedInvoiceId);
+    if (!t) return;
+    
+    generateAndShareVoucher({
+      id: t.id,
+      date: t.date || '',
+      payee: invoicePayee || '................................',
+      particulars: t.description || '...',
+      accountHead: t.anouny || 'expense',
+      grossAmount: t.amount,
+      vatRegNo: invoiceVatRegNo,
+      vatPaid: parseFloat(invoiceVatPaid) || 0,
+    }).then(() => {
+      setInvoiceModalOpen(false);
+      setInvoiceSearch('');
+      setInvoicePayee('');
+      setInvoiceVatRegNo('');
+      setInvoiceVatPaid('');
+      setSelectedInvoiceId(null);
+    });
+  };
+
+  const invoiceSearchResults = invoiceSearch.trim() === '' ? [] : payments.filter(t => 
+    t.id.toString().includes(invoiceSearch.toLowerCase()) || 
+    (t.description || '').toLowerCase().includes(invoiceSearch.toLowerCase())
+  ).slice(0, 5);
+
   return (
     <ThemedView style={[styles.container, { backgroundColor: 'transparent' }]}>
       <BackgroundPattern />
@@ -201,7 +238,7 @@ export default function OtherPaymentsPage() {
               value={search}
               onChangeText={setSearch}
             />
-            <Pressable style={[styles.exportButton, { backgroundColor: '#22c55e' }]}>
+            <Pressable style={[styles.exportButton, { backgroundColor: '#22c55e' }]} onPress={() => setInvoiceModalOpen(true)}>
               <Text style={styles.exportButtonText}>🧾 Generate Invoice</Text>
             </Pressable>
             <Pressable style={[styles.addButton, { backgroundColor: '#3b82f6' }]} onPress={openAddPayment}>
@@ -391,6 +428,101 @@ export default function OtherPaymentsPage() {
         </Modal>
 
         <SuccessModal visible={!!successMessage} title={successMessage ?? ''} onClose={() => setSuccessMessage(null)} />
+
+        {/* Invoice Generator Modal */}
+        <Modal visible={invoiceModalOpen} transparent animationType="fade" onRequestClose={() => setInvoiceModalOpen(false)}>
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { backgroundColor: theme.backgroundElement, padding: 20 }]}>
+              <View style={styles.modalHeader}>
+                <ThemedText type="title">Generate Invoice</ThemedText>
+                <Pressable onPress={() => setInvoiceModalOpen(false)}>
+                  <Text style={styles.modalCloseButton}>✕</Text>
+                </Pressable>
+              </View>
+
+              <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+                <ThemedText style={{ marginBottom: 10 }}>Search by ID or Description</ThemedText>
+
+                <TextInput
+                  style={[styles.textInput, { color: theme.text, borderColor: theme.backgroundSelected }]}
+                  placeholder="Type ID e.g. 123 or description..."
+                  placeholderTextColor="#aaa"
+                  value={invoiceSearch}
+                  onChangeText={(v) => {
+                    setInvoiceSearch(v);
+                    setSelectedInvoiceId(null);
+                  }}
+                />
+
+                {!selectedInvoiceId && invoiceSearch.trim() !== '' && (
+                  <View style={{ maxHeight: 150, backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: 10, marginTop: 5 }}>
+                    {invoiceSearchResults.length === 0 ? (
+                      <Text style={{ padding: 10, color: '#aaa' }}>No matching records found.</Text>
+                    ) : (
+                      invoiceSearchResults.map(t => (
+                        <Pressable
+                          key={t.id}
+                          style={{ padding: 10, borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.05)' }}
+                          onPress={() => {
+                            setSelectedInvoiceId(t.id);
+                            setInvoiceSearch(`ID: ${t.id} - ${t.description || 'No description'}`);
+                          }}
+                        >
+                          <Text style={{ color: theme.text }}>ID: {t.id} | Rs. {t.amount} | {t.description}</Text>
+                        </Pressable>
+                      ))
+                    )}
+                  </View>
+                )}
+
+                {selectedInvoiceId && (
+                  <View style={{ marginTop: 15 }}>
+                    <ThemedText style={{ marginBottom: 8 }}>Name of Payee (Optional)</ThemedText>
+                    <TextInput
+                      style={[styles.textInput, { color: theme.text, borderColor: theme.backgroundSelected, marginBottom: 15 }]}
+                      placeholder="Enter payee name..."
+                      placeholderTextColor="#aaa"
+                      value={invoicePayee}
+                      onChangeText={setInvoicePayee}
+                    />
+                    
+                    <ThemedText style={{ marginBottom: 8 }}>Supplier's VAT Registration No. (Optional)</ThemedText>
+                    <TextInput
+                      style={[styles.textInput, { color: theme.text, borderColor: theme.backgroundSelected, marginBottom: 15 }]}
+                      placeholder="Enter VAT Registration No..."
+                      placeholderTextColor="#aaa"
+                      value={invoiceVatRegNo}
+                      onChangeText={setInvoiceVatRegNo}
+                    />
+                    
+                    <ThemedText style={{ marginBottom: 8 }}>VAT Paid Amount (Optional)</ThemedText>
+                    <TextInput
+                      style={[styles.textInput, { color: theme.text, borderColor: theme.backgroundSelected }]}
+                      placeholder="Enter VAT paid..."
+                      placeholderTextColor="#aaa"
+                      keyboardType="numeric"
+                      value={invoiceVatPaid}
+                      onChangeText={setInvoiceVatPaid}
+                    />
+                  </View>
+                )}
+              </ScrollView>
+
+              <View style={styles.modalFooter}>
+                <Pressable style={[styles.modalButton, { backgroundColor: 'rgba(0,0,0,0.1)' }]} onPress={() => setInvoiceModalOpen(false)}>
+                  <Text style={[styles.modalButtonText, { color: theme.text }]}>Cancel</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.modalButton, { backgroundColor: selectedInvoiceId ? '#22c55e' : '#aaa' }]}
+                  onPress={handleGenerateInvoice}
+                  disabled={!selectedInvoiceId}
+                >
+                  <Text style={styles.modalButtonText}>Generate PDF</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </SafeAreaView>
     </ThemedView>
   );

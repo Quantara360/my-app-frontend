@@ -15,6 +15,7 @@ import * as ApprovalsService from "@/services/adminApprovalsService";
 import * as PersonalAssetsService from "@/services/adminPersonalAssetsService";
 import * as PersonalDocumentsService from "@/services/adminPersonalDocumentsService";
 import * as AttendancesService from "@/services/adminAttendancesService";
+import { getCashInHandEntries, createCashInHandEntry, getBankEntries, createBankEntry } from "@/services/accountsService";
 import { useAuth } from "@/contexts/AuthContext";
 import { API_BASE_URL, getAuthHeaders } from "@/services/authService";
 import { useTheme } from "@/hooks/use-theme";
@@ -1169,8 +1170,44 @@ export default function AdminDashboard() {
     loadPersonalDocumentsData();
     loadWorksitesData();
     loadAttendancesData();
+    loadAccountsData();
     return () => clearInterval(timer);
   }, []);
+
+  const loadAccountsData = async () => {
+    try {
+      const cashRows = await getCashInHandEntries();
+      setAdminCashEntries(
+        cashRows.map((r) => ({
+          id:          r.id,
+          date:        r.date,
+          chequeNo:    r.cheque_no ?? '',
+          description: r.description ?? '',
+          debit:       r.debit,
+          credit:      r.credit,
+          balance:     r.balance,
+        }))
+      );
+    } catch (err) {
+      console.warn('[Admin] loadAccountsData cash error', err);
+    }
+    try {
+      const bankRows = await getBankEntries();
+      setAdminBankEntries(
+        bankRows.map((r) => ({
+          id:          r.id,
+          date:        r.date,
+          chequeNo:    r.cheque_no ?? '',
+          description: r.description ?? '',
+          debit:       r.debit,
+          credit:      r.credit,
+          balance:     r.balance,
+        }))
+      );
+    } catch (err) {
+      console.warn('[Admin] loadAccountsData bank error', err);
+    }
+  };
 
   const loadPersonalDocumentsData = async () => {
     try {
@@ -4486,6 +4523,15 @@ export default function AdminDashboard() {
         balance: newBalance,
       };
       setAdminCashEntries((prev2) => [...prev2, entry]);
+      // Persist to backend (fire-and-forget)
+      createCashInHandEntry({
+        date:        entry.date,
+        cheque_no:   entry.chequeNo || null,
+        description: entry.description || null,
+        debit:       entry.debit,
+        credit:      entry.credit,
+        balance:     entry.balance,
+      }).catch((err) => console.warn('[Admin] cash save error', err));
       setAdminCashForm({ date: getAdminSriLankaDate(), chequeNo: "", description: "", amount: "", prevBalance: "0.00" });
       setAdminCashTransactionType("debit");
       setAdminCashAddModalOpen(false);
@@ -4743,6 +4789,15 @@ export default function AdminDashboard() {
         balance: newBalance,
       };
       setAdminBankEntries((prev2) => [...prev2, entry]);
+      // Persist to backend (fire-and-forget)
+      createBankEntry({
+        date:        entry.date,
+        cheque_no:   entry.chequeNo || null,
+        description: entry.description || null,
+        debit:       entry.debit,
+        credit:      entry.credit,
+        balance:     entry.balance,
+      }).catch((err) => console.warn('[Admin] bank save error', err));
       setAdminBankForm({ date: getAdminSriLankaDate(), chequeNo: "", description: "", amount: "", prevBalance: "0.00" });
       setAdminBankTransactionType("debit");
       setAdminBankAddModalOpen(false);

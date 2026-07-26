@@ -394,6 +394,15 @@ export default function AttendancesPage() {
           </View>
         )}
 
+        {/* Record count summary */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', paddingHorizontal: 4, paddingBottom: 4 }}>
+          <View style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)', borderRadius: 20, paddingVertical: 4, paddingHorizontal: 12 }}>
+            <Text style={{ color: isDark ? '#e2e8f0' : '#374151', fontSize: 13, fontWeight: '600' }}>
+              {filteredAttendanceData.length} record{filteredAttendanceData.length !== 1 ? 's' : ''} shown
+            </Text>
+          </View>
+        </View>
+
         {/* Table */}
         <ScrollView style={styles.tableScrollContainer} showsVerticalScrollIndicator nestedScrollEnabled>
           <ScrollView horizontal showsHorizontalScrollIndicator>
