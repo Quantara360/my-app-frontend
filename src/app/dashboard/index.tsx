@@ -35,6 +35,7 @@ const officeStaffTiles = [
   { id: "peticash", title: "Accounts", route: "/accounts", color: "#F5FFD6", icon: "\u{1F3E6}" },
   { id: "template", title: "Template", route: "/template", color: "#FFD6F0", icon: "\u{1F4CB}" },
   { id: "bonds", title: "Bonds", route: "/bonds", color: "#D6D6FF", icon: "\u{1F4C4}" },
+  { id: "books", title: "Book", route: "/books", color: "#D6FFD6", icon: "\u{1F4D6}" },
 ];
 
 export default function DashboardScreen() {
@@ -188,7 +189,7 @@ export default function DashboardScreen() {
                   officeStaffTiles.slice(4, 6),
                   officeStaffTiles.slice(6, 8),
                   officeStaffTiles.slice(8, 10),
-                  officeStaffTiles.slice(10),
+                  officeStaffTiles.slice(10, 12),
                 ].map((rowTiles, rowIdx) => (
                   <View key={rowIdx} style={styles.staffCardsRow}>
                     {rowTiles.map((tile) => (
