@@ -1,5 +1,5 @@
 import { Link, useRouter } from "expo-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Modal,
   Pressable,
@@ -10,7 +10,7 @@ import {
   TextInput,
   View, Platform
 } from "react-native";
-import { registerWithApi, type UserRole } from "@/services/authService";
+import { registerWithApi, type UserRole, API_BASE_URL } from "@/services/authService";
 import { useTheme } from "@/hooks/use-theme";
 import { MaxContentWidth, rf } from '@/constants/theme';
 
@@ -52,6 +52,41 @@ export default function RegisterScreen() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
 
+  // Supervisor scoping
+  const [worksites, setWorksites] = useState<{ id: number; name: string }[]>([]);
+  const [selectedWorksiteId, setSelectedWorksiteId] = useState<number | null>(null);
+  const [hospitals, setHospitals] = useState<{ id: number; name: string }[]>([]);
+  const [selectedHospitalIds, setSelectedHospitalIds] = useState<number[]>([]);
+  const [loadingWorksites, setLoadingWorksites] = useState(false);
+  const [loadingHospitals, setLoadingHospitals] = useState(false);
+
+  useEffect(() => {
+    // Fetch worksites without auth (public endpoint for registration use)
+    setLoadingWorksites(true);
+    fetch(`${API_BASE_URL}/public-worksites`, { headers: { Accept: 'application/json' } })
+      .then(r => r.json())
+      .then(data => setWorksites(Array.isArray(data) ? data : data.data || []))
+      .catch(() => {})
+      .finally(() => setLoadingWorksites(false));
+  }, []);
+
+  useEffect(() => {
+    if (!selectedWorksiteId) { setHospitals([]); setSelectedHospitalIds([]); return; }
+    setLoadingHospitals(true);
+    setSelectedHospitalIds([]);
+    fetch(`${API_BASE_URL}/public-hospitals?worksite_id=${selectedWorksiteId}`, { headers: { Accept: 'application/json' } })
+      .then(r => r.json())
+      .then(data => setHospitals(Array.isArray(data) ? data : []))
+      .catch(() => {})
+      .finally(() => setLoadingHospitals(false));
+  }, [selectedWorksiteId]);
+
+  const toggleHospital = (id: number) => {
+    setSelectedHospitalIds(prev =>
+      prev.includes(id) ? prev.filter(h => h !== id) : [...prev, id]
+    );
+  };
+
   const validateUsername = (u: string) => {
     // Only letters, numbers, underscores, hyphens; 3–30 chars
     return /^[a-zA-Z0-9_-]{3,30}$/.test(u.trim());
@@ -73,7 +108,9 @@ export default function RegisterScreen() {
     isUsernameValid &&
     isEmailValid &&
     isPasswordValid &&
-    isPasswordMatchValid;
+    isPasswordMatchValid &&
+    // Supervisors must select a main site
+    (role !== 'supervisor' || selectedWorksiteId !== null);
 
   return (
     <View style={[styles.page, { backgroundColor: theme.background }]}>
@@ -237,6 +274,66 @@ export default function RegisterScreen() {
               )}
             </View>
 
+            {/* ── Supervisor Site/Hospital Scope pickers ────────────────── */}
+            {role === 'supervisor' && (
+              <>
+                <View style={styles.field}>
+                  <Text style={[styles.label, { color: theme.textSecondary }]}>Main Site <Text style={{ color: '#e74c3c' }}>*</Text></Text>
+                  {loadingWorksites ? (
+                    <Text style={{ color: theme.textSecondary, fontSize: 13, paddingLeft: 4 }}>Loading sites…</Text>
+                  ) : (
+                    <View style={styles.optionList}>
+                      {worksites.map(ws => (
+                        <Pressable
+                          key={ws.id}
+                          style={[styles.optionItem, selectedWorksiteId === ws.id && styles.optionItemSelected, { borderColor: selectedWorksiteId === ws.id ? accent : theme.backgroundSelected }]}
+                          onPress={() => setSelectedWorksiteId(ws.id === selectedWorksiteId ? null : ws.id)}
+                        >
+                          <View style={[styles.optionRadio, selectedWorksiteId === ws.id && { backgroundColor: accent, borderColor: accent }]}>
+                            {selectedWorksiteId === ws.id && <View style={styles.optionRadioInner} />}
+                          </View>
+                          <Text style={[styles.optionText, { color: theme.text }]}>{ws.name}</Text>
+                        </Pressable>
+                      ))}
+                      {worksites.length === 0 && (
+                        <Text style={{ color: theme.textSecondary, fontSize: 13, paddingLeft: 4 }}>No sites available</Text>
+                      )}
+                    </View>
+                  )}
+                </View>
+
+                {selectedWorksiteId !== null && (
+                  <View style={styles.field}>
+                    <Text style={[styles.label, { color: theme.textSecondary }]}>Hospitals <Text style={{ color: theme.textSecondary, fontWeight: '400' }}>(optional — leave blank for all)</Text></Text>
+                    {loadingHospitals ? (
+                      <Text style={{ color: theme.textSecondary, fontSize: 13, paddingLeft: 4 }}>Loading hospitals…</Text>
+                    ) : (
+                      <View style={styles.optionList}>
+                        {hospitals.map(h => {
+                          const checked = selectedHospitalIds.includes(h.id);
+                          return (
+                            <Pressable
+                              key={h.id}
+                              style={[styles.optionItem, checked && styles.optionItemSelected, { borderColor: checked ? accent : theme.backgroundSelected }]}
+                              onPress={() => toggleHospital(h.id)}
+                            >
+                              <View style={[styles.optionCheckbox, checked && { backgroundColor: accent, borderColor: accent }]}>
+                                {checked && <Text style={styles.optionCheckmark}>✓</Text>}
+                              </View>
+                              <Text style={[styles.optionText, { color: theme.text }]}>{h.name}</Text>
+                            </Pressable>
+                          );
+                        })}
+                        {hospitals.length === 0 && (
+                          <Text style={{ color: theme.textSecondary, fontSize: 13, paddingLeft: 4 }}>No hospitals under this site</Text>
+                        )}
+                      </View>
+                    )}
+                  </View>
+                )}
+              </>
+            )}
+
             {authError ? (
               <Text style={styles.errorText}>{authError}</Text>
             ) : null}
@@ -255,6 +352,8 @@ export default function RegisterScreen() {
                     email,
                     password,
                     role,
+                    worksite_id: role === 'supervisor' ? selectedWorksiteId : null,
+                    hospital_ids: role === 'supervisor' && selectedHospitalIds.length > 0 ? selectedHospitalIds : [],
                   });
                   setShowSuccess(true);
                 } catch (error) {
@@ -536,5 +635,57 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "700",
     fontSize: 14,
+  },
+  // ── Site / Hospital pickers ─────────────────────────────────────────────
+  optionList: {
+    gap: 8,
+  },
+  optionItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    backgroundColor: "transparent",
+  },
+  optionItemSelected: {
+    backgroundColor: "rgba(79,91,177,0.08)",
+  },
+  optionRadio: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: "#aaa",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  optionRadioInner: {
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: "#fff",
+  },
+  optionCheckbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 5,
+    borderWidth: 2,
+    borderColor: "#aaa",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  optionCheckmark: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "700",
+    lineHeight: 14,
+  },
+  optionText: {
+    fontSize: 14,
+    fontWeight: "500",
+    flex: 1,
   },
 });

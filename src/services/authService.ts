@@ -12,6 +12,8 @@ export type AuthUser = {
   username: string;
   email: string;
   role: UserRole;
+  worksite_id?: number | null;
+  hospital_ids?: number[];
 };
 
 export const ACCESS_TOKEN_KEY = 'auth_token';
@@ -97,6 +99,8 @@ export async function registerWithApi(params: {
   email: string;
   password: string;
   role: UserRole;
+  worksite_id?: number | null;
+  hospital_ids?: number[];
 }): Promise<AuthUser> {
   const result = await postJson<{ user: AuthUser; access_token: string }>('register', params);
   return result.user;
