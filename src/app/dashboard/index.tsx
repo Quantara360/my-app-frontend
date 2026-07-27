@@ -1,14 +1,20 @@
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Redirect, useRouter } from "expo-router";
-import {  Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View, Image } from 'react-native';
+import { Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View, Image } from 'react-native';
 import { useEffect, useState } from "react";
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/hooks/use-theme";
-import { API_BASE_URL } from "@/services/authService";
+import { API_BASE_URL, getAuthHeaders } from "@/services/authService";
 import { BottomTabInset, MaxContentWidth, Spacing, rf } from "@/constants/theme";
+import { getWorkers } from "@/services/adminWorkersService";
+import { getAssets } from "@/services/adminAssetsService";
+import { getMachineries } from "@/services/adminMachineriesService";
+import { getChemicals } from "@/services/adminChemicalsService";
+import { getApprovals } from "@/services/adminApprovalsService";
+import { getAttendances } from "@/services/adminAttendancesService";
 
 interface WorksiteTile {
   id: number;
@@ -18,17 +24,17 @@ interface WorksiteTile {
 }
 
 const officeStaffTiles = [
-  { id: "workers",       title: "Workers",     route: "/workers",       color: "#FFD6D6", icon: "\u{1F477}" },
-  { id: "assets",        title: "Assets",      route: "/assets",        color: "#D6EAFF", icon: "\u{1F4E6}" },
-  { id: "machineries",   title: "Machineries", route: "/machineries",   color: "#D6FFE4", icon: "\u2699\uFE0F" },
-  { id: "chemicals",     title: "Chemicals",   route: "/chemicals",     color: "#FFF3D6", icon: "\u{1F9EA}" },
-  { id: "approvals",     title: "Approvals",   route: "/approvals",     color: "#EDD6FF", icon: "\u2705" },
-  { id: "salaries",      title: "Salaries",    route: "/salaries",      color: "#D6FFF9", icon: "\u{1F4B5}" },
-  { id: "other-payments",title: "Peticash",    route: "/other-payments",color: "#FFE8D6", icon: "\u{1F4B0}" },
-  { id: "attendances",   title: "Attendances", route: "/attendances",   color: "#D6F0FF", icon: "\u{1F465}" },
-  { id: "peticash",      title: "Accounts",    route: "/accounts",      color: "#F5FFD6", icon: "\u{1F3E6}" },
-  { id: "template",      title: "Template",    route: "/template",      color: "#FFD6F0", icon: "\u{1F4CB}" },
-  { id: "bonds",         title: "Bonds",       route: "/bonds",         color: "#D6D6FF", icon: "\u{1F4C4}" },
+  { id: "workers", title: "Workers", route: "/workers", color: "#FFD6D6", icon: "\u{1F477}" },
+  { id: "assets", title: "Assets", route: "/assets", color: "#D6EAFF", icon: "\u{1F4E6}" },
+  { id: "machineries", title: "Machineries", route: "/machineries", color: "#D6FFE4", icon: "\u2699\uFE0F" },
+  { id: "chemicals", title: "Chemicals", route: "/chemicals", color: "#FFF3D6", icon: "\u{1F9EA}" },
+  { id: "approvals", title: "Approvals", route: "/approvals", color: "#EDD6FF", icon: "\u2705" },
+  { id: "salaries", title: "Salaries", route: "/salaries", color: "#D6FFF9", icon: "\u{1F4B5}" },
+  { id: "other-payments", title: "Peticash", route: "/other-payments", color: "#FFE8D6", icon: "\u{1F4B0}" },
+  { id: "attendances", title: "Attendances", route: "/attendances", color: "#D6F0FF", icon: "\u{1F465}" },
+  { id: "peticash", title: "Accounts", route: "/accounts", color: "#F5FFD6", icon: "\u{1F3E6}" },
+  { id: "template", title: "Template", route: "/template", color: "#FFD6F0", icon: "\u{1F4CB}" },
+  { id: "bonds", title: "Bonds", route: "/bonds", color: "#D6D6FF", icon: "\u{1F4C4}" },
 ];
 
 export default function DashboardScreen() {
@@ -40,6 +46,57 @@ export default function DashboardScreen() {
   const [supervisorWorksites, setSupervisorWorksites] = useState<
     WorksiteTile[]
   >([]);
+
+  // --- Office Staff tile counts ---
+  const [tileCounts, setTileCounts] = useState<Record<string, number | null>>({
+    workers: null,
+    assets: null,
+    machineries: null,
+    chemicals: null,
+    approvals: null,
+    attendances: null,
+  });
+
+  useEffect(() => {
+    if (!token || user?.role !== "officeStaff") return;
+
+    async function loadTileCounts() {
+      try {
+        const [workers, assets, machineries, chemicals, approvals, attendances] =
+          await Promise.allSettled([
+            getWorkers(),
+            getAssets(),
+            getMachineries(),
+            getChemicals(),
+            getApprovals(),
+            getAttendances(),
+          ]);
+
+        // Today's date in YYYY-MM-DD (Sri Lanka offset)
+        const now = new Date();
+        const sriLankaDate = new Date(now.getTime() + 330 * 60 * 1000)
+          .toISOString()
+          .slice(0, 10);
+
+        setTileCounts({
+          workers:    workers.status    === 'fulfilled' ? workers.value.length    : null,
+          assets:     assets.status     === 'fulfilled' ? assets.value.length     : null,
+          machineries:machineries.status=== 'fulfilled' ? machineries.value.length: null,
+          chemicals:  chemicals.status  === 'fulfilled' ? chemicals.value.length  : null,
+          approvals:  approvals.status  === 'fulfilled'
+            ? approvals.value.filter((a: any) => (a.status || '').toLowerCase() !== 'approved').length
+            : null,
+          attendances: attendances.status === 'fulfilled'
+            ? attendances.value.filter((a: any) => a.date === sriLankaDate && !!a.marked_at).length
+            : null,
+        });
+      } catch (err) {
+        console.warn('[Dashboard] loadTileCounts error', err);
+      }
+    }
+
+    loadTileCounts();
+  }, [token, user?.role]);
 
   useEffect(() => {
     if (!token || user?.role !== "supervisor") {
@@ -83,7 +140,7 @@ export default function DashboardScreen() {
         <View style={[styles.background, { backgroundColor: isDark ? "#121212" : "#F1E7DF" }]} />
         <View style={[styles.backgroundCircleLarge, { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(255, 255, 255, 0.65)" }]} />
         <View style={[styles.backgroundCircleSmall, { backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(255, 255, 255, 0.5)" }]} />
-        
+
         <SafeAreaView style={styles.safeArea}>
           <ScrollView
             style={styles.staffScroll}
@@ -124,40 +181,41 @@ export default function DashboardScreen() {
               </Pressable>
             </View>
 
-            <View
-              style={[
-                styles.staffPanel,
-                {
-                  backgroundColor: theme.backgroundElement,
-                  borderColor: theme.backgroundSelected,
-                },
-              ]}
-            >
-              <View style={styles.staffGrid}>
-                {officeStaffTiles.map((tile) => (
-                  <Pressable
-                    key={tile.id}
-                    style={({ pressed }) => [
-                      styles.staffCard,
-                      tile.id === "bonds" ? { width: "100%" } : {},
-                      {
-                        backgroundColor: tile.color,
-                        borderColor: tile.color,
-                      },
-                      pressed && styles.staffCardPressed,
-                    ]}
-                    onPress={() => router.push(tile.route as any)}
-                  >
-                    <Text style={{ fontSize: 28, marginBottom: 4 }}>{tile.icon}</Text>
-                    <Text
-                      style={[styles.staffCardTitle, { color: '#3D3D3D' }]}
-                    >
-                      {tile.title}
-                    </Text>
-                  </Pressable>
+            <View style={styles.staffGrid}>
+                {[
+                  officeStaffTiles.slice(0, 2),
+                  officeStaffTiles.slice(2, 4),
+                  officeStaffTiles.slice(4, 6),
+                  officeStaffTiles.slice(6, 8),
+                  officeStaffTiles.slice(8, 10),
+                  officeStaffTiles.slice(10),
+                ].map((rowTiles, rowIdx) => (
+                  <View key={rowIdx} style={styles.staffCardsRow}>
+                    {rowTiles.map((tile) => (
+                      <Pressable
+                        key={tile.id}
+                        style={({ pressed }) => [
+                          styles.staffCard,
+                          rowTiles.length === 1 ? { flex: 1 } : {},
+                          { backgroundColor: tile.color },
+                          pressed && styles.staffCardPressed,
+                        ]}
+                        onPress={() => router.push(tile.route as any)}
+                      >
+                        <Text style={styles.staffCardIcon}>{tile.icon}</Text>
+                        <Text style={[styles.staffCardTitle, { color: '#3D3D3D' }]}>
+                          {tile.title}
+                        </Text>
+                        {tileCounts[tile.id] != null && (
+                          <Text style={styles.staffCardValue}>
+                            {tileCounts[tile.id]}
+                          </Text>
+                        )}
+                      </Pressable>
+                    ))}
+                  </View>
                 ))}
               </View>
-            </View>
           </ScrollView>
         </SafeAreaView>
       </ThemedView>
@@ -226,7 +284,7 @@ export default function DashboardScreen() {
                     ]}
                   >
                     {worksite.logo ? (
-                      <Image 
+                      <Image
                         source={{ uri: worksite.logo.startsWith('http') ? worksite.logo : `${API_BASE_URL.replace(/\/api$/, '')}${worksite.logo.includes('/') ? (worksite.logo.startsWith('/') ? worksite.logo : '/' + worksite.logo) : '/storage/worksites/' + worksite.logo}` }}
                         style={{ width: '100%', height: '100%' }}
                         resizeMode="cover"
@@ -433,7 +491,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   staffPanel: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#ffffffff",
     borderRadius: 36,
     padding: Spacing.four,
     borderWidth: 1,
@@ -445,30 +503,45 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   staffGrid: {
+    gap: Spacing.two,
+    flexDirection: "column",
+  },
+  staffCardsRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
+    gap: Spacing.two,
+    alignItems: "stretch",
   },
   staffCard: {
-    width: '48%',
-    minHeight: 90,
-    borderRadius: 24,
-    backgroundColor: "#F8FAFC",
-    borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.05)",
+    flex: 1,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: Spacing.three,
-    paddingHorizontal: Spacing.two,
-    marginBottom: Spacing.two,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
   staffCardPressed: {
     opacity: 0.85,
   },
+  staffCardIcon: {
+    fontSize: 22,
+    marginBottom: 6,
+  },
   staffCardTitle: {
     color: "#0F172A",
-    fontSize: rf(16, 13, 16),
-    fontWeight: "800",
+    fontSize: 12,
+    fontWeight: "600",
     textAlign: "center",
+    marginBottom: 2,
+  },
+  staffCardValue: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#1f1d21",
+    marginTop: 2,
   },
 });

@@ -1182,13 +1182,13 @@ export default function AdminDashboard() {
       const cashRows = await getCashInHandEntries();
       setAdminCashEntries(
         cashRows.map((r) => ({
-          id:          r.id,
-          date:        r.date,
-          chequeNo:    r.cheque_no ?? '',
+          id: r.id,
+          date: r.date,
+          chequeNo: r.cheque_no ?? '',
           description: r.description ?? '',
-          debit:       r.debit,
-          credit:      r.credit,
-          balance:     r.balance,
+          debit: r.debit,
+          credit: r.credit,
+          balance: r.balance,
         }))
       );
     } catch (err) {
@@ -1198,13 +1198,13 @@ export default function AdminDashboard() {
       const bankRows = await getBankEntries();
       setAdminBankEntries(
         bankRows.map((r) => ({
-          id:          r.id,
-          date:        r.date,
-          chequeNo:    r.cheque_no ?? '',
+          id: r.id,
+          date: r.date,
+          chequeNo: r.cheque_no ?? '',
           description: r.description ?? '',
-          debit:       r.debit,
-          credit:      r.credit,
-          balance:     r.balance,
+          debit: r.debit,
+          credit: r.credit,
+          balance: r.balance,
         }))
       );
     } catch (err) {
@@ -1578,40 +1578,40 @@ export default function AdminDashboard() {
           <option value="absent">Absent</option>
           <option value="late">Late</option>
         </select>
-      <View style={{ position: 'relative', minWidth: 140 }}>
-        <input
-          type="date"
-          value={attendanceDateFilter}
-          onChange={(e: any) => setAttendanceDateFilter(e.target.value)}
-          style={{
-            backgroundColor: theme.backgroundSelected,
-            color: theme.text,
-            border: `1px solid ${theme.border || "#ccc"}`,
-            borderRadius: 8,
-            padding: "8px 12px",
-            fontSize: 14,
-            colorScheme: isDark ? "dark" : "light",
-            minWidth: 140,
-            minHeight: 40,
-            display: 'block',
-          }}
-        />
-        {!attendanceDateFilter && (
-          <Text
-            pointerEvents="none"
+        <View style={{ position: 'relative', minWidth: 140 }}>
+          <input
+            type="date"
+            value={attendanceDateFilter}
+            onChange={(e: any) => setAttendanceDateFilter(e.target.value)}
             style={{
-              position: 'absolute',
-              left: 12,
-              top: 10,
+              backgroundColor: theme.backgroundSelected,
+              color: theme.text,
+              border: `1px solid ${theme.border || "#ccc"}`,
+              borderRadius: 8,
+              padding: "8px 12px",
               fontSize: 14,
-              color: isDark ? '#888' : '#999',
+              colorScheme: isDark ? "dark" : "light",
+              minWidth: 140,
+              minHeight: 40,
+              display: 'block',
             }}
-          >
-            mm/dd/yyyy
-          </Text>
-        )}
+          />
+          {!attendanceDateFilter && (
+            <Text
+              pointerEvents="none"
+              style={{
+                position: 'absolute',
+                left: 12,
+                top: 10,
+                fontSize: 14,
+                color: isDark ? '#888' : '#999',
+              }}
+            >
+              mm/dd/yyyy
+            </Text>
+          )}
+        </View>
       </View>
-    </View>
 
       {attendanceTab === "IN" && selectedSiteId && attendanceDateFilter !== "" && attendanceShiftFilter !== "All" && (
         <View style={{ backgroundColor: isDark ? "#2a2000" : "#fffbe6", borderRadius: 8, padding: 10, marginBottom: 10, borderLeftWidth: 3, borderLeftColor: "#faad14" }}>
@@ -4528,12 +4528,12 @@ export default function AdminDashboard() {
       setAdminCashEntries((prev2) => [...prev2, entry]);
       // Persist to backend (fire-and-forget)
       createCashInHandEntry({
-        date:        entry.date,
-        cheque_no:   entry.chequeNo || null,
+        date: entry.date,
+        cheque_no: entry.chequeNo || null,
         description: entry.description || null,
-        debit:       entry.debit,
-        credit:      entry.credit,
-        balance:     entry.balance,
+        debit: entry.debit,
+        credit: entry.credit,
+        balance: entry.balance,
       }).catch((err) => console.warn('[Admin] cash save error', err));
       setAdminCashForm({ date: getAdminSriLankaDate(), chequeNo: "", description: "", amount: "", prevBalance: "0.00" });
       setAdminCashTransactionType("debit");
@@ -4823,12 +4823,12 @@ export default function AdminDashboard() {
       setAdminBankEntries((prev2) => [...prev2, entry]);
       // Persist to backend (fire-and-forget)
       createBankEntry({
-        date:        entry.date,
-        cheque_no:   entry.chequeNo || null,
+        date: entry.date,
+        cheque_no: entry.chequeNo || null,
         description: entry.description || null,
-        debit:       entry.debit,
-        credit:      entry.credit,
-        balance:     entry.balance,
+        debit: entry.debit,
+        credit: entry.credit,
+        balance: entry.balance,
       }).catch((err) => console.warn('[Admin] bank save error', err));
       setAdminBankForm({ date: getAdminSriLankaDate(), chequeNo: "", description: "", amount: "", prevBalance: "0.00" });
       setAdminBankTransactionType("debit");
@@ -5194,12 +5194,13 @@ const createStyles = (isDark: boolean) =>
       alignItems: "center",
       flexWrap: "wrap",
       gap: Spacing.two,
-      marginBottom: Spacing.two,
+      marginBottom: Spacing.four,
     },
     siteTimeRow: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "flex-start",
+      marginTop: Spacing.two,
       marginBottom: Spacing.three,
       gap: Spacing.two,
       zIndex: 100,
@@ -5695,6 +5696,7 @@ const createStyles = (isDark: boolean) =>
       gap: Spacing.two,
       flex: 1,
       justifyContent: "space-between",
+      marginTop: Spacing.three,
     },
     manageSiteContainer: {
       flex: 1,
