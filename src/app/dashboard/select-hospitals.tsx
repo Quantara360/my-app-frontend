@@ -48,9 +48,11 @@ export default function SelectHospitals() {
           const list: Hospital[] = Array.isArray(data) ? data : data.data || [];
           if (list.length === 0) {
             // No hospitals for this worksite — skip straight to site-actions
+            // Pass hospitalId same as worksiteId AND isWorksite=true so
+            // site-actions knows images are scoped at worksite level
             router.replace({
               pathname: "/dashboard/site-actions",
-              params: { worksiteId: worksiteId ?? "" },
+              params: { worksiteId: worksiteId ?? "", hospitalId: worksiteId ?? "", isWorksite: "true" },
             } as any);
             return;
           }

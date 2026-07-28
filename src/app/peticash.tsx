@@ -11,7 +11,8 @@ import { useTheme } from '@/hooks/use-theme';
 import { API_BASE_URL } from '@/services/authService';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGoBack } from "@/hooks/use-go-back";
-import { generateAndShareVoucher } from '@/utils/pdfVoucher';
+import { generateAndShareVoucher, generateVoucherHtml } from '@/utils/pdfVoucher';
+import * as Print from 'expo-print';
 
 type Worksite = {
   id: number;
@@ -74,6 +75,9 @@ export default function PeticashPage() {
   const [invoiceSearch, setInvoiceSearch] = useState('');
   const [invoicePayee, setInvoicePayee] = useState('');
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null);
+
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [previewHtml, setPreviewHtml] = useState('');
 
   useEffect(() => {
     if (!token) return;
@@ -236,6 +240,30 @@ export default function PeticashPage() {
       setInvoicePayee('');
       setSelectedInvoiceId(null);
     });
+  };
+
+  const handleViewInvoice = async () => {
+    if (!selectedInvoiceId) return;
+    const t = transactions.find(tx => tx.id === selectedInvoiceId);
+    if (!t) return;
+    
+    const html = generateVoucherHtml({
+      id: t.id,
+      date: t.transaction_date,
+      payee: invoicePayee || t.worksite?.name || '................................',
+      particulars: t.description || '...',
+      accountHead: t.type,
+      grossAmount: t.amount,
+    });
+
+    if (Platform.OS === 'web') {
+      setPreviewHtml(html);
+      setPreviewModalOpen(true);
+      setInvoiceModalOpen(false);
+    } else {
+      // On native, use expo-print to show native print preview
+      await Print.printAsync({ html });
+    }
   };
 
   const invoiceSearchResults = invoiceSearch.trim() === '' ? [] : transactions.filter(t => 
@@ -608,21 +636,67 @@ export default function PeticashPage() {
                 )}
               </ScrollView>
 
-              <View style={styles.modalFooter}>
+              <View style={[styles.modalFooter, { justifyContent: 'space-between' }]}>
                 <Pressable style={[styles.modalButton, { backgroundColor: 'transparent' }]} onPress={() => setInvoiceModalOpen(false)}>
                   <Text style={[styles.modalButtonText, { color: '#555' }]}>Cancel</Text>
                 </Pressable>
-                <Pressable 
-                  style={[styles.modalButton, { backgroundColor: selectedInvoiceId ? '#22c55e' : '#aaa' }]} 
-                  onPress={handleGenerateInvoice}
-                  disabled={!selectedInvoiceId}
-                >
-                  <Text style={styles.modalButtonText}>Generate PDF</Text>
-                </Pressable>
+                
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                  <Pressable 
+                    style={[styles.modalButton, { backgroundColor: selectedInvoiceId ? '#6a0dad' : '#aaa', paddingHorizontal: 15 }]} 
+                    onPress={handleViewInvoice}
+                    disabled={!selectedInvoiceId}
+                  >
+                    <Text style={styles.modalButtonText}>👁 View</Text>
+                  </Pressable>
+                  <Pressable 
+                    style={[styles.modalButton, { backgroundColor: selectedInvoiceId ? '#1a7a3a' : '#aaa', paddingHorizontal: 15 }]} 
+                    onPress={handleGenerateInvoice}
+                    disabled={!selectedInvoiceId}
+                  >
+                    <Text style={styles.modalButtonText}>⬇ PDF</Text>
+                  </Pressable>
+                </View>
               </View>
             </View>
           </View>
         </Modal>
+
+        {/* Web Preview Modal */}
+        {Platform.OS === 'web' && (
+          <Modal visible={previewModalOpen} transparent animationType="fade" onRequestClose={() => setPreviewModalOpen(false)}>
+            <View style={styles.overlay}>
+              <View style={styles.previewBox}>
+                <View style={styles.modalBar}>
+                  <ThemedText type="subtitle" style={{ fontSize: 15, fontWeight: "700" }}>
+                    Voucher Preview
+                  </ThemedText>
+                  <View style={{ flexDirection: "row", gap: 8 }}>
+                    <Pressable
+                      onPress={() => {
+                        setPreviewModalOpen(false);
+                        handleGenerateInvoice();
+                      }}
+                      style={styles.printBtn}
+                    >
+                      <Text style={styles.printBtnTxt}>⬇ PDF</Text>
+                    </Pressable>
+                    <Pressable onPress={() => setPreviewModalOpen(false)} style={styles.closeBtn}>
+                      <Text style={styles.closeBtnTxt}>✕ Close</Text>
+                    </Pressable>
+                  </View>
+                </View>
+                <View style={{ flex: 1, backgroundColor: '#fff', borderRadius: 8, overflow: 'hidden' }}>
+                  {/* eslint-disable-next-line jsx-a11y/iframe-has-title */}
+                  <iframe 
+                    srcDoc={previewHtml} 
+                    style={{ width: '100%', height: '100%', border: 'none' }}
+                  />
+                </View>
+              </View>
+            </View>
+          </Modal>
+        )}
       </SafeAreaView>
     </ThemedView>
   );
@@ -945,22 +1019,37 @@ const createStyles = (theme: ReturnType<typeof useTheme>) =>
       marginBottom: Spacing.one,
     },
     modalFooter: {
-      paddingHorizontal: Spacing.four,
-      paddingVertical: Spacing.three,
-      borderTopWidth: 1,
-      borderTopColor: 'rgba(0, 0, 0, 0.1)',
       flexDirection: 'row',
       justifyContent: 'flex-end',
-      gap: Spacing.two,
+      marginTop: 24,
+      gap: 12,
     },
     modalButton: {
-      paddingHorizontal: Spacing.four,
-      paddingVertical: Spacing.two,
+      paddingVertical: 10,
+      paddingHorizontal: 20,
       borderRadius: 8,
     },
     modalButtonText: {
-      color: 'white',
+      color: '#fff',
+      fontSize: 14,
       fontWeight: '600',
     },
+    overlay: {
+      flex: 1, backgroundColor: "rgba(0,0,0,0.75)",
+      justifyContent: "center", alignItems: "center", padding: 12,
+    },
+    previewBox: {
+      backgroundColor: theme.backgroundElement,
+      borderRadius: 16, padding: 16,
+      width: '90%', maxWidth: 900,
+      height: '90%',
+    },
+    modalBar: {
+      flexDirection: "row", justifyContent: "space-between",
+      alignItems: "center", marginBottom: 12,
+    },
+    printBtn: { backgroundColor: "#1a7a3a", borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, justifyContent: 'center' },
+    printBtnTxt: { color: "#fff", fontSize: 13, fontWeight: "600" },
+    closeBtn: { backgroundColor: "#e5e5ea", borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, justifyContent: 'center' },
+    closeBtnTxt: { color: "#333", fontSize: 13, fontWeight: "600" },
   });
-

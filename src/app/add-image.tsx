@@ -22,6 +22,9 @@ export default function AddImagePage() {
   const { token } = useAuth();
   const params = useLocalSearchParams();
   const worksiteId = params.worksiteId;
+  // isWorksite=true means this worksite has no sub-sites;
+  // use worksite_id scope to avoid collision with sub_site_id
+  const isWorksite = params.isWorksite === "true";
 
   const [workers, setWorkers] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
@@ -34,7 +37,10 @@ export default function AddImagePage() {
     const loadImages = async () => {
       if (!worksiteId || !token) return;
       try {
-        const response = await fetch(`${API_BASE_URL}/sub-site-images?sub_site_id=${worksiteId}`, {
+        const scopeParam = isWorksite
+          ? `worksite_id=${worksiteId}`
+          : `sub_site_id=${worksiteId}`;
+        const response = await fetch(`${API_BASE_URL}/sub-site-images?${scopeParam}`, {
           headers: {
             Accept: "application/json",
             Authorization: `Bearer ${token}`,
@@ -81,7 +87,7 @@ export default function AddImagePage() {
   const openCapture = (index: number) => {
     router.push({
       pathname: "/add-image-capture",
-      params: { book: index, worksiteId },
+      params: { book: index, worksiteId, isWorksite: isWorksite ? "true" : "false" },
     } as any);
   };
 

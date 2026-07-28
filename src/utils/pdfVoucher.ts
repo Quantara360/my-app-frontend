@@ -14,7 +14,7 @@ export type VoucherData = {
   vatPaid?: number;
 };
 
-export async function generateAndShareVoucher(data: VoucherData) {
+export function generateVoucherHtml(data: VoucherData): string {
   const vatPaidVal = data.vatPaid || 0;
   const netTotal = data.grossAmount + vatPaidVal;
   
@@ -23,7 +23,7 @@ export async function generateAndShareVoucher(data: VoucherData) {
   const netTotalStr = netTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const amountWords = numberToWords(netTotal);
 
-  const html = `
+  return `
     <html>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
@@ -276,24 +276,32 @@ export async function generateAndShareVoucher(data: VoucherData) {
       </body>
     </html>
   `;
+}
 
+export async function generateAndShareVoucher(data: VoucherData) {
+  const html = generateVoucherHtml(data);
   try {
     if (Platform.OS === 'web') {
+      const isMobileBrowser = typeof navigator !== 'undefined' && /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
+      
       // On web (desktop or mobile browser): open the HTML in a new window/tab
       // The browser's print dialog / share sheet allows saving as PDF
       const printWindow = window.open('', '_blank', 'width=900,height=700');
       if (printWindow) {
         printWindow.document.write(html);
         printWindow.document.close();
-        // Trigger print after content loads
-        printWindow.onload = () => {
-          printWindow.focus();
-          printWindow.print();
-        };
-        // Fallback for browsers where onload doesn't fire on document.write
-        setTimeout(() => {
-          try { printWindow.focus(); printWindow.print(); } catch (_) {}
-        }, 500);
+        
+        if (!isMobileBrowser) {
+          // Trigger print after content loads (only on desktop)
+          printWindow.onload = () => {
+            printWindow.focus();
+            printWindow.print();
+          };
+          // Fallback for browsers where onload doesn't fire on document.write
+          setTimeout(() => {
+            try { printWindow.focus(); printWindow.print(); } catch (_) {}
+          }, 500);
+        }
       }
     } else {
       // Native mobile (iOS / Android): generate PDF file, then open native share sheet

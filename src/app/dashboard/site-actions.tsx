@@ -29,6 +29,12 @@ export default function SiteActionsPage() {
   const worksiteId = Array.isArray(params.worksiteId) ? params.worksiteId[0] : params.worksiteId;
   const hospitalId = Array.isArray(params.hospitalId) ? params.hospitalId[0] : params.hospitalId;
   const passedSiteName = Array.isArray(params.siteName) ? params.siteName[0] : params.siteName;
+  const isWorksite = Array.isArray(params.isWorksite) ? params.isWorksite[0] : params.isWorksite;
+
+  // The scoped image ID: prefer sub-site > hospital > null
+  // We never fall back to worksiteId to avoid ID collision between
+  // worksites.id and sub_sites.id (same numbers, different tables)
+  const imageScopeId = siteId ?? (isWorksite === 'true' ? null : hospitalId) ?? null;
 
   const siteLabel = passedSiteName ? passedSiteName : siteId ? (siteNames[siteId] ?? siteId) : "Worksite";
 
@@ -90,11 +96,16 @@ export default function SiteActionsPage() {
                   return;
                 }
 
-                // For add-image: siteId (sub-site) → hospitalId → worksiteId
-                // This ensures each level has its own image scope
+                // For add-image: pass worksiteId separately from the scoped
+                // sub_site_id so they never collide (different DB tables).
+                // imageScopeId is null when the worksite has no sub-sites —
+                // in that case we use worksiteId as the worksite-level scope.
                 router.push({
                   pathname: "/add-image",
-                  params: { worksiteId: siteId ?? hospitalId ?? worksiteId ?? "" },
+                  params: {
+                    worksiteId: imageScopeId ?? worksiteId ?? "",
+                    isWorksite: imageScopeId ? "false" : "true",
+                  },
                 } as any);
               }}
             >

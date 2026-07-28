@@ -98,20 +98,12 @@ export default function WorksitePage() {
                     return;
                   }
                   if (action.id === "add-image") {
-                    const isAmil = worksite?.name
-                      ?.toLowerCase()
-                      .includes("amil");
-                    if (isAmil) {
-                      router.push(
-                        `/dashboard/select-hospitals?worksiteId=${worksiteId}`,
-                      );
-                      return;
-                    }
-
-                    router.push({
-                      pathname: "/add-image",
-                      params: { worksiteId },
-                    } as any);
+                    // Always route through select-hospitals so a proper sub_site_id
+                    // is used — prevents collision between worksites.id and sub_sites.id
+                    // (e.g. Clean worksite id=3 colliding with Castle sub-site id=3)
+                    router.push(
+                      `/dashboard/select-hospitals?worksiteId=${worksiteId}`,
+                    );
                     return;
                   }
                 }}

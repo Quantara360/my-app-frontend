@@ -25,6 +25,8 @@ export default function AddImageCapture() {
   const { token } = useAuth();
   const book = Number(params.book ?? 1);
   const worksiteId = params.worksiteId;
+  // isWorksite=true: this is a worksite with no sub-sites, use worksite_id scope
+  const isWorksite = params.isWorksite === "true";
 
   // We store full image objects { id: number, image_path: string }
   const [captured, setCaptured] = useState<any[]>([]);
@@ -119,7 +121,7 @@ export default function AddImageCapture() {
     if (!worksiteId || !token) return;
     try {
       const response = await fetch(
-        `${API_BASE_URL}/sub-site-images?sub_site_id=${worksiteId}&book_id=${book}`,
+        `${API_BASE_URL}/sub-site-images?${isWorksite ? 'worksite_id' : 'sub_site_id'}=${worksiteId}&book_id=${book}`,
         {
           headers: {
             Accept: "application/json",
@@ -193,7 +195,9 @@ export default function AddImageCapture() {
           });
 
           const formData = new FormData();
-          formData.append('sub_site_id', worksiteId as string);
+          // Use worksite_id for worksite-scoped images (no sub-sites),
+          // sub_site_id for sub-site-scoped images (Castle, etc.)
+          formData.append(isWorksite ? 'worksite_id' : 'sub_site_id', worksiteId as string);
           formData.append('book_id', book.toString());
           formData.append('photo', blob, `photo_${Date.now()}.jpg`);
 
@@ -234,7 +238,7 @@ export default function AddImageCapture() {
       if (!photo) throw new Error("No photo captured");
 
       const formData = new FormData();
-      formData.append("sub_site_id", worksiteId as string);
+      formData.append(isWorksite ? "worksite_id" : "sub_site_id", worksiteId as string);
       formData.append("book_id", book.toString());
       formData.append("photo", {
         uri: photo.uri,
@@ -429,7 +433,7 @@ export default function AddImageCapture() {
             onPress={() =>
               router.push({
                 pathname: "/add-image",
-                params: { worksiteId, refresh: Date.now() },
+                params: { worksiteId, refresh: Date.now(), isWorksite: isWorksite ? "true" : "false" },
               } as any)
             }
           >
