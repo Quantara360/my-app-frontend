@@ -106,8 +106,9 @@ export default function BooksPage() {
       .finally(() => setIsLoading(false));
   }, [token]);
 
-  const loadImages = async (scopeId: number) => {
-    const r = await fetch(`${API_BASE_URL}/sub-site-images?sub_site_id=${scopeId}`, { headers: authHeaders() });
+  const loadImages = async (scopeId: number, type: 'worksite' | 'hospital' | 'subsite' = 'subsite') => {
+    const param = type === 'worksite' ? 'worksite_id' : 'sub_site_id';
+    const r = await fetch(`${API_BASE_URL}/sub-site-images?${param}=${scopeId}`, { headers: authHeaders() });
     if (!r.ok) { setImages([]); return; }
     const data = await r.json();
     setImages(Array.isArray(data) ? data : []);
@@ -120,7 +121,7 @@ export default function BooksPage() {
       const r = await fetch(`${API_BASE_URL}/hospitals?worksite_id=${ws.id}`, { headers: authHeaders() });
       const data = await r.json();
       const list: Hospital[] = Array.isArray(data) ? data : data.data || [];
-      if (list.length === 0) { setHospitals([]); setSubSites([]); await loadImages(ws.id); setLevel("books"); }
+      if (list.length === 0) { setHospitals([]); setSubSites([]); await loadImages(ws.id, 'worksite'); setLevel("books"); }
       else { setHospitals(list); setLevel("hospitals"); }
     } catch (e) { console.error(e); } finally { setIsLoading(false); setLoadingStep(""); }
   };
@@ -132,14 +133,14 @@ export default function BooksPage() {
       const r = await fetch(`${API_BASE_URL}/sub-sites?hospital_id=${h.id}`, { headers: authHeaders() });
       const data = await r.json();
       const list: SubSite[] = Array.isArray(data) ? data : data.data || [];
-      if (list.length === 0) { setSubSites([]); await loadImages(h.id); setLevel("books"); }
+      if (list.length === 0) { setSubSites([]); await loadImages(h.id, 'hospital'); setLevel("books"); }
       else { setSubSites(list); setLevel("subsites"); }
     } catch (e) { console.error(e); } finally { setIsLoading(false); setLoadingStep(""); }
   };
 
   const selectSubSite = async (s: SubSite) => {
     setSelectedSubSite(s); setIsLoading(true);
-    try { await loadImages(s.id); setLevel("books"); } catch (e) { console.error(e); } finally { setIsLoading(false); }
+    try { await loadImages(s.id, 'subsite'); setLevel("books"); } catch (e) { console.error(e); } finally { setIsLoading(false); }
   };
 
   const selectBook = (bookId: number) => {

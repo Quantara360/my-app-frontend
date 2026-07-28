@@ -282,27 +282,14 @@ export async function generateAndShareVoucher(data: VoucherData) {
   const html = generateVoucherHtml(data);
   try {
     if (Platform.OS === 'web') {
-      const isMobileBrowser = typeof navigator !== 'undefined' && /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
-      
-      // On web (desktop or mobile browser): open the HTML in a new window/tab
-      // The browser's print dialog / share sheet allows saving as PDF
-      const printWindow = window.open('', '_blank', 'width=900,height=700');
-      if (printWindow) {
-        printWindow.document.write(html);
-        printWindow.document.close();
-        
-        if (!isMobileBrowser) {
-          // Trigger print after content loads (only on desktop)
-          printWindow.onload = () => {
-            printWindow.focus();
-            printWindow.print();
-          };
-          // Fallback for browsers where onload doesn't fire on document.write
-          setTimeout(() => {
-            try { printWindow.focus(); printWindow.print(); } catch (_) {}
-          }, 500);
-        }
-      }
+      const html2pdf = require('html2pdf.js');
+      html2pdf().from(html).set({
+        margin: 0,
+        filename: `PettyCash_Voucher_${data.id}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'pt', format: [794, 559], orientation: 'landscape' }
+      }).save();
     } else {
       // Native mobile (iOS / Android): generate PDF file, then open native share sheet
       const { uri } = await Print.printToFileAsync({
