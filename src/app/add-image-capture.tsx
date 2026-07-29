@@ -27,6 +27,9 @@ export default function AddImageCapture() {
   const worksiteId = params.worksiteId;
   // isWorksite=true: this is a worksite with no sub-sites, use worksite_id scope
   const isWorksite = params.isWorksite === "true";
+  // parentWorksiteId: real parent worksite — combined with sub_site_id to
+  // prevent collision when sub-sites of different worksites share the same ID
+  const parentWorksiteId = params.parentWorksiteId;
 
   // We store full image objects { id: number, image_path: string }
   const [captured, setCaptured] = useState<any[]>([]);
@@ -121,7 +124,7 @@ export default function AddImageCapture() {
     if (!worksiteId || !token) return;
     try {
       const response = await fetch(
-        `${API_BASE_URL}/sub-site-images?${isWorksite ? 'worksite_id' : 'sub_site_id'}=${worksiteId}&book_id=${book}`,
+        `${API_BASE_URL}/sub-site-images?${isWorksite ? 'worksite_id' : 'sub_site_id'}=${worksiteId}${!isWorksite && parentWorksiteId ? `&worksite_id=${parentWorksiteId}` : ''}&book_id=${book}`,
         {
           headers: {
             Accept: "application/json",
@@ -197,7 +200,13 @@ export default function AddImageCapture() {
           const formData = new FormData();
           // Use worksite_id for worksite-scoped images (no sub-sites),
           // sub_site_id for sub-site-scoped images (Castle, etc.)
+          // When scoped to a sub-site, also send the parent worksite_id so the
+          // backend can distinguish between sub-sites of different worksites
+          // that share the same numeric ID.
           formData.append(isWorksite ? 'worksite_id' : 'sub_site_id', worksiteId as string);
+          if (!isWorksite && parentWorksiteId) {
+            formData.append('worksite_id', parentWorksiteId as string);
+          }
           formData.append('book_id', book.toString());
           formData.append('photo', blob, `photo_${Date.now()}.jpg`);
 
@@ -239,6 +248,9 @@ export default function AddImageCapture() {
 
       const formData = new FormData();
       formData.append(isWorksite ? "worksite_id" : "sub_site_id", worksiteId as string);
+      if (!isWorksite && parentWorksiteId) {
+        formData.append("worksite_id", parentWorksiteId as string);
+      }
       formData.append("book_id", book.toString());
       formData.append("photo", {
         uri: photo.uri,

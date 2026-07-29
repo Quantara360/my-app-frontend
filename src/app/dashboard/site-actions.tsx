@@ -100,11 +100,15 @@ export default function SiteActionsPage() {
                 // sub_site_id so they never collide (different DB tables).
                 // imageScopeId is null when the worksite has no sub-sites —
                 // in that case we use worksiteId as the worksite-level scope.
+                // parentWorksiteId is always the real worksite — used together
+                // with sub_site_id to prevent collision when two different
+                // worksites have sub-sites that share the same numeric ID.
                 router.push({
                   pathname: "/add-image",
                   params: {
                     worksiteId: imageScopeId ?? worksiteId ?? "",
                     isWorksite: imageScopeId ? "false" : "true",
+                    parentWorksiteId: worksiteId ?? "",
                   },
                 } as any);
               }}

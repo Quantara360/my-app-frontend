@@ -25,6 +25,10 @@ export default function AddImagePage() {
   // isWorksite=true means this worksite has no sub-sites;
   // use worksite_id scope to avoid collision with sub_site_id
   const isWorksite = params.isWorksite === "true";
+  // parentWorksiteId is the real main worksite — passed alongside sub_site_id
+  // to prevent images from different worksites sharing the same sub-site ID
+  // from colliding (e.g. Castle sub_site_id=3 vs Razavi sub_site_id=3)
+  const parentWorksiteId = params.parentWorksiteId;
 
   const [workers, setWorkers] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
@@ -39,7 +43,7 @@ export default function AddImagePage() {
       try {
         const scopeParam = isWorksite
           ? `worksite_id=${worksiteId}`
-          : `sub_site_id=${worksiteId}`;
+          : `sub_site_id=${worksiteId}${parentWorksiteId ? `&worksite_id=${parentWorksiteId}` : ''}`;
         const response = await fetch(`${API_BASE_URL}/sub-site-images?${scopeParam}`, {
           headers: {
             Accept: "application/json",
@@ -87,7 +91,7 @@ export default function AddImagePage() {
   const openCapture = (index: number) => {
     router.push({
       pathname: "/add-image-capture",
-      params: { book: index, worksiteId, isWorksite: isWorksite ? "true" : "false" },
+      params: { book: index, worksiteId, isWorksite: isWorksite ? "true" : "false", parentWorksiteId: parentWorksiteId ?? "" },
     } as any);
   };
 
