@@ -42,6 +42,7 @@ export function generateVoucherHtml(data: VoucherData): string {
             padding: 10px;
             color: #000;
             font-size: 12px;
+            background-color: #ffff99; /* more yellowish */
           }
           .header-container {
             display: flex;

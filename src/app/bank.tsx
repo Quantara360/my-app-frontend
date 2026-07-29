@@ -52,6 +52,17 @@ export default function BankPage() {
   const [transactionType, setTransactionType] = useState<'debit' | 'credit'>('debit');
   const [editingId, setEditingId] = useState<number | null>(null);
 
+  const [manualPrevBalanceStr, setManualPrevBalanceStr] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const stored = window.localStorage.getItem('bank_prevBal_override');
+      if (stored) {
+        setManualPrevBalanceStr(stored);
+      }
+    }
+  }, []);
+
   // Load persisted entries from backend on mount
   useEffect(() => {
     getBankEntries()
@@ -84,7 +95,7 @@ export default function BankPage() {
   const currentBalance = totalCredit - totalDebit;
 
   /** Closing balance = balance field of the last entry in the previous calendar month */
-  const prevMonthBalance = (() => {
+  const computedPrevMonthBalance = (() => {
     const now = new Date();
     const offset = 330; // Sri Lanka UTC+5:30
     const local = new Date(now.getTime() + offset * 60 * 1000);
@@ -103,6 +114,10 @@ export default function BankPage() {
     // Return the balance of the last entry (closing balance of the previous month)
     return prevMonthEntries[prevMonthEntries.length - 1].balance;
   })();
+
+  const prevMonthBalance = manualPrevBalanceStr !== null 
+    ? parseFloat(manualPrevBalanceStr) 
+    : computedPrevMonthBalance;
 
   // Calculate running balances chronologically first
   const entriesWithBalances = [...entries]
@@ -132,6 +147,12 @@ export default function BankPage() {
     const debit  = transactionType === 'debit'  && form.amount ? parseFloat(form.amount) : null;
     const credit = transactionType === 'credit' && form.amount ? parseFloat(form.amount) : null;
     const prevBalance = parseFloat(form.prevBalance || '0');
+
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.setItem('bank_prevBal_override', form.prevBalance);
+      setManualPrevBalanceStr(form.prevBalance);
+    }
+
     const newBalance = prevBalance + (credit ?? 0) - (debit ?? 0);
     
     if (editingId) {
@@ -369,12 +390,13 @@ export default function BankPage() {
                   Previous Month Bank Balance
                 </Text>
                 <TextInput
-                  style={[styles.textInput, { color: theme.text, borderColor: theme.backgroundSelected, backgroundColor: 'rgba(0,0,0,0.05)' }]}
+                  style={[styles.textInput, { color: theme.text, borderColor: theme.backgroundSelected, backgroundColor: 'transparent' }]}
                   placeholder="0.00"
                   placeholderTextColor="#aaa"
                   keyboardType="decimal-pad"
                   value={form.prevBalance}
-                  editable={false}
+                  onChangeText={(v) => setForm((prev) => ({ ...prev, prevBalance: v }))}
+                  editable={true}
                 />
               </View>
 

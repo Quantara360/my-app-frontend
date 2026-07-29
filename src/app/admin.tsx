@@ -96,10 +96,11 @@ export default function AdminDashboard() {
   interface WorkerRecord {
     id: string | number;
     name: string;
-    site: string;
-    type: string;
+    site?: string;
+    type?: string;
     status?: string;
     role?: string;
+    worksite?: { name: string };
   }
 
   interface ApprovalRecord {
@@ -517,13 +518,13 @@ export default function AdminDashboard() {
   const filteredWorkerData = filteredWorkers.filter((item) => {
     const query = workerSearch.trim().toLowerCase();
     if (!query) return true;
+    const siteName = item.worksite?.name || item.site || "Unassigned";
+    const roleName = item.role || item.type || item.status || "";
     return (
       String(item.id).includes(query) ||
       item.name.toLowerCase().includes(query) ||
-      item.site.toLowerCase().includes(query) ||
-      (item.type || item.status || item.role || "")
-        .toLowerCase()
-        .includes(query)
+      siteName.toLowerCase().includes(query) ||
+      roleName.toLowerCase().includes(query)
     );
   });
 
@@ -4300,10 +4301,10 @@ export default function AdminDashboard() {
                   {item.name}
                 </Text>
                 <Text style={[styles.tableCell, styles.workerCellSite]}>
-                  {item.site}
+                  {item.worksite?.name || item.site || "Unassigned"}
                 </Text>
                 <Text style={[styles.tableCell, styles.workerCellType]}>
-                  {item.type}
+                  {item.role || item.type || "N/A"}
                 </Text>
                 <View style={styles.workerActionsContainer}>
                   <Pressable
