@@ -123,9 +123,15 @@ export default function BooksPage() {
       .finally(() => setIsLoading(false));
   }, [token]);
 
-  const loadImages = async (scopeId: number, type: 'worksite' | 'hospital' | 'subsite' = 'subsite') => {
+  const loadImages = async (scopeId: number, type: 'worksite' | 'hospital' | 'subsite' = 'subsite', parentWorksiteId?: number) => {
     const param = type === 'worksite' ? 'worksite_id' : 'sub_site_id';
-    const r = await fetch(`${API_BASE_URL}/sub-site-images?${param}=${scopeId}`, { headers: authHeaders() });
+    let url = `${API_BASE_URL}/sub-site-images?${param}=${scopeId}`;
+    // When fetching sub-site images, also pass the parent worksite_id to prevent
+    // collision when sub-sites of different worksites share the same numeric ID
+    if (type === 'subsite' && parentWorksiteId) {
+      url += `&worksite_id=${parentWorksiteId}`;
+    }
+    const r = await fetch(url, { headers: authHeaders() });
     if (!r.ok) { setImages([]); return; }
     const data = await r.json();
     setImages(Array.isArray(data) ? data : []);
@@ -157,7 +163,7 @@ export default function BooksPage() {
 
   const selectSubSite = async (s: SubSite) => {
     setSelectedSubSite(s); setIsLoading(true);
-    try { await loadImages(s.id, 'subsite'); setLevel("books"); } catch (e) { console.error(e); } finally { setIsLoading(false); }
+    try { await loadImages(s.id, 'subsite', selectedWorksite?.id); setLevel("books"); } catch (e) { console.error(e); } finally { setIsLoading(false); }
   };
 
   const selectBook = (bookId: number) => {
