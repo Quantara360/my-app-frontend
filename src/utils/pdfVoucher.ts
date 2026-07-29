@@ -3,6 +3,13 @@ import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
 import { numberToWords } from './numberToWords';
 
+let html2canvas: any;
+let jsPDF: any;
+if (Platform.OS === 'web') {
+  html2canvas = require('html2canvas/dist/html2canvas.min.js');
+  jsPDF = require('jspdf/dist/jspdf.es.min.js').jsPDF;
+}
+
 export type VoucherData = {
   id: string | number;
   date: string;
@@ -282,14 +289,35 @@ export async function generateAndShareVoucher(data: VoucherData) {
   const html = generateVoucherHtml(data);
   try {
     if (Platform.OS === 'web') {
-      const html2pdf = require('html2pdf.js');
-      html2pdf().from(html).set({
-        margin: 0,
-        filename: `PettyCash_Voucher_${data.id}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'pt', format: [794, 559], orientation: 'landscape' }
-      }).save();
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.left = '-9999px';
+      iframe.style.width = '794px';
+      iframe.style.height = '559px';
+      document.body.appendChild(iframe);
+
+      await new Promise((resolve) => {
+        iframe.onload = resolve;
+        iframe.srcdoc = html;
+      });
+
+      // Render using the iframe's own document/style context (not a clone in the main doc)
+      const iframeWindow = iframe.contentWindow;
+      const target = iframe.contentDocument.body;
+
+      const canvas = await html2canvas(target, {
+        scale: 2,
+        useCORS: true,
+        windowWidth: 794,
+        windowHeight: 559,
+      });
+
+      document.body.removeChild(iframe);
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.98);
+      const pdf = new jsPDF({ unit: 'pt', format: [794, 559], orientation: 'landscape' });
+      pdf.addImage(imgData, 'JPEG', 0, 0, 794, 559);
+      pdf.save(`PettyCash_Voucher_${data.id}.pdf`);
     } else {
       // Native mobile (iOS / Android): generate PDF file, then open native share sheet
       const { uri } = await Print.printToFileAsync({

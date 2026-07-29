@@ -63,14 +63,31 @@ export default function BooksPage() {
     [token]
   );
 
-  const imageUrl = (path: string) => `${API_BASE_URL.replace("/api", "")}/storage/${path}`;
+  const imageUrl = (path: string) => `${API_BASE_URL.replace(/\/api\/?$/, "")}/storage/${path}`;
 
   const [downloading, setDownloading] = useState(false);
 
   const handleDownload = async (img: BookImage) => {
     const url = imageUrl(img.image_path);
     if (Platform.OS === 'web') {
-      window.open(url, '_blank');
+      try {
+        setDownloading(true);
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const filename = img.image_path.split('/').pop() || 'image.jpg';
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(blobUrl);
+      } catch (e) {
+        alert('Failed to download image.');
+      } finally {
+        setDownloading(false);
+      }
       return;
     }
     
@@ -255,30 +272,43 @@ export default function BooksPage() {
               <Text style={[styles.dateChipText, selectedDate === null && { color: theme.background }]}>All Dates</Text>
             </Pressable>
             {Platform.OS === 'web' ? (
-              require('react').createElement('input', {
-                type: 'date',
-                value: selectedDate || '',
-                onChange: (e: any) => {
-                  const val = e.target.value;
-                  if (val) {
-                    const d = new Date(val);
-                    const dStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-                    setSelectedDate(dStr);
+              require('react').createElement('div', { style: { position: 'relative' } },
+                require('react').createElement('input', {
+                  type: 'date',
+                  value: selectedDate || '',
+                  onChange: (e: any) => {
+                    const val = e.target.value;
+                    if (val) {
+                      const d = new Date(val);
+                      const dStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                      setSelectedDate(dStr);
+                    }
+                  },
+                  style: {
+                    padding: '8px 16px',
+                    borderRadius: '20px',
+                    border: '1px solid rgba(150,150,150,0.2)',
+                    backgroundColor: selectedDate !== null ? theme.text : "rgba(150,150,150,0.15)",
+                    color: selectedDate !== null ? theme.background : "#888",
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    outline: 'none',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit'
                   }
-                },
-                style: {
-                  padding: '8px 16px',
-                  borderRadius: '20px',
-                  border: '1px solid rgba(150,150,150,0.2)',
-                  backgroundColor: selectedDate !== null ? theme.text : "rgba(150,150,150,0.15)",
-                  color: selectedDate !== null ? theme.background : "#888",
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  outline: 'none',
-                  cursor: 'pointer',
-                  fontFamily: 'inherit'
-                }
-              })
+                }),
+                !selectedDate && require('react').createElement('span', {
+                  style: {
+                    position: 'absolute',
+                    left: 16,
+                    top: 9,
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    color: '#888',
+                    pointerEvents: 'none'
+                  }
+                }, 'mm/dd/yyyy')
+              )
             ) : (
               <Pressable onPress={() => setShowDatePicker(true)} style={[styles.dateChip, selectedDate !== null && { backgroundColor: theme.text }]}>
                 <Text style={[styles.dateChipText, selectedDate !== null && { color: theme.background }]}>
