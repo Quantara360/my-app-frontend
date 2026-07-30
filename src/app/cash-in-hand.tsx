@@ -18,7 +18,7 @@ import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useGoBack } from '@/hooks/use-go-back';
-import { getCashInHandEntries, createCashInHandEntry, updateCashInHandEntry, deleteCashInHandEntry } from '@/services/accountsService';
+import { getCashInHandEntries, createCashInHandEntry, updateCashInHandEntry, deleteCashInHandEntry, getLedgerPrevBalance, setLedgerPrevBalance } from '@/services/accountsService';
 import { exportLedgerToExcel } from '@/utils/exportLedger';
 
 type CashEntry = {
@@ -66,12 +66,9 @@ export default function CashInHandPage() {
   const [manualPrevBalanceStr, setManualPrevBalanceStr] = useState<string | null>(null);
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      const stored = window.localStorage.getItem('cashInHand_prevBal_override');
-      if (stored) {
-        setManualPrevBalanceStr(stored);
-      }
-    }
+    getLedgerPrevBalance('cash_in_hand')
+      .then((val) => { if (val !== null) setManualPrevBalanceStr(val.toFixed(2)); })
+      .catch((err) => console.warn('[CashInHand] prevBalance fetch error', err));
   }, []);
 
   // Load persisted entries from backend on mount
@@ -96,7 +93,6 @@ export default function CashInHandPage() {
 
   const totalDebit = entries.reduce((s, e) => s + (e.debit ?? 0), 0);
   const totalCredit = entries.reduce((s, e) => s + (e.credit ?? 0), 0);
-  const currentBalance = totalCredit - totalDebit;
 
   /** Closing balance = balance field of the last entry in the previous calendar month */
   const computedPrevMonthBalance = (() => {
@@ -123,6 +119,8 @@ export default function CashInHandPage() {
   const prevMonthBalance = manualPrevBalanceStr !== null 
     ? parseFloat(manualPrevBalanceStr) 
     : computedPrevMonthBalance;
+
+  const currentBalance = prevMonthBalance + totalCredit - totalDebit;
 
   // Calculate running balances chronologically first
   const entriesWithBalances = [...entries]
@@ -153,10 +151,9 @@ export default function CashInHandPage() {
     const credit = transactionType === 'credit' && form.amount ? parseFloat(form.amount) : null;
     const prevBalance = parseFloat(form.prevBalance || '0');
     
-    if (typeof window !== 'undefined' && window.localStorage) {
-      window.localStorage.setItem('cashInHand_prevBal_override', form.prevBalance);
-      setManualPrevBalanceStr(form.prevBalance);
-    }
+    setLedgerPrevBalance('cash_in_hand', parseFloat(form.prevBalance || '0'))
+      .then(() => setManualPrevBalanceStr(form.prevBalance))
+      .catch((err) => console.warn('[CashInHand] prevBalance save error', err));
     
     const newBalance = prevBalance + (credit ?? 0) - (debit ?? 0);
     
@@ -351,7 +348,7 @@ export default function CashInHandPage() {
               <Text style={[styles.summaryLabel, { color: theme.text }]}>Total Credit balance</Text>
               <View style={[styles.summaryPill, { backgroundColor: theme.backgroundSelected }]}>
                 <Text style={[styles.summaryValue, { color: theme.text }]}>
-                  {totalDebit.toFixed(2)}
+                  {totalCredit.toFixed(2)}
                 </Text>
               </View>
             </View>
@@ -359,12 +356,12 @@ export default function CashInHandPage() {
               <Text style={[styles.summaryLabel, { color: theme.text }]}>Total Debit balance</Text>
               <View style={[styles.summaryPill, { backgroundColor: theme.backgroundSelected }]}>
                 <Text style={[styles.summaryValue, { color: theme.text }]}>
-                  {totalCredit.toFixed(2)}
+                  {totalDebit.toFixed(2)}
                 </Text>
               </View>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={[styles.summaryLabel, { color: theme.text }]}>Current Bank Balance</Text>
+              <Text style={[styles.summaryLabel, { color: theme.text }]}>Current Cash Balance</Text>
               <View style={[styles.summaryPill, { backgroundColor: theme.backgroundSelected }]}>
                 <Text style={[styles.summaryValue, { color: theme.text }]}>
                   {currentBalance.toFixed(2)}

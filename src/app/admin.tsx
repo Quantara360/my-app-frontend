@@ -4497,7 +4497,21 @@ export default function AdminDashboard() {
   const renderAdminCashInHandView = () => {
     const totalDebit = adminCashEntries.reduce((s, e) => s + (e.debit ?? 0), 0);
     const totalCredit = adminCashEntries.reduce((s, e) => s + (e.credit ?? 0), 0);
-    const currentBalance = totalCredit - totalDebit;
+    const now = new Date();
+    const offset = 330;
+    const local = new Date(now.getTime() + offset * 60 * 1000);
+    const year = local.getUTCFullYear();
+    const month = local.getUTCMonth();
+    const prevMonthStart = new Date(Date.UTC(month === 0 ? year - 1 : year, month === 0 ? 11 : month - 1, 1));
+    const prevMonthEnd = new Date(Date.UTC(year, month, 1));
+    const prevMonthEntries = adminCashEntries
+      .filter((e) => {
+        const d = new Date(e.date);
+        return d >= prevMonthStart && d < prevMonthEnd;
+      })
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const prevBalance = prevMonthEntries.length > 0 ? prevMonthEntries[prevMonthEntries.length - 1].balance : 0;
+    const currentBalance = prevBalance + (totalCredit - totalDebit);
 
     const filtered = adminCashEntries
       .filter(
@@ -4792,7 +4806,21 @@ export default function AdminDashboard() {
   const renderAdminBankView = () => {
     const totalDebit = adminBankEntries.reduce((s, e) => s + (e.debit ?? 0), 0);
     const totalCredit = adminBankEntries.reduce((s, e) => s + (e.credit ?? 0), 0);
-    const currentBalance = totalCredit - totalDebit;
+    const now = new Date();
+    const offset = 330;
+    const local = new Date(now.getTime() + offset * 60 * 1000);
+    const year = local.getUTCFullYear();
+    const month = local.getUTCMonth();
+    const prevMonthStart = new Date(Date.UTC(month === 0 ? year - 1 : year, month === 0 ? 11 : month - 1, 1));
+    const prevMonthEnd = new Date(Date.UTC(year, month, 1));
+    const prevMonthEntries = adminBankEntries
+      .filter((e) => {
+        const d = new Date(e.date);
+        return d >= prevMonthStart && d < prevMonthEnd;
+      })
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const prevBalance = prevMonthEntries.length > 0 ? prevMonthEntries[prevMonthEntries.length - 1].balance : 0;
+    const currentBalance = prevBalance + (totalCredit - totalDebit);
 
     const filtered = adminBankEntries
       .filter(

@@ -123,12 +123,19 @@ export default function BooksPage() {
       .finally(() => setIsLoading(false));
   }, [token]);
 
+  // HOSPITAL_ID_OFFSET: hospitals.id and sub_sites.id both start from 1,
+  // so a bare hospital id can collide with an unrelated sub_site_id
+  // (e.g. Castle hospital.id=2 colliding with Razavi sub_site.id=2).
+  // Must match the offset used in dashboard/site-actions.tsx.
+  const HOSPITAL_ID_OFFSET = 100000;
+
   const loadImages = async (scopeId: number, type: 'worksite' | 'hospital' | 'subsite' = 'subsite', parentWorksiteId?: number) => {
     const param = type === 'worksite' ? 'worksite_id' : 'sub_site_id';
-    let url = `${API_BASE_URL}/sub-site-images?${param}=${scopeId}`;
+    const effectiveScopeId = type === 'hospital' ? scopeId + HOSPITAL_ID_OFFSET : scopeId;
+    let url = `${API_BASE_URL}/sub-site-images?${param}=${effectiveScopeId}`;
     // When fetching sub-site images, also pass the parent worksite_id to prevent
     // collision when sub-sites of different worksites share the same numeric ID
-    if (type === 'subsite' && parentWorksiteId) {
+    if ((type === 'subsite' || type === 'hospital') && parentWorksiteId) {
       url += `&worksite_id=${parentWorksiteId}`;
     }
     const r = await fetch(url, { headers: authHeaders() });
@@ -156,7 +163,7 @@ export default function BooksPage() {
       const r = await fetch(`${API_BASE_URL}/sub-sites?hospital_id=${h.id}`, { headers: authHeaders() });
       const data = await r.json();
       const list: SubSite[] = Array.isArray(data) ? data : data.data || [];
-      if (list.length === 0) { setSubSites([]); await loadImages(h.id, 'hospital'); setLevel("books"); }
+      if (list.length === 0) { setSubSites([]); await loadImages(h.id, 'hospital', selectedWorksite?.id); setLevel("books"); }
       else { setSubSites(list); setLevel("subsites"); }
     } catch (e) { console.error(e); } finally { setIsLoading(false); setLoadingStep(""); }
   };

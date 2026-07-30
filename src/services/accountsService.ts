@@ -143,3 +143,22 @@ export async function updateBankEntry(
 export async function deleteBankEntry(id: number): Promise<void> {
   await deleteJson(`bank-entries/${id}`);
 }
+
+// — Ledger Settings ─────────────────────────────
+
+export async function getLedgerPrevBalance(
+  ledgerType: 'bank' | 'cash_in_hand'
+): Promise<number | null> {
+  const result = await getJson<{ data: { manual_prev_balance: number | null } }>(
+    `ledger-settings/${ledgerType}`
+  );
+  const val = (result as any).data?.manual_prev_balance;
+  return val !== null && val !== undefined ? Number(val) : null;
+}
+
+export async function setLedgerPrevBalance(
+  ledgerType: 'bank' | 'cash_in_hand',
+  value: number
+): Promise<void> {
+  await putJson(`ledger-settings/${ledgerType}`, { manual_prev_balance: value });
+}

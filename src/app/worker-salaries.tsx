@@ -343,6 +343,24 @@ export default function WorkerSalariesPage() {
       } catch (_) {}
     }
 
+    // Step 3: Also pull records marked directly at the hospital level
+    // (sub_site_id is NULL, hospital_id is set) — these are missed by the
+    // sub-site loop above since it only filters by sub_site_id.
+    try {
+      const hParams: Record<string, string> = {
+        month: monthStr, all: '1',
+        worksite_id: String(worksiteId),
+        hospital_id: String(hospitalId),
+      };
+      const hQs = new URLSearchParams(hParams).toString();
+      const hResp = await fetch(`${API_BASE_URL}/attendances?${hQs}`, { headers: authHeader });
+      if (hResp.ok) {
+        const hJson = await hResp.json();
+        const hRecords: any[] = Array.isArray(hJson) ? hJson : hJson.data || [];
+        processRecords(hRecords);
+      }
+    } catch (_) {}
+
     return { workerMap, daysCount };
   };
 

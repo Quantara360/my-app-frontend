@@ -34,7 +34,14 @@ export default function SiteActionsPage() {
   // The scoped image ID: prefer sub-site > hospital > null
   // We never fall back to worksiteId to avoid ID collision between
   // worksites.id and sub_sites.id (same numbers, different tables)
-  const imageScopeId = siteId ?? (isWorksite === 'true' ? null : hospitalId) ?? null;
+  // HOSPITAL_ID_OFFSET: hospitals.id and sub_sites.id both start from 1,
+  // so a bare hospitalId can collide with an unrelated sub_site_id
+  // (e.g. Castle hospital.id=2 colliding with Razavi sub_site.id=2).
+  // Offsetting hospital-based scope IDs keeps them in a separate numeric
+  // range so they can never collide with a real sub_site_id.
+  const HOSPITAL_ID_OFFSET = 100000;
+  const hospitalScopeId = hospitalId ? String(Number(hospitalId) + HOSPITAL_ID_OFFSET) : null;
+  const imageScopeId = siteId ?? (isWorksite === 'true' ? null : hospitalScopeId) ?? null;
 
   const siteLabel = passedSiteName ? passedSiteName : siteId ? (siteNames[siteId] ?? siteId) : "Worksite";
 
