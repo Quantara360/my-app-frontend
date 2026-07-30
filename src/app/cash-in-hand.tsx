@@ -18,7 +18,7 @@ import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useGoBack } from '@/hooks/use-go-back';
-import { getCashInHandEntries, createCashInHandEntry, updateCashInHandEntry, deleteCashInHandEntry, getLedgerPrevBalance, setLedgerPrevBalance } from '@/services/accountsService';
+import { getCashInHandEntries, createCashInHandEntry, updateCashInHandEntry, deleteCashInHandEntry } from '@/services/accountsService';
 import { exportLedgerToExcel } from '@/utils/exportLedger';
 
 type CashEntry = {
@@ -66,9 +66,12 @@ export default function CashInHandPage() {
   const [manualPrevBalanceStr, setManualPrevBalanceStr] = useState<string | null>(null);
 
   useEffect(() => {
-    getLedgerPrevBalance('cash_in_hand')
-      .then((val) => { if (val !== null) setManualPrevBalanceStr(val.toFixed(2)); })
-      .catch((err) => console.warn('[CashInHand] prevBalance fetch error', err));
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const stored = window.localStorage.getItem('cashInHand_prevBal_override');
+      if (stored) {
+        setManualPrevBalanceStr(stored);
+      }
+    }
   }, []);
 
   // Load persisted entries from backend on mount
@@ -76,13 +79,13 @@ export default function CashInHandPage() {
     getCashInHandEntries()
       .then((rows) => {
         const mapped = rows.map((r) => ({
-          id:          r.id,
-          date:        r.date,
-          chequeNo:    r.cheque_no ?? '',
+          id: r.id,
+          date: r.date,
+          chequeNo: r.cheque_no ?? '',
           description: r.description ?? '',
-          debit:       r.debit,
-          credit:      r.credit,
-          balance:     r.balance,
+          debit: r.debit,
+          credit: r.credit,
+          balance: r.balance,
         }));
         setEntries(mapped);
       })
@@ -93,6 +96,7 @@ export default function CashInHandPage() {
 
   const totalDebit = entries.reduce((s, e) => s + (e.debit ?? 0), 0);
   const totalCredit = entries.reduce((s, e) => s + (e.credit ?? 0), 0);
+  const currentBalance = totalCredit - totalDebit;
 
   /** Closing balance = balance field of the last entry in the previous calendar month */
   const computedPrevMonthBalance = (() => {
@@ -116,11 +120,9 @@ export default function CashInHandPage() {
     return prevMonthEntries[prevMonthEntries.length - 1].balance;
   })();
 
-  const prevMonthBalance = manualPrevBalanceStr !== null 
-    ? parseFloat(manualPrevBalanceStr) 
+  const prevMonthBalance = manualPrevBalanceStr !== null
+    ? parseFloat(manualPrevBalanceStr)
     : computedPrevMonthBalance;
-
-  const currentBalance = prevMonthBalance + totalCredit - totalDebit;
 
   // Calculate running balances chronologically first
   const entriesWithBalances = [...entries]
@@ -147,25 +149,26 @@ export default function CashInHandPage() {
 
   const handleSave = () => {
     if (!form.date) { Alert.alert('Validation', 'Date is required.'); return; }
-    const debit  = transactionType === 'debit'  && form.amount ? parseFloat(form.amount) : null;
+    const debit = transactionType === 'debit' && form.amount ? parseFloat(form.amount) : null;
     const credit = transactionType === 'credit' && form.amount ? parseFloat(form.amount) : null;
     const prevBalance = parseFloat(form.prevBalance || '0');
-    
-    setLedgerPrevBalance('cash_in_hand', parseFloat(form.prevBalance || '0'))
-      .then(() => setManualPrevBalanceStr(form.prevBalance))
-      .catch((err) => console.warn('[CashInHand] prevBalance save error', err));
-    
+
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.setItem('cashInHand_prevBal_override', form.prevBalance);
+      setManualPrevBalanceStr(form.prevBalance);
+    }
+
     const newBalance = prevBalance + (credit ?? 0) - (debit ?? 0);
-    
+
     if (editingId) {
       setEntries((prev) => prev.map((e) => e.id === editingId ? { ...e, date: form.date, chequeNo: form.chequeNo, description: form.description, debit, credit, balance: newBalance } : e));
       updateCashInHandEntry(editingId, {
-        date:        form.date,
-        cheque_no:   form.chequeNo || null,
+        date: form.date,
+        cheque_no: form.chequeNo || null,
         description: form.description || null,
-        debit:       debit,
-        credit:      credit,
-        balance:     newBalance,
+        debit: debit,
+        credit: credit,
+        balance: newBalance,
       }).catch((err) => console.warn('update error', err));
     } else {
       const entry = {
@@ -179,15 +182,15 @@ export default function CashInHandPage() {
       };
       setEntries((prev) => [...prev, entry]);
       createCashInHandEntry({
-        date:        entry.date,
-        cheque_no:   entry.chequeNo || null,
+        date: entry.date,
+        cheque_no: entry.chequeNo || null,
         description: entry.description || null,
-        debit:       entry.debit,
-        credit:      entry.credit,
-        balance:     entry.balance,
+        debit: entry.debit,
+        credit: entry.credit,
+        balance: entry.balance,
       }).catch((err) => console.warn('save error', err));
     }
-    
+
     setForm({ date: getSriLankaDate(), chequeNo: '', description: '', amount: '', prevBalance: prevMonthBalance.toFixed(2) });
     setTransactionType('debit');
     setEditingId(null);
@@ -211,10 +214,12 @@ export default function CashInHandPage() {
   const handleDelete = (id: number) => {
     Alert.alert('Delete', 'Are you sure you want to delete this entry?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => {
-        setEntries((prev) => prev.filter((e) => e.id !== id));
-        deleteCashInHandEntry(id).catch(err => console.warn('delete error', err));
-      } }
+      {
+        text: 'Delete', style: 'destructive', onPress: () => {
+          setEntries((prev) => prev.filter((e) => e.id !== id));
+          deleteCashInHandEntry(id).catch(err => console.warn('delete error', err));
+        }
+      }
     ]);
   };
 
@@ -243,133 +248,133 @@ export default function CashInHandPage() {
           contentContainerStyle={{ gap: Spacing.three, paddingBottom: Spacing.four }}
         >
           <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}>
-          {/* Controls row */}
-          <View style={styles.controlsRow}>
-            {/* Search */}
-            <View style={styles.searchWrapper}>
-              <TextInput
-                style={[styles.searchInput, { color: theme.text }]}
-                placeholder="Search Cheque No"
-                placeholderTextColor="#aaa"
-                value={search}
-                onChangeText={setSearch}
-              />
-              <Text style={styles.searchIcon}>🔍</Text>
-            </View>
-
-            {/* Sort toggle */}
-            <Pressable
-              style={[
-                styles.sortBtn,
-                { backgroundColor: sortOrder === 'asc' ? '#6366f1' : '#f59e0b' },
-              ]}
-              onPress={() => setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))}
-            >
-              <Text style={styles.sortBtnText}>
-                {sortOrder === 'asc' ? '↑ Asc' : '↓ Desc'}
-              </Text>
-            </Pressable>
-
-            {/* Export button */}
-            <Pressable 
-              style={[styles.actionBtn, { backgroundColor: '#22c55e' }]}
-              onPress={() => exportLedgerToExcel('Cash_In_Hand', filtered, prevMonthBalance)}
-            >
-              <Text style={styles.actionBtnText}>⬇ Export</Text>
-            </Pressable>
-
-            {/* Add button */}
-            <Pressable
-              style={[styles.actionBtn, { backgroundColor: '#3b82f6' }]}
-              onPress={() => {
-                setEditingId(null);
-                setForm({ date: getSriLankaDate(), chequeNo: '', description: '', amount: '', prevBalance: prevMonthBalance.toFixed(2) });
-                setAddModalOpen(true);
-              }}
-            >
-              <Text style={styles.actionBtnText}>＋ Add</Text>
-            </Pressable>
-          </View>
-
-          {/* Table */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={{ minWidth: 560 }}>
-              {/* Table header */}
-              <View style={styles.tableHeader}>
-                {columns.map((col) => (
-                  <Text key={col} style={styles.columnHeader}>
-                    {col}
-                  </Text>
-                ))}
+            {/* Controls row */}
+            <View style={styles.controlsRow}>
+              {/* Search */}
+              <View style={styles.searchWrapper}>
+                <TextInput
+                  style={[styles.searchInput, { color: theme.text }]}
+                  placeholder="Search Cheque No"
+                  placeholderTextColor="#aaa"
+                  value={search}
+                  onChangeText={setSearch}
+                />
+                <Text style={styles.searchIcon}>🔍</Text>
               </View>
 
-              {/* Table body */}
-              <ScrollView style={styles.tableBody} showsVerticalScrollIndicator={false} nestedScrollEnabled>
-                {filtered.length === 0 ? (
-                  <View style={styles.emptyRow}>
-                    <Text style={{ color: '#aaa', fontSize: 13 }}>No records found</Text>
-                  </View>
-                ) : (
-                  filtered.map((entry, idx) => (
-                    <View
-                      key={entry.id}
-                      style={[
-                        styles.tableRow,
-                        { backgroundColor: idx % 2 === 0 ? 'rgba(0,0,0,0.04)' : 'transparent' },
-                      ]}
-                    >
-                      <Text style={styles.rowCell} numberOfLines={1}>{entry.date}</Text>
-                      <Text style={styles.rowCell} numberOfLines={1}>{entry.chequeNo || '-'}</Text>
-                      <Text style={styles.rowCell} numberOfLines={1}>{entry.description || '-'}</Text>
-                      <Text style={styles.rowCell} numberOfLines={1}>
-                        {entry.debit != null ? entry.debit.toFixed(2) : '-'}
-                      </Text>
-                      <Text style={styles.rowCell} numberOfLines={1}>
-                        {entry.credit != null ? entry.credit.toFixed(2) : '-'}
-                      </Text>
-                      <Text style={styles.rowCell} numberOfLines={1}>{entry.runningBalance.toFixed(2)}</Text>
-                      <View style={[styles.rowCell, { flexDirection: 'row', justifyContent: 'center', gap: 10 }]}>
-                        <Pressable onPress={() => handleEdit(entry)} style={{ padding: 4, backgroundColor: 'rgba(59, 130, 246, 0.1)', borderRadius: 6 }}>
-                          <Text style={{ fontSize: 14 }}>✏️</Text>
-                        </Pressable>
-                        <Pressable onPress={() => handleDelete(entry.id)} style={{ padding: 4, backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: 6 }}>
-                          <Text style={{ fontSize: 14 }}>🗑️</Text>
-                        </Pressable>
-                      </View>
+              {/* Sort toggle */}
+              <Pressable
+                style={[
+                  styles.sortBtn,
+                  { backgroundColor: sortOrder === 'asc' ? '#6366f1' : '#f59e0b' },
+                ]}
+                onPress={() => setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))}
+              >
+                <Text style={styles.sortBtnText}>
+                  {sortOrder === 'asc' ? '↑ Asc' : '↓ Desc'}
+                </Text>
+              </Pressable>
+
+              {/* Export button */}
+              <Pressable
+                style={[styles.actionBtn, { backgroundColor: '#22c55e' }]}
+                onPress={() => exportLedgerToExcel('Cash_In_Hand', filtered, prevMonthBalance)}
+              >
+                <Text style={styles.actionBtnText}>⬇ Export</Text>
+              </Pressable>
+
+              {/* Add button */}
+              <Pressable
+                style={[styles.actionBtn, { backgroundColor: '#3b82f6' }]}
+                onPress={() => {
+                  setEditingId(null);
+                  setForm({ date: getSriLankaDate(), chequeNo: '', description: '', amount: '', prevBalance: prevMonthBalance.toFixed(2) });
+                  setAddModalOpen(true);
+                }}
+              >
+                <Text style={styles.actionBtnText}>＋ Add</Text>
+              </Pressable>
+            </View>
+
+            {/* Table */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={{ minWidth: 560 }}>
+                {/* Table header */}
+                <View style={styles.tableHeader}>
+                  {columns.map((col) => (
+                    <Text key={col} style={styles.columnHeader}>
+                      {col}
+                    </Text>
+                  ))}
+                </View>
+
+                {/* Table body */}
+                <ScrollView style={styles.tableBody} showsVerticalScrollIndicator={false} nestedScrollEnabled>
+                  {filtered.length === 0 ? (
+                    <View style={styles.emptyRow}>
+                      <Text style={{ color: '#aaa', fontSize: 13 }}>No records found</Text>
                     </View>
-                  ))
-                )}
-              </ScrollView>
-            </View>
-          </ScrollView>
-          {/* Summary section — inside card, below grid */}
-          <View style={[styles.summarySection, { borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.07)', paddingTop: Spacing.three }]}>
-            <View style={styles.summaryRow}>
-              <Text style={[styles.summaryLabel, { color: theme.text }]}>Total Debit balance</Text>
-              <View style={[styles.summaryPill, { backgroundColor: theme.backgroundSelected }]}>
-                <Text style={[styles.summaryValue, { color: theme.text }]}>
-                  {totalCredit.toFixed(2)}
-                </Text>
+                  ) : (
+                    filtered.map((entry, idx) => (
+                      <View
+                        key={entry.id}
+                        style={[
+                          styles.tableRow,
+                          { backgroundColor: idx % 2 === 0 ? 'rgba(0,0,0,0.04)' : 'transparent' },
+                        ]}
+                      >
+                        <Text style={styles.rowCell} numberOfLines={1}>{entry.date}</Text>
+                        <Text style={styles.rowCell} numberOfLines={1}>{entry.chequeNo || '-'}</Text>
+                        <Text style={styles.rowCell} numberOfLines={1}>{entry.description || '-'}</Text>
+                        <Text style={styles.rowCell} numberOfLines={1}>
+                          {entry.debit != null ? entry.debit.toFixed(2) : '-'}
+                        </Text>
+                        <Text style={styles.rowCell} numberOfLines={1}>
+                          {entry.credit != null ? entry.credit.toFixed(2) : '-'}
+                        </Text>
+                        <Text style={styles.rowCell} numberOfLines={1}>{entry.runningBalance.toFixed(2)}</Text>
+                        <View style={[styles.rowCell, { flexDirection: 'row', justifyContent: 'center', gap: 10 }]}>
+                          <Pressable onPress={() => handleEdit(entry)} style={{ padding: 4, backgroundColor: 'rgba(59, 130, 246, 0.1)', borderRadius: 6 }}>
+                            <Text style={{ fontSize: 14 }}>✏️</Text>
+                          </Pressable>
+                          <Pressable onPress={() => handleDelete(entry.id)} style={{ padding: 4, backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: 6 }}>
+                            <Text style={{ fontSize: 14 }}>🗑️</Text>
+                          </Pressable>
+                        </View>
+                      </View>
+                    ))
+                  )}
+                </ScrollView>
               </View>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={[styles.summaryLabel, { color: theme.text }]}>Total Credit balance</Text>
-              <View style={[styles.summaryPill, { backgroundColor: theme.backgroundSelected }]}>
-                <Text style={[styles.summaryValue, { color: theme.text }]}>
-                  {totalDebit.toFixed(2)}
-                </Text>
+            </ScrollView>
+            {/* Summary section — inside card, below grid */}
+            <View style={[styles.summarySection, { borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.07)', paddingTop: Spacing.three }]}>
+              <View style={styles.summaryRow}>
+                <Text style={[styles.summaryLabel, { color: theme.text }]}>Total Credit balance</Text>
+                <View style={[styles.summaryPill, { backgroundColor: theme.backgroundSelected }]}>
+                  <Text style={[styles.summaryValue, { color: theme.text }]}>
+                    {totalDebit.toFixed(2)}
+                  </Text>
+                </View>
               </View>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={[styles.summaryLabel, { color: theme.text }]}>Current Cash Balance</Text>
-              <View style={[styles.summaryPill, { backgroundColor: theme.backgroundSelected }]}>
-                <Text style={[styles.summaryValue, { color: theme.text }]}>
-                  {currentBalance.toFixed(2)}
-                </Text>
+              <View style={styles.summaryRow}>
+                <Text style={[styles.summaryLabel, { color: theme.text }]}>Total Debit balance</Text>
+                <View style={[styles.summaryPill, { backgroundColor: theme.backgroundSelected }]}>
+                  <Text style={[styles.summaryValue, { color: theme.text }]}>
+                    {totalCredit.toFixed(2)}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={[styles.summaryLabel, { color: theme.text }]}>Current Bank Balance</Text>
+                <View style={[styles.summaryPill, { backgroundColor: theme.backgroundSelected }]}>
+                  <Text style={[styles.summaryValue, { color: theme.text }]}>
+                    {currentBalance.toFixed(2)}
+                  </Text>
+                </View>
               </View>
             </View>
           </View>
-        </View>
         </ScrollView>
       </SafeAreaView>
 
@@ -378,7 +383,7 @@ export default function CashInHandPage() {
         <View style={styles.modalOverlay}>
           <View style={[styles.modalCard, { backgroundColor: theme.backgroundElement }]}>
             <View style={styles.modalHeader}>
-              <ThemedText type="title">{editingId ? 'Edit Entry' : 'Add Entry'}</ThemedText>
+              <ThemedText type="title" style={{ marginTop: 6 }}>{editingId ? 'Edit Entry' : 'Add Entry'}</ThemedText>
               <Pressable onPress={() => setAddModalOpen(false)}>
                 <Text style={{ fontSize: 20, color: theme.text }}>✕</Text>
               </Pressable>

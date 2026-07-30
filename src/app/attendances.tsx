@@ -324,8 +324,8 @@ export default function AttendancesPage() {
               {selectedHospital === "All"
                 ? "— Select Hospital first —"
                 : filteredSubSites.length === 0
-                ? "No sub-sites"
-                : "All Sub Sites"}
+                  ? "No sub-sites"
+                  : "All Sub Sites"}
             </option>
             {filteredSubSites.map((s) => (
               <option key={s.id} value={String(s.id)}>
@@ -355,34 +355,34 @@ export default function AttendancesPage() {
             <option value="absent">Absent</option>
           </select>
 
-            <View style={{ position: 'relative', minWidth: 140 }}>
-              <input
-                type="date"
-                value={attendanceDateFilter}
-                onChange={(e: any) => setAttendanceDateFilter(e.target.value)}
+          <View style={{ position: 'relative', minWidth: 140 }}>
+            <input
+              type="date"
+              value={attendanceDateFilter}
+              onChange={(e: any) => setAttendanceDateFilter(e.target.value)}
+              style={{
+                ...selectStyle,
+                colorScheme: isDark ? "dark" : "light",
+                minWidth: 140,
+                minHeight: 40,
+                display: 'block',
+              }}
+            />
+            {!attendanceDateFilter && (
+              <Text
+                pointerEvents="none"
                 style={{
-                  ...selectStyle,
-                  colorScheme: isDark ? "dark" : "light",
-                  minWidth: 140,
-                  minHeight: 40,
-                  display: 'block',
+                  position: 'absolute',
+                  left: 12,
+                  top: 10,
+                  fontSize: 14,
+                  color: isDark ? '#888' : '#999',
                 }}
-              />
-              {!attendanceDateFilter && (
-                <Text
-                  pointerEvents="none"
-                  style={{
-                    position: 'absolute',
-                    left: 12,
-                    top: 10,
-                    fontSize: 14,
-                    color: isDark ? '#888' : '#999',
-                  }}
-                >
-                  mm/dd/yyyy
-                </Text>
-              )}
-            </View>
+              >
+                mm/dd/yyyy
+              </Text>
+            )}
+          </View>
         </View>
 
         {/* Absent info banner for IN tab */}
@@ -447,8 +447,8 @@ export default function AttendancesPage() {
                           ? new Date(item.out_marked_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
                           : "—"
                         : item.marked_at
-                        ? new Date(item.marked_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-                        : "—"}
+                          ? new Date(item.marked_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                          : "—"}
                     </Text>
                     {(() => {
                       // OUT tab: override display status to "Early" if worker left before shift end

@@ -34,23 +34,21 @@ export default function AccountsPage() {
           </View>
 
           {/* Cards */}
-          <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}>
-            {/* Cash in Hand */}
-            <Pressable
-              style={[styles.tileButton, { backgroundColor: '#c0392b' }]}
-              onPress={() => router.push('/cash-in-hand')}
-            >
-              <Text style={styles.tileText}>Cash in Hand</Text>
-            </Pressable>
+          {/* Cash in Hand */}
+          <Pressable
+            style={[styles.tileButton, { backgroundColor: '#c0392b' }]}
+            onPress={() => router.push('/cash-in-hand')}
+          >
+            <Text style={styles.tileText}>Cash in Hand</Text>
+          </Pressable>
 
-            {/* Bank */}
-            <Pressable
-              style={[styles.tileButton, { backgroundColor: '#a89080' }]}
-              onPress={() => router.push('/bank')}
-            >
-              <Text style={styles.tileText}>Bank</Text>
-            </Pressable>
-          </View>
+          {/* Bank */}
+          <Pressable
+            style={[styles.tileButton, { backgroundColor: '#a89080' }]}
+            onPress={() => router.push('/bank')}
+          >
+            <Text style={styles.tileText}>Bank</Text>
+          </Pressable>
         </View>
       </SafeAreaView>
     </ThemedView>

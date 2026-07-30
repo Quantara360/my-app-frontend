@@ -65,10 +65,10 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, marginBottom: Spacing.four },
   backButton: { padding: Spacing.two, borderRadius: 16 },
   pageTitle: { flex: 1, textAlign: 'center', color: theme.text },
-  card: { width: '100%', borderRadius: 28, padding: Spacing.four, backgroundColor: '#ffffff', shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 18, shadowOffset: { width: 0, height: 12 }, elevation: 10 },
+  card: { width: '100%', borderRadius: 0, padding: Spacing.four, backgroundColor: '#ffffff', shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 18, shadowOffset: { width: 0, height: 12 }, elevation: 10 },
   tileGrid: { width: '100%', flexDirection: 'column', gap: Spacing.three },
-  tile: { width: '100%', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', paddingVertical: Spacing.four, paddingHorizontal: Spacing.three, backgroundColor: 'transparent', borderRadius: 1, borderWidth: 0.8, borderColor: 'rgba(0, 0, 0, 0.1)', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 6 }, elevation: 3, minHeight: 130 },
-  imagePlaceholder: { width: 48, height: 48, borderRadius: 14, marginBottom: Spacing.two, alignSelf: 'center' },
+  tile: { width: '100%', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', paddingVertical: Spacing.four, paddingHorizontal: Spacing.three, backgroundColor: 'transparent', borderRadius: 0, borderWidth: 0.8, borderColor: 'rgba(0, 0, 0, 0.1)', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 6 }, elevation: 3, minHeight: 130 },
+  imagePlaceholder: { width: 90, height: 90, borderRadius: 0, marginBottom: Spacing.two, alignSelf: 'center' },
   tileText: { alignItems: 'center', width: '100%' },
   tileTitle: { fontSize: 15, fontWeight: '700', color: theme.text, textAlign: 'center', flexWrap: 'wrap' },
 });
