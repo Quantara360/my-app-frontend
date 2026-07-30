@@ -4757,8 +4757,8 @@ export default function AdminDashboard() {
           {/* Summary */}
           <View style={{ borderTopWidth: 1, borderTopColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.07)", paddingTop: 12, gap: 8 }}>
             {[
-              { label: "Total Debit Balance", value: totalDebit },
-              { label: "Total Credit Balance", value: totalCredit },
+              { label: "Total Debit Balance", value: totalCredit },
+              { label: "Total Credit Balance", value: totalDebit },
               { label: "Current Cash Balance", value: currentBalance },
             ].map((row) => (
               <View key={row.label} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
@@ -5111,8 +5111,8 @@ export default function AdminDashboard() {
           {/* Summary */}
           <View style={{ borderTopWidth: 1, borderTopColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.07)", paddingTop: 12, gap: 8 }}>
             {[
-              { label: "Total Debit Balance", value: totalDebit },
-              { label: "Total Credit Balance", value: totalCredit },
+              { label: "Total Debit Balance", value: totalCredit },
+              { label: "Total Credit Balance", value: totalDebit },
               { label: "Current Bank Balance", value: currentBalance },
             ].map((row) => (
               <View key={row.label} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
