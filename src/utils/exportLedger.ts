@@ -1,4 +1,3 @@
-import * as XLSX from 'xlsx';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
@@ -18,6 +17,11 @@ export async function exportLedgerToExcel(
   entries: LedgerEntry[],
   openingBalance: number
 ) {
+  // Loaded lazily - xlsx is a large library and every other screen was
+  // paying its bundle-eval cost at startup for a feature only this export
+  // path uses.
+  const XLSX = await import('xlsx');
+
   const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
   let monthYearHeading = '';
   if (entries.length > 0 && entries[0].date) {

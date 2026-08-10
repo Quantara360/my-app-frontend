@@ -1,5 +1,8 @@
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { SafeView } from "@/components/safe-view";
+import { SelectInput } from "@/components/ui/select-input";
+import { DateInput } from "@/components/ui/date-input";
 import { BottomTabInset, Spacing, rf, MaxContentWidth } from "@/constants/theme";
 
 
@@ -959,8 +962,31 @@ export default function AdminDashboard() {
     }
   };
 
-  const handlePickSiteLogo = () => {
-    siteLogoInputRef.current?.click();
+  const handlePickSiteLogo = async () => {
+    if (Platform.OS === "web") {
+      siteLogoInputRef.current?.click();
+      return;
+    }
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert("Permission required", "Allow media access to pick a logo.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: false,
+      quality: 0.85,
+      base64: true,
+    });
+    if (!result.canceled && result.assets.length > 0) {
+      const asset = result.assets[0];
+      setSiteLogoName(asset.fileName || "logo.jpg");
+      if (asset.base64) {
+        setSiteLogoUri(`data:${asset.mimeType || "image/jpeg"};base64,${asset.base64}`);
+      } else {
+        setSiteLogoUri(asset.uri);
+      }
+    }
   };
 
   const handleSiteLogoFileChange = (e: any) => {
@@ -1546,10 +1572,15 @@ export default function AdminDashboard() {
             style={styles.searchInput}
           />
         </View>
-        <select
+        <SelectInput
           value={attendanceShiftFilter}
-          onChange={(e: any) => setAttendanceShiftFilter(e.target.value)}
-          style={{
+          onChange={setAttendanceShiftFilter}
+          options={[
+            { value: "All", label: "All Shifts" },
+            { value: "Morning", label: "Morning" },
+            { value: "Evening", label: "Evening" },
+          ]}
+          webStyle={{
             backgroundColor: "transparent",
             color: isDark ? "#ffffff" : "#333",
             border: `1px solid ${isDark ? "#333" : "#ccc"}`,
@@ -1557,15 +1588,17 @@ export default function AdminDashboard() {
             padding: "8px 12px",
             fontSize: 14,
           }}
-        >
-          <option value="All">All Shifts</option>
-          <option value="Morning">Morning</option>
-          <option value="Evening">Evening</option>
-        </select>
-        <select
+        />
+        <SelectInput
           value={attendanceStatusFilter}
-          onChange={(e: any) => setAttendanceStatusFilter(e.target.value)}
-          style={{
+          onChange={setAttendanceStatusFilter}
+          options={[
+            { value: "All", label: "All Status" },
+            { value: "present", label: "Present" },
+            { value: "absent", label: "Absent" },
+            { value: "late", label: "Late" },
+          ]}
+          webStyle={{
             backgroundColor: "transparent",
             color: isDark ? "#ffffff" : "#333",
             border: `1px solid ${isDark ? "#333" : "#ccc"}`,
@@ -1573,18 +1606,12 @@ export default function AdminDashboard() {
             padding: "8px 12px",
             fontSize: 14,
           }}
-        >
-          <option value="All">All Status</option>
-          <option value="present">Present</option>
-          <option value="absent">Absent</option>
-          <option value="late">Late</option>
-        </select>
+        />
         <View style={{ position: 'relative', minWidth: 140 }}>
-          <input
-            type="date"
+          <DateInput
             value={attendanceDateFilter}
-            onChange={(e: any) => setAttendanceDateFilter(e.target.value)}
-            style={{
+            onChange={setAttendanceDateFilter}
+            webStyle={{
               backgroundColor: theme.backgroundSelected,
               color: theme.text,
               border: `1px solid ${theme.border || "#ccc"}`,
@@ -1597,7 +1624,7 @@ export default function AdminDashboard() {
               display: 'block',
             }}
           />
-          {!attendanceDateFilter && (
+          {Platform.OS === 'web' && !attendanceDateFilter && (
             <Text
               pointerEvents="none"
               style={{
@@ -2047,7 +2074,7 @@ export default function AdminDashboard() {
                 >
                   {card.title}
                 </ThemedText>
-                {card.value && (
+                {card.value !== undefined && card.value !== null && (
                   <Text style={[styles.cardValue, { color: card.textColor }]}>
                     {card.value}
                   </Text>
@@ -2077,7 +2104,7 @@ export default function AdminDashboard() {
                 >
                   {card.title}
                 </ThemedText>
-                {card.value && (
+                {card.value !== undefined && card.value !== null && (
                   <Text style={[styles.cardValue, { color: card.textColor }]}>
                     {card.value}
                   </Text>
@@ -2107,7 +2134,7 @@ export default function AdminDashboard() {
                 >
                   {card.title}
                 </ThemedText>
-                {card.value && (
+                {card.value !== undefined && card.value !== null && (
                   <Text style={[styles.cardValue, { color: card.textColor }]}>
                     {card.value}
                   </Text>
@@ -2137,7 +2164,7 @@ export default function AdminDashboard() {
                 >
                   {card.title}
                 </ThemedText>
-                {card.value && (
+                {card.value !== undefined && card.value !== null && (
                   <Text style={[styles.cardValue, { color: card.textColor }]}>
                     {card.value}
                   </Text>
@@ -2256,8 +2283,8 @@ export default function AdminDashboard() {
     };
 
     return (
-      <View style={styles.manageSiteContainer}>
-        <View style={[styles.headerSection, styles.greetingContainer, { flexDirection: "row", justifyContent: "space-between", alignItems: "center" }]}>
+      <SafeView style={styles.manageSiteContainer}>
+        <SafeView style={[styles.headerSection, styles.greetingContainer, { flexDirection: "row", justifyContent: "space-between", alignItems: "center" }]}>
           <ThemedText type="subtitle" style={styles.greeting}>
             Hii {user?.name || "Malith"}, Welcome!
           </ThemedText>
@@ -2267,17 +2294,17 @@ export default function AdminDashboard() {
           >
             <Text style={{ fontSize: 13, fontWeight: "600", color: isDark ? "#fff" : "#000" }}>Sign Out</Text>
           </Pressable>
-        </View>
+        </SafeView>
 
-        <View style={styles.manageSiteHeader}>
+        <SafeView style={styles.manageSiteHeader}>
           <Pressable style={styles.backButton} onPress={handleBack}>
             <Text style={styles.backButtonIcon}>‹</Text>
           </Pressable>
           <ThemedText type="subtitle" style={styles.manageSiteTitle}>
             {screenTitle}
           </ThemedText>
-          <View style={{ width: 44 }} />
-        </View>
+          <SafeView style={{ width: 44 }} />
+        </SafeView>
 
         <ScrollView
           style={styles.manageSiteList}
@@ -2291,7 +2318,7 @@ export default function AdminDashboard() {
             />
           }
         >
-          <View style={styles.manageSiteCardsContainer}>
+          <SafeView style={styles.manageSiteCardsContainer}>
             {displayedSites.map((site) => (
               <Pressable
                 key={`${site._level}-${site.id}`}
@@ -2307,8 +2334,8 @@ export default function AdminDashboard() {
                   // sub_site cards are not drillable
                 }}
               >
-                <View style={styles.manageSiteCardTopRow}>
-                  <View style={styles.manageSiteLogoWrapper}>
+                <SafeView style={styles.manageSiteCardTopRow}>
+                  <SafeView style={styles.manageSiteLogoWrapper}>
                     {site.logo ? (
                       <Image source={{ uri: site.logo.startsWith('http') ? site.logo : `${API_BASE_URL.replace(/\/api$/, '')}${site.logo}` }} style={{ width: 70, height: 70, borderRadius: 12 }} resizeMode="cover" />
                     ) : (
@@ -2316,19 +2343,19 @@ export default function AdminDashboard() {
                         {site._level === 'hospital' ? '🏥' : site._level === 'subsite' ? '📍' : '🏗️'}
                       </Text>
                     )}
-                  </View>
-                  <View style={{ flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                  </SafeView>
+                  <SafeView style={{ flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
                     <Pressable style={styles.manageSiteDeleteButton} onPress={() => handleDeleteSite(site)}>
                       <Text style={styles.manageSiteDeleteIcon}>🗑️</Text>
                     </Pressable>
                     <Pressable style={styles.manageSiteDeleteButton} onPress={() => openEdit(site)}>
                       <Text style={styles.manageSiteDeleteIcon}>✏️</Text>
                     </Pressable>
-                  </View>
-                </View>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12 }}>
+                  </SafeView>
+                </SafeView>
+                <SafeView style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12 }}>
                   <Text style={styles.manageSiteCardLabel}>{site.name}</Text>
-                </View>
+                </SafeView>
                 {site._level !== 'subsite' && (
                   <Text style={{ fontSize: 11, color: isDark ? '#888' : '#aaa', marginTop: 8, textAlign: 'center' }}>
                     Tap to manage ›
@@ -2344,9 +2371,9 @@ export default function AdminDashboard() {
               <Text style={styles.manageSiteAddIcon}>+</Text>
               <Text style={{ marginTop: 8, color: '#16a34a', fontWeight: 'bold' }}>{addLabel}</Text>
             </Pressable>
-          </View>
+          </SafeView>
         </ScrollView>
-      </View>
+      </SafeView>
     );
   };
 
@@ -2364,26 +2391,26 @@ export default function AdminDashboard() {
         animationType="fade"
         onRequestClose={() => setShowAddSiteModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
+        <SafeView style={styles.modalOverlay}>
+          <SafeView style={styles.modalContent}>
+            <SafeView style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{titleMap[drillLevel]}</Text>
               <Pressable onPress={() => setShowAddSiteModal(false)} style={styles.modalClose}>
                 <Text style={styles.modalCloseText}>✕</Text>
               </Pressable>
-            </View>
+            </SafeView>
 
             {/* Type indicator — read only, locked by screen context */}
-            <View style={[styles.formRow, { marginBottom: 8 }]}>
+            <SafeView style={[styles.formRow, { marginBottom: 8 }]}>
               <Text style={{ fontSize: 13, color: isDark ? '#aaa' : '#666', textAlign: 'center', flex: 1 }}>
                 {iconMap[drillLevel]}{' '}
                 {drillLevel === 'main' ? 'Will be saved as a Main Site'
                   : drillLevel === 'hospital' ? `Will be saved under ${mainSites.find(s => Number(s.id) === currentMainSiteId)?.name || 'selected site'}`
                     : `Will be saved under ${hospitals.find(h => Number(h.id) === currentHospitalId)?.name || 'selected hospital'}`}
               </Text>
-            </View>
+            </SafeView>
 
-            <View style={styles.formRow}>
+            <SafeView style={styles.formRow}>
               <Text style={styles.formLabel}>Name</Text>
               <TextInput
                 value={newSiteName}
@@ -2393,10 +2420,10 @@ export default function AdminDashboard() {
                 style={styles.formInput}
                 autoFocus
               />
-            </View>
+            </SafeView>
 
             {drillLevel === 'main' && (
-              <View style={styles.formRow}>
+              <SafeView style={styles.formRow}>
                 <Text style={styles.formLabel}>Logo (Optional)</Text>
                 <Pressable
                   onPress={handlePickSiteLogo}
@@ -2408,21 +2435,24 @@ export default function AdminDashboard() {
                     <Text style={{ color: isDark ? '#aaa' : '#666' }}>Tap to select an image</Text>
                   )}
                 </Pressable>
-                <input
-                  type="file"
-                  ref={siteLogoInputRef as any}
-                  style={{ display: 'none' }}
-                  accept="image/*"
-                  onChange={handleSiteLogoFileChange}
-                />
-              </View>
+                {Platform.OS === 'web' && (
+                  // @ts-ignore -- web-only file input, guarded above
+                  <input
+                    type="file"
+                    ref={siteLogoInputRef as any}
+                    style={{ display: 'none' }}
+                    accept="image/*"
+                    onChange={handleSiteLogoFileChange}
+                  />
+                )}
+              </SafeView>
             )}
 
             <Pressable onPress={handleAddSite} style={styles.addSiteButton}>
               <Text style={styles.addSiteButtonText}>Add</Text>
             </Pressable>
-          </View>
-        </View>
+          </SafeView>
+        </SafeView>
       </Modal>
     );
   };
@@ -2434,16 +2464,16 @@ export default function AdminDashboard() {
       animationType="fade"
       onRequestClose={() => setShowEditSiteModal(false)}
     >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
+      <SafeView style={styles.modalOverlay}>
+        <SafeView style={styles.modalContent}>
+          <SafeView style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Rename</Text>
             <Pressable onPress={() => setShowEditSiteModal(false)} style={styles.modalClose}>
               <Text style={styles.modalCloseText}>✕</Text>
             </Pressable>
-          </View>
+          </SafeView>
 
-          <View style={styles.formRow}>
+          <SafeView style={styles.formRow}>
             <Text style={styles.formLabel}>Name</Text>
             <TextInput
               value={editSiteName}
@@ -2453,10 +2483,10 @@ export default function AdminDashboard() {
               style={styles.formInput}
               autoFocus
             />
-          </View>
+          </SafeView>
 
           {selectedManageSite?._level === 'main' && (
-            <View style={styles.formRow}>
+            <SafeView style={styles.formRow}>
               <Text style={styles.formLabel}>Logo (Optional)</Text>
               <Pressable
                 onPress={handlePickSiteLogo}
@@ -2468,21 +2498,24 @@ export default function AdminDashboard() {
                   <Text style={{ color: isDark ? '#aaa' : '#666' }}>Tap to select an image</Text>
                 )}
               </Pressable>
-              <input
-                type="file"
-                ref={siteLogoInputRef as any}
-                style={{ display: 'none' }}
-                accept="image/*"
-                onChange={handleSiteLogoFileChange}
-              />
-            </View>
+              {Platform.OS === 'web' && (
+                // @ts-ignore -- web-only file input, guarded above
+                <input
+                  type="file"
+                  ref={siteLogoInputRef as any}
+                  style={{ display: 'none' }}
+                  accept="image/*"
+                  onChange={handleSiteLogoFileChange}
+                />
+              )}
+            </SafeView>
           )}
 
           <Pressable onPress={handleEditSite} style={styles.addSiteButton}>
             <Text style={styles.addSiteButtonText}>Update</Text>
           </Pressable>
-        </View>
-      </View>
+        </SafeView>
+      </SafeView>
     </Modal>
   );
 
@@ -2493,11 +2526,11 @@ export default function AdminDashboard() {
       animationType="fade"
       onRequestClose={() => setShowSiteDeletedSuccessModal(false)}
     >
-      <View style={styles.modalOverlay}>
-        <View style={styles.successModalCard}>
-          <View style={styles.deleteSuccessIconWrapper}>
+      <SafeView style={styles.modalOverlay}>
+        <SafeView style={styles.successModalCard}>
+          <SafeView style={styles.deleteSuccessIconWrapper}>
             <Text style={styles.successIcon}>✓</Text>
-          </View>
+          </SafeView>
           <Text style={styles.successTitle}>Site Deleted Successfully!</Text>
           <Pressable
             onPress={() => setShowSiteDeletedSuccessModal(false)}
@@ -2505,8 +2538,8 @@ export default function AdminDashboard() {
           >
             <Text style={styles.successButtonText}>Ok</Text>
           </Pressable>
-        </View>
-      </View>
+        </SafeView>
+      </SafeView>
     </Modal>
   );
 

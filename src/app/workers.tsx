@@ -244,9 +244,13 @@ export default function WorkersPage() {
             const ctx = canvas.getContext('2d');
             if (!ctx) throw new Error('Unable to get canvas drawing context');
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            return { uri: canvas.toDataURL('image/jpeg', 0.6), base64: canvas.toDataURL('image/jpeg', 0.6).split(',')[1] };
+            // High quality here: this becomes the face-recognition reference photo,
+            // and the AI service's blur check (Laplacian variance) is sensitive to
+            // JPEG compression artifacts - low quality reads as "blurry" even when
+            // the capture itself is sharp.
+            return { uri: canvas.toDataURL('image/jpeg', 0.92), base64: canvas.toDataURL('image/jpeg', 0.92).split(',')[1] };
           })()
-        : await cameraRef.current.takePictureAsync({ quality: 0.6, base64: true });
+        : await cameraRef.current.takePictureAsync({ quality: 0.92, base64: true });
       setPhotoUri(photo.uri);
       setPhotoBase64(Platform.OS === 'web' ? photo.base64 : (photo.base64 || null));
       setFaceProgress(80);
@@ -741,21 +745,28 @@ export default function WorkersPage() {
                       </Pressable>
                     </View>
                     {showJoinDatePicker && (
-                      <DateTimePicker
-                        value={joinDate}
-                        mode="date"
-                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                        onChange={(_event, selectedDate) => {
-                          setShowJoinDatePicker(Platform.OS === 'ios');
-                          if (selectedDate) {
-                            setJoinDate(selectedDate);
-                            setFormValues((prev) => ({
-                              ...prev,
-                              join_date: selectedDate.toISOString().split('T')[0],
-                            }));
-                          }
-                        }}
-                      />
+                      <>
+                        <DateTimePicker
+                          value={joinDate}
+                          mode="date"
+                          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                          onChange={(_event, selectedDate) => {
+                            setShowJoinDatePicker(Platform.OS === 'ios');
+                            if (selectedDate) {
+                              setJoinDate(selectedDate);
+                              setFormValues((prev) => ({
+                                ...prev,
+                                join_date: selectedDate.toISOString().split('T')[0],
+                              }));
+                            }
+                          }}
+                        />
+                        {Platform.OS === 'ios' && (
+                          <Pressable onPress={() => setShowJoinDatePicker(false)} style={{ alignSelf: 'flex-end', padding: 8 }}>
+                            <Text style={{ color: theme.text, fontWeight: '600' }}>Done</Text>
+                          </Pressable>
+                        )}
+                      </>
                     )}
                   </>
                 )}

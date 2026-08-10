@@ -420,21 +420,28 @@ export default function MachineriesPage() {
                       </Pressable>
                     </View>
                     {showMaintenancePicker && (
-                      <DateTimePicker
-                        value={maintenanceDate}
-                        mode="date"
-                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                        onChange={(_event, selectedDate) => {
-                          setShowMaintenancePicker(Platform.OS === 'ios');
-                          if (selectedDate) {
-                            setMaintenanceDate(selectedDate);
-                            setFormValues((prev) => ({
-                              ...prev,
-                              maintenance_due_at: selectedDate.toISOString().split('T')[0],
-                            }));
-                          }
-                        }}
-                      />
+                      <>
+                        <DateTimePicker
+                          value={maintenanceDate}
+                          mode="date"
+                          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                          onChange={(_event, selectedDate) => {
+                            setShowMaintenancePicker(Platform.OS === 'ios');
+                            if (selectedDate) {
+                              setMaintenanceDate(selectedDate);
+                              setFormValues((prev) => ({
+                                ...prev,
+                                maintenance_due_at: selectedDate.toISOString().split('T')[0],
+                              }));
+                            }
+                          }}
+                        />
+                        {Platform.OS === 'ios' && (
+                          <Pressable onPress={() => setShowMaintenancePicker(false)} style={{ alignSelf: 'flex-end', padding: 8 }}>
+                            <Text style={{ color: theme.text, fontWeight: '600' }}>Done</Text>
+                          </Pressable>
+                        )}
+                      </>
                     )}
                   </>
                 )}

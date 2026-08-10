@@ -378,18 +378,25 @@ export default function OfficeSalariesPage() {
                       </Pressable>
                     </View>
                     {showDatePicker && (
-                      <DateTimePicker
-                        value={salaryDate}
-                        mode="date"
-                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                        onChange={(_event, selectedDate) => {
-                          setShowDatePicker(Platform.OS === 'ios');
-                          if (selectedDate) {
-                            setSalaryDate(selectedDate);
-                            setFormValues((prev) => ({ ...prev, date: selectedDate.toISOString().split('T')[0] }));
-                          }
-                        }}
-                      />
+                      <>
+                        <DateTimePicker
+                          value={salaryDate}
+                          mode="date"
+                          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                          onChange={(_event, selectedDate) => {
+                            setShowDatePicker(Platform.OS === 'ios');
+                            if (selectedDate) {
+                              setSalaryDate(selectedDate);
+                              setFormValues((prev) => ({ ...prev, date: selectedDate.toISOString().split('T')[0] }));
+                            }
+                          }}
+                        />
+                        {Platform.OS === 'ios' && (
+                          <Pressable onPress={() => setShowDatePicker(false)} style={{ alignSelf: 'flex-end', padding: 8 }}>
+                            <Text style={{ color: theme.text, fontWeight: '600' }}>Done</Text>
+                          </Pressable>
+                        )}
+                      </>
                     )}
                   </>
                 )}

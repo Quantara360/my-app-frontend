@@ -4,7 +4,7 @@ import Constants from 'expo-constants';
 import * as SecureStore from 'expo-secure-store';
 
 // Switched to local SQLite server — change back to 'https://api.abeysone.cloud/api' for production
-export const API_BASE_URL = 'https://api.abeysone.cloud/api';
+export const API_BASE_URL = 'http://192.168.8.172:8000/api';
 
 export type AuthUser = {
   id: number;
@@ -62,8 +62,9 @@ export async function getAuthHeaders(token?: string): Promise<HeadersInit> {
 }
 
 async function postJson<T>(path: string, payload: Record<string, unknown>): Promise<T> {
+  let response: Response;
   try {
-    const response = await fetch(`${API_BASE_URL}/${path}`, {
+    response = await fetch(`${API_BASE_URL}/${path}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -71,18 +72,30 @@ async function postJson<T>(path: string, payload: Record<string, unknown>): Prom
       },
       body: JSON.stringify(payload),
     });
-
-    const body = await response.json();
-
-    if (!response.ok) {
-      throw new Error(body.message || 'Authentication failed');
-    }
-
-    return body;
   } catch (err) {
-    console.error('[authService] error', err);
-    throw err;
+    // fetch itself threw - no connection, DNS failure, etc. Give the user
+    // something actionable instead of the raw "Network request failed".
+    console.error('[authService] network error', err);
+    throw new Error('Could not reach the server. Check your connection and try again.');
   }
+
+  // The server can fail before it ever produces JSON (a raw 500/502 HTML
+  // page, an empty body) - don't let response.json() throw a cryptic
+  // "Unexpected token <" past this function.
+  let body: any = null;
+  try {
+    body = await response.json();
+  } catch (parseErr) {
+    console.error('[authService] non-JSON response', response.status, parseErr);
+  }
+
+  if (!response.ok) {
+    const message = body?.message || `Request failed (${response.status})`;
+    console.error('[authService] error', message);
+    throw new Error(message);
+  }
+
+  return body as T;
 }
 
 export async function loginWithApi(params: {

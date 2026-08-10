@@ -74,7 +74,10 @@ function formatDate(dateStr?: string): string {
 
 function getPhotoUrl(worker: Worker): string | null {
   if (!worker.face_photo_path) return null;
-  return `https://api.abeysone.cloud/storage/${worker.face_photo_path}`;
+  // API_BASE_URL is "<host>/api" - strip the "/api" suffix to get the host
+  // that also serves /storage, instead of hardcoding a fixed domain.
+  const apiOrigin = API_BASE_URL.replace(/\/api\/?$/, '');
+  return `${apiOrigin}/storage/${worker.face_photo_path}`;
 }
 
 import { Asset } from 'expo-asset';

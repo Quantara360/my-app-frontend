@@ -214,12 +214,19 @@ export default function MarkAttendance() {
             </View>
 
             {showDatePicker && (
-              <DateTimePicker
-                value={date}
-                mode="date"
-                display={Platform.OS === "ios" ? "spinner" : "default"}
-                onChange={onDateChange}
-              />
+              <>
+                <DateTimePicker
+                  value={date}
+                  mode="date"
+                  display={Platform.OS === "ios" ? "spinner" : "default"}
+                  onChange={onDateChange}
+                />
+                {Platform.OS === "ios" && (
+                  <Pressable onPress={() => setShowDatePicker(false)} style={{ alignSelf: "flex-end", padding: 8 }}>
+                    <ThemedText type="small" style={{ color: theme.text, fontWeight: "600" }}>Done</ThemedText>
+                  </Pressable>
+                )}
+              </>
             )}
 
             {workers.length > 0 && (

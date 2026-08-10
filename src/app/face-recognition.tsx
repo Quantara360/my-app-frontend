@@ -37,7 +37,6 @@ export default function FaceRecognition() {
   const { token } = useAuth();
   const goBack = useGoBack();
   const { worksiteId, hospitalId, subSiteId, shift, state } = useLocalSearchParams<{ worksiteId?: string; hospitalId?: string; subSiteId?: string; shift?: string; state?: string }>();
-  console.log('[face-recognition] params:', { worksiteId, hospitalId, subSiteId, shift, state });
   const currentState = state || "IN";
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [cameraReady, setCameraReady] = useState(false);
@@ -200,9 +199,12 @@ export default function FaceRecognition() {
 
       if (!recData.matched) {
         const reason = recData.reason || "";
+        // Surface the backend's specific reason when it has one (e.g. an
+        // ambiguous match between similar-looking workers) instead of
+        // always falling back to a generic message that hides why.
         const msg = reason.toLowerCase().includes("no face")
           ? "No face detected. Please ensure your face is clearly visible and well-lit."
-          : "Could not identify any registered worker. Please try again.";
+          : reason || "Could not identify any registered worker. Please try again.";
         showAlert("No Match", msg);
         setIsProcessing(false);
         return;
@@ -344,7 +346,10 @@ export default function FaceRecognition() {
           <View style={{ flex: 1 }} />
           <ThemedText type="smallBold" style={{ flex: 2, textAlign: "center" }}>Keep Your eyes open</ThemedText>
           <View style={{ flex: 1, alignItems: "flex-end" }}>
-        <Pressable style={styles.flipButton} onPress={() => { setCameraReady(false); setCameraFacing(prev => prev === 'front' ? 'back' : 'front'); }}>
+        <Pressable style={styles.flipButton} onPress={() => {
+          setCameraReady(false);
+          setCameraFacing(prev => prev === 'front' ? 'back' : 'front');
+        }}>
               <ThemedText style={styles.flipText}>🔄</ThemedText>
             </Pressable>
           </View>

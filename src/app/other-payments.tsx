@@ -389,18 +389,25 @@ export default function OtherPaymentsPage() {
                       </Pressable>
                     </View>
                     {showDatePicker && (
-                      <DateTimePicker
-                        value={paymentDate}
-                        mode="date"
-                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                        onChange={(_event, selectedDate) => {
-                          setShowDatePicker(Platform.OS === 'ios');
-                          if (selectedDate) {
-                            setPaymentDate(selectedDate);
-                            setFormValues((prev) => ({ ...prev, date: selectedDate.toISOString().split('T')[0] }));
-                          }
-                        }}
-                      />
+                      <>
+                        <DateTimePicker
+                          value={paymentDate}
+                          mode="date"
+                          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                          onChange={(_event, selectedDate) => {
+                            setShowDatePicker(Platform.OS === 'ios');
+                            if (selectedDate) {
+                              setPaymentDate(selectedDate);
+                              setFormValues((prev) => ({ ...prev, date: selectedDate.toISOString().split('T')[0] }));
+                            }
+                          }}
+                        />
+                        {Platform.OS === 'ios' && (
+                          <Pressable onPress={() => setShowDatePicker(false)} style={{ alignSelf: 'flex-end', padding: 8 }}>
+                            <Text style={{ color: theme.text, fontWeight: '600' }}>Done</Text>
+                          </Pressable>
+                        )}
+                      </>
                     )}
                   </>
                 )}

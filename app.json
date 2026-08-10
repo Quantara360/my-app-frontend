@@ -8,7 +8,8 @@
     "scheme": "myfirstproject",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/images/logo.png"
+      "icon": "./assets/images/logo.png",
+      "bundleIdentifier": "com.anonymous.MyFirstProject"
     },
     "android": {
       "adaptiveIcon": {
@@ -43,7 +44,29 @@
         }
       ],
       "@react-native-community/datetimepicker",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to mark attendance with face recognition and photograph workers, assets, and documents."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos to attach worker, asset, and document images.",
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to attach worker, asset, and document images."
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos to attach worker, asset, and document images.",
+          "savePhotosPermission": "Allow $(PRODUCT_NAME) to save generated reports and exports to your photo library."
+        }
+      ],
+      "expo-document-picker",
+      "expo-file-system"
     ],
     "experiments": {
       "typedRoutes": true

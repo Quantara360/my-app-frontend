@@ -3,6 +3,8 @@ import { Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextIn
 import { BackgroundPattern } from '@/components/BackgroundPattern';
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { SelectInput } from "@/components/ui/select-input";
+import { DateInput } from "@/components/ui/date-input";
 import { BottomTabInset, Spacing, MaxContentWidth } from "@/constants/theme";
 
 import { useTheme } from "@/hooks/use-theme";
@@ -277,90 +279,85 @@ export default function AttendancesPage() {
 
           {/* ── Cascading location filter ─────────────────────────────────── */}
           {/* Level 1: Main Site */}
-          <select
+          <SelectInput
             value={selectedMainSite}
-            onChange={(e: any) => handleMainSiteChange(e.target.value)}
-            style={selectStyle}
-          >
-            <option value="All">All Main Sites</option>
-            {mainSites.map((ws) => (
-              <option key={ws.id} value={String(ws.id)}>
-                {ws.name}
-              </option>
-            ))}
-          </select>
+            onChange={handleMainSiteChange}
+            webStyle={selectStyle}
+            options={[
+              { value: "All", label: "All Main Sites" },
+              ...mainSites.map((ws) => ({ value: String(ws.id), label: ws.name })),
+            ]}
+          />
 
           {/* Level 2: Hospital (shown only when a main site is selected) */}
-          <select
+          <SelectInput
             value={selectedHospital}
-            onChange={(e: any) => handleHospitalChange(e.target.value)}
-            style={{
+            onChange={handleHospitalChange}
+            disabled={selectedMainSite === "All"}
+            webStyle={{
               ...selectStyle,
               opacity: selectedMainSite === "All" ? 0.5 : 1,
             }}
-            disabled={selectedMainSite === "All"}
-          >
-            <option value="All">
-              {selectedMainSite === "All" ? "— Select Main Site first —" : "All Hospitals"}
-            </option>
-            {filteredHospitals.map((h) => (
-              <option key={h.id} value={String(h.id)}>
-                {h.name}
-              </option>
-            ))}
-          </select>
+            options={[
+              {
+                value: "All",
+                label: selectedMainSite === "All" ? "— Select Main Site first —" : "All Hospitals",
+              },
+              ...filteredHospitals.map((h) => ({ value: String(h.id), label: h.name })),
+            ]}
+          />
 
           {/* Level 3: Sub Site (shown only when a hospital is selected and has sub-sites) */}
-          <select
+          <SelectInput
             value={selectedSubSite}
-            onChange={(e: any) => handleSubSiteChange(e.target.value)}
-            style={{
+            onChange={handleSubSiteChange}
+            disabled={selectedHospital === "All" || filteredSubSites.length === 0}
+            webStyle={{
               ...selectStyle,
               opacity: (selectedHospital === "All" || filteredSubSites.length === 0) ? 0.5 : 1,
             }}
-            disabled={selectedHospital === "All" || filteredSubSites.length === 0}
-          >
-            <option value="All">
-              {selectedHospital === "All"
-                ? "— Select Hospital first —"
-                : filteredSubSites.length === 0
-                  ? "No sub-sites"
-                  : "All Sub Sites"}
-            </option>
-            {filteredSubSites.map((s) => (
-              <option key={s.id} value={String(s.id)}>
-                {s.name}
-              </option>
-            ))}
-          </select>
+            options={[
+              {
+                value: "All",
+                label:
+                  selectedHospital === "All"
+                    ? "— Select Hospital first —"
+                    : filteredSubSites.length === 0
+                      ? "No sub-sites"
+                      : "All Sub Sites",
+              },
+              ...filteredSubSites.map((s) => ({ value: String(s.id), label: s.name })),
+            ]}
+          />
 
-          <select
+          <SelectInput
             value={attendanceShiftFilter}
-            onChange={(e: any) => setAttendanceShiftFilter(e.target.value)}
-            style={selectStyle}
-          >
-            <option value="All">All Shifts</option>
-            <option value="Morning">Morning</option>
-            <option value="Evening">Evening</option>
-          </select>
+            onChange={setAttendanceShiftFilter}
+            webStyle={selectStyle}
+            options={[
+              { value: "All", label: "All Shifts" },
+              { value: "Morning", label: "Morning" },
+              { value: "Evening", label: "Evening" },
+            ]}
+          />
 
-          <select
+          <SelectInput
             value={attendanceStatusFilter}
-            onChange={(e: any) => setAttendanceStatusFilter(e.target.value)}
-            style={selectStyle}
-          >
-            <option value="All">All Status</option>
-            <option value="present">Present</option>
-            <option value="late">Late</option>
-            <option value="absent">Absent</option>
-          </select>
+            onChange={setAttendanceStatusFilter}
+            webStyle={selectStyle}
+            options={[
+              { value: "All", label: "All Status" },
+              { value: "present", label: "Present" },
+              { value: "late", label: "Late" },
+              { value: "absent", label: "Absent" },
+            ]}
+          />
 
           <View style={{ position: 'relative', minWidth: 140 }}>
-            <input
-              type="date"
+            <DateInput
               value={attendanceDateFilter}
-              onChange={(e: any) => setAttendanceDateFilter(e.target.value)}
-              style={{
+              onChange={setAttendanceDateFilter}
+              webStyle={{
                 ...selectStyle,
                 colorScheme: isDark ? "dark" : "light",
                 minWidth: 140,
@@ -368,7 +365,7 @@ export default function AttendancesPage() {
                 display: 'block',
               }}
             />
-            {!attendanceDateFilter && (
+            {Platform.OS === 'web' && !attendanceDateFilter && (
               <Text
                 pointerEvents="none"
                 style={{

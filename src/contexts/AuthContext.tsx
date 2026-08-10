@@ -75,13 +75,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const freshUser = await res.json();
             if (freshUser && freshUser.id) {
               setUser(freshUser);
-              // Persist fresh user data for next restore
+              // Persist fresh user data for next restore. Best-effort and
+              // isolated from the fetch's try/catch on purpose: on native
+              // (Android/iOS), `window` exists but `window.localStorage`
+              // does not, so an unguarded call here used to throw, get
+              // mislabeled as "could not reach backend" by the outer catch,
+              // and skip the `return` below - falling through to the
+              // stale-cache fallback and clobbering the freshUser we just
+              // set with old data on every single restore.
               const serialized = JSON.stringify(freshUser);
-              if (typeof window !== 'undefined') {
-                window.localStorage.setItem(AUTH_USER_KEY, serialized);
-                window.sessionStorage?.setItem(AUTH_USER_KEY, serialized);
+              try {
+                if (typeof window !== 'undefined') {
+                  window.localStorage?.setItem(AUTH_USER_KEY, serialized);
+                  window.sessionStorage?.setItem(AUTH_USER_KEY, serialized);
+                }
+                await SecureStore.setItemAsync(AUTH_USER_KEY, serialized);
+              } catch (persistErr) {
+                console.warn('[AuthContext] Failed to persist fresh user data', persistErr);
               }
-              try { await SecureStore.setItemAsync(AUTH_USER_KEY, serialized); } catch(e) {}
               return;
             }
           }
@@ -131,12 +142,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await SecureStore.setItemAsync(AUTH_USER_KEY, JSON.stringify(newUser));
       } catch (e) {}
       if (typeof window !== 'undefined') {
-        // Always update both storages so refresh always gets the latest
+        // Always update both storages so refresh always gets the latest.
+        // window.localStorage is undefined on native (Android/iOS) even
+        // though `window` itself exists there - guard both, not just one.
         const serialized = JSON.stringify(newUser);
-        window.localStorage.setItem(AUTH_USER_KEY, serialized);
-        if (window?.sessionStorage) {
-          window.sessionStorage.setItem(AUTH_USER_KEY, serialized);
-        }
+        window.localStorage?.setItem(AUTH_USER_KEY, serialized);
+        window.sessionStorage?.setItem(AUTH_USER_KEY, serialized);
       }
     }
   }

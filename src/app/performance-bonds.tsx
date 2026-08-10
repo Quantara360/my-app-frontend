@@ -279,18 +279,25 @@ export default function PerformanceBondsPage() {
                       <Text style={{ color: theme.text }}>{selectedDate.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}</Text>
                     </Pressable>
                     {showDatePicker && (
-                      <DateTimePicker
-                        value={selectedDate}
-                        mode="date"
-                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                        onChange={(_event, date) => {
-                          setShowDatePicker(Platform.OS === 'ios');
-                          if (date) {
-                            setSelectedDate(date);
-                            setFormValues((prev) => ({ ...prev, date: date.toISOString().split('T')[0] }));
-                          }
-                        }}
-                      />
+                      <>
+                        <DateTimePicker
+                          value={selectedDate}
+                          mode="date"
+                          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                          onChange={(_event, date) => {
+                            setShowDatePicker(Platform.OS === 'ios');
+                            if (date) {
+                              setSelectedDate(date);
+                              setFormValues((prev) => ({ ...prev, date: date.toISOString().split('T')[0] }));
+                            }
+                          }}
+                        />
+                        {Platform.OS === 'ios' && (
+                          <Pressable onPress={() => setShowDatePicker(false)} style={{ alignSelf: 'flex-end', padding: 8 }}>
+                            <Text style={{ color: theme.text, fontWeight: '600' }}>Done</Text>
+                          </Pressable>
+                        )}
+                      </>
                     )}
                   </>
                 )}
