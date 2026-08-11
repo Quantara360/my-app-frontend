@@ -169,10 +169,15 @@ export default function FaceRecognition() {
       if (!photo || !photo.base64) return;
       setPhotoUri(photo.uri);
 
-      // Convert image to base64 for the face service using the captured base64 data
+      // Convert image to base64 for the face service using the captured base64 data.
+      // Both capture paths (web canvas.toDataURL and native takePictureAsync) always
+      // produce JPEG, and photo.base64 is already the raw base64 payload with no
+      // data-URL prefix - so the mime type can be hardcoded here. (Do NOT derive it
+      // from photo.uri: on web, photo.uri IS the full data URL with no "." in it,
+      // so `.split(".").pop()` used to return the entire data URL as "ext" and
+      // produce a garbled, doubly-prefixed string that failed base64 validation.)
       const base64 = photo.base64;
-      const ext = photo.uri.split(".").pop() || "jpg";
-      const dataUri = `data:image/${ext};base64,${base64}`;
+      const dataUri = `data:image/jpeg;base64,${base64}`;
 
       // POST to Laravel → Python face service
       const recRes = await fetch(`${API_BASE_URL}/face-recognition/recognize`, {
