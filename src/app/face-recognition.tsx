@@ -193,7 +193,16 @@ export default function FaceRecognition() {
       console.log('[recognize] response:', recData);
 
       if (!recData.success) {
-        let errorMsg = recData.error || "Face service error. Please try again.";
+        // recData.error/reason come from the AI service or our own controller;
+        // recData.message/errors is Laravel's shape for a validation failure
+        // (e.g. request too large and image_base64 silently dropped) - fall
+        // back through all of them before the generic message so failures are
+        // actually diagnosable from the alert instead of a dead end.
+        let errorMsg =
+          recData.error ||
+          recData.message ||
+          (recData.errors ? JSON.stringify(recData.errors) : "") ||
+          "Face service error. Please try again.";
         if (errorMsg.toLowerCase().includes("face could not be detected") || errorMsg.includes("enforce_detection")) {
           errorMsg = "No face detected in the picture. Please make sure your face is clearly visible and well-lit, then try again.";
         }
