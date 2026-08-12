@@ -26,6 +26,25 @@ export default function Root({ children }: { children: React.ReactNode }) {
         />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
 
+        {/* Expo Router renders <title>/<meta name="description"> per-route via
+            its own head manager (the empty `data-rh="true"` tag it leaves
+            here client-side), but that only exists after the JS bundle runs.
+            The static fallback below is what an automated crawler, a search
+            engine, or a manual reviewer at a security/web-filtering vendor
+            (FortiGuard, Cisco Umbrella, Zscaler, etc.) actually sees when
+            they fetch the bare URL without executing JS - previously this
+            was a blank <title></title> with no description, which is a
+            common reason those vendors leave a brand-new domain sitting at
+            "Not Rated" / "Uncategorized" indefinitely, and some corporate
+            firewalls block unrated sites by default. Giving crawlers real
+            text to read makes automatic/manual categorization far more
+            likely to actually happen. */}
+        <title>Abeysone – Workforce Attendance &amp; HR Management</title>
+        <meta
+          name="description"
+          content="Abeysone is a workforce attendance and HR management platform for tracking employee attendance via face recognition, payroll, worksite operations, bonds, and financial records."
+        />
+
         {/* iOS: run as a standalone app when added to the home screen, and
             match the app's dark theme in the status bar / task switcher
             instead of Safari's default white chrome. */}
@@ -67,7 +86,22 @@ export default function Root({ children }: { children: React.ReactNode }) {
           }}
         />
       </head>
-      <body>{children}</body>
+      <body>
+        {/* Same reasoning as the <title>/<meta description> above: real,
+            visible text for anything that reads the page without running
+            JS. Hidden the instant React mounts. */}
+        <noscript>
+          <div style={{ fontFamily: '-apple-system, sans-serif', padding: 40, maxWidth: 600, margin: '0 auto' }}>
+            <h1>Abeysone</h1>
+            <p>
+              Abeysone is a workforce attendance and HR management platform used to track employee
+              attendance, payroll, worksite operations, bonds, and financial records. Please enable
+              JavaScript to use the app.
+            </p>
+          </div>
+        </noscript>
+        {children}
+      </body>
     </html>
   );
 }
