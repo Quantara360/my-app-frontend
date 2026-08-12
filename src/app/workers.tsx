@@ -990,7 +990,7 @@ export default function WorkersPage() {
               <View style={{ backgroundColor: '#dc3545', padding: 16, alignItems: 'center' }}>
                 <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 17 }}>{errorModal?.title}</Text>
               </View>
-              <View style={{ padding: 20, alignItems: 'center' }}>
+              <View style={{ backgroundColor: '#fff', padding: 20, alignItems: 'center' }}>
                 <Text style={{ color: theme.text, fontSize: 15, textAlign: 'center', marginBottom: 20 }}>{errorModal?.message}</Text>
                 <Pressable
                   style={{ backgroundColor: '#4b4fbf', paddingVertical: 10, paddingHorizontal: 28, borderRadius: 8 }}
