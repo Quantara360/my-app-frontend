@@ -67,6 +67,21 @@ export default function FaceRecognition() {
 
   useEffect(() => {
     (async () => {
+      // Check first instead of unconditionally re-requesting: the normal
+      // path here is mark-attendance.tsx's "Next >>" button, which already
+      // requested (and got granted) camera permission a moment ago, tied to
+      // that tap. Calling requestCameraPermissionsAsync() again here fires
+      // a second, auto-on-mount permission prompt with no user gesture
+      // behind it - on iOS/Android Chrome that's an extra, unnecessary
+      // chance to hit the "close any bubbles or overlays" safety block,
+      // since browsers are stricter about prompts not tied to a direct tap.
+      // Only fall back to actually requesting if we land here without
+      // already having permission (e.g. direct URL, browser back/forward).
+      const existing = await Camera.getCameraPermissionsAsync();
+      if (existing.status === "granted") {
+        setHasPermission(true);
+        return;
+      }
       const { status } = await Camera.requestCameraPermissionsAsync();
       setHasPermission(status === "granted");
     })();
