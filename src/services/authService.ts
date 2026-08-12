@@ -3,8 +3,7 @@ export type UserRole = 'supervisor' | 'officeStaff' | 'admin';
 import Constants from 'expo-constants';
 import * as SecureStore from 'expo-secure-store';
 
-// Switched to local SQLite server — change back to 'https://api.abeysone.cloud/api' for production
-export const API_BASE_URL = 'http://192.168.8.172:8000/api';
+export const API_BASE_URL = 'https://api.abeysone.cloud/api';
 
 export type AuthUser = {
   id: number;
