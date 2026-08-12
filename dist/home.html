@@ -10,12 +10,28 @@
                   el.textContent = 'App failed to load. Please screenshot this and send it to support:\n\n' + message;
                   document.body.appendChild(el);
                 }
+                // Browsers replace the real error with the generic string
+                // "Script error." (no message/stack) when they treat the
+                // failing script as cross-origin - this happens even for our
+                // own same-origin code if it ran inside a dynamically
+                // injected chunk (code-splitting) rather than a plain
+                // top-level <script> tag. When that happens e.message is
+                // just "Script error." with filename/lineno/colno all blank
+                // too, so there's nothing more to extract - but capturing
+                // those fields whenever they ARE available (the common case)
+                // turns "Script error." into an actual file+line we can look
+                // up instead of a dead end.
                 window.addEventListener('error', function (e) {
-                  showFatalError((e && (e.message || (e.error && e.error.toString()))) || 'Unknown error');
+                  var parts = [(e && (e.message || (e.error && e.error.toString()))) || 'Unknown error'];
+                  if (e && e.filename) parts.push('at ' + e.filename + ':' + e.lineno + ':' + e.colno);
+                  if (e && e.error && e.error.stack) parts.push(String(e.error.stack));
+                  showFatalError(parts.join('\n'));
                 });
                 window.addEventListener('unhandledrejection', function (e) {
                   var reason = e && e.reason;
-                  showFatalError('Unhandled promise rejection: ' + (reason && reason.toString ? reason.toString() : String(reason)));
+                  var msg = 'Unhandled promise rejection: ' + (reason && reason.toString ? reason.toString() : String(reason));
+                  if (reason && reason.stack) msg += '\n' + String(reason.stack);
+                  showFatalError(msg);
                 });
               })();
             </script><style id="react-native-stylesheet">[stylesheet-group="0"]{}
