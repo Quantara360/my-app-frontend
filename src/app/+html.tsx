@@ -219,14 +219,16 @@ export default function Root({ children }: { children: React.ReactNode }) {
               (function () {
                 function findScroller() {
                   var all = document.querySelectorAll('*');
+                  var matches = [];
                   for (var i = 0; i < all.length; i++) {
                     var el = all[i];
+                    if (el === document.documentElement || el === document.body) continue;
                     if (el.scrollHeight > el.clientHeight + 2) {
                       var cs = getComputedStyle(el);
-                      if (cs.overflowY === 'auto' || cs.overflowY === 'scroll') return el;
+                      if (cs.overflowY === 'auto' || cs.overflowY === 'scroll') matches.push(el);
                     }
                   }
-                  return null;
+                  return matches;
                 }
                 function update() {
                   var box = document.getElementById('diag-overlay');
@@ -241,25 +243,28 @@ export default function Root({ children }: { children: React.ReactNode }) {
                   var vv = window.visualViewport;
                   var appHeight = getComputedStyle(document.documentElement).getPropertyValue('--app-height');
                   var root = document.getElementById('root');
-                  var scroller = findScroller();
+                  var scrollers = findScroller();
                   var lines = [
                     'innerHeight=' + window.innerHeight,
                     'visualViewport.height=' + (vv ? vv.height : 'n/a'),
                     '--app-height=' + (appHeight || 'unset'),
                     'html.clientHeight=' + document.documentElement.clientHeight,
+                    'html overscroll-behavior=' + getComputedStyle(document.documentElement).overscrollBehavior,
                     'body.scrollHeight=' + document.body.scrollHeight,
+                    'body overscroll-behavior=' + getComputedStyle(document.body).overscrollBehavior,
                     'root.rect.height=' + (root ? Math.round(root.getBoundingClientRect().height) : 'n/a'),
                     'bodyBg=' + getComputedStyle(document.body).backgroundColor,
+                    'scrollers found=' + scrollers.length,
                   ];
-                  if (scroller) {
+                  scrollers.slice(0, 4).forEach(function (scroller, idx) {
                     var scs = getComputedStyle(scroller);
-                    lines.push('scroller.class=' + (scroller.className || '').toString().slice(0, 30));
-                    lines.push('scroller scrollTop/scrollH/clientH=' + scroller.scrollTop + '/' + scroller.scrollHeight + '/' + scroller.clientHeight);
-                    lines.push('scroller overscroll-behavior=' + scs.overscrollBehavior);
-                    lines.push('scroller bg=' + scs.backgroundColor);
                     var srect = scroller.getBoundingClientRect();
-                    lines.push('scroller rect.bottom=' + Math.round(srect.bottom) + ' vs innerHeight=' + window.innerHeight);
-                  } else {
+                    lines.push('[' + idx + '] ' + scroller.tagName + '#' + (scroller.id || '-') + '.' + (scroller.className || '-').toString().slice(0, 25));
+                    lines.push('    scrollTop/scrollH/clientH=' + scroller.scrollTop + '/' + scroller.scrollHeight + '/' + scroller.clientHeight);
+                    lines.push('    overscroll-behavior=' + scs.overscrollBehavior + ' bg=' + scs.backgroundColor);
+                    lines.push('    rect.top/bottom=' + Math.round(srect.top) + '/' + Math.round(srect.bottom));
+                  });
+                  if (scrollers.length === 0) {
                     lines.push('scroller=NOT FOUND');
                   }
                   box.textContent = lines.join('\\n');
