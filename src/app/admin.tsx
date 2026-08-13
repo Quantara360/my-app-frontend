@@ -1981,7 +1981,17 @@ export default function AdminDashboard() {
   );
 
   const renderDashboardView = () => (
-    <>
+    // justifyContent:'center' on the wrapping ScrollView's own
+    // contentContainerStyle is unreliable on iOS Safari specifically -
+    // WebKit has long-documented issues centering flex content inside a
+    // container that also has overflow:auto plus
+    // -webkit-overflow-scrolling:touch (momentum scroll, which RN's
+    // ScrollView always sets on web), sometimes just leaving content flush
+    // at the start regardless of justifyContent. margin:'auto' on the
+    // actual content is the more cross-browser-reliable way to center
+    // within leftover flex space, so it's added here as reinforcement
+    // rather than relying on justifyContent alone.
+    <View style={{ margin: 'auto', width: '100%' }}>
       {/* Header with greeting */}
       <View
         style={[
@@ -2228,7 +2238,7 @@ export default function AdminDashboard() {
           })()}
         </View>
       </View>
-    </>
+    </View>
   );
 
   const renderManageSiteView = () => {
