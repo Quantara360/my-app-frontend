@@ -326,7 +326,7 @@ export default function TemplatePage() {
   const openCard = (w: Worker) => { setSelectedWorker(w); setShowCard(true); };
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: 'transparent' }]}>
+    <ThemedView style={[styles.container, { backgroundColor: isDark ? "#121212" : "#F1E7DF" }]}>
       <BackgroundPattern />
       <SafeAreaView style={{ flex: 1 }}>
         {/* Header */}

@@ -233,7 +233,7 @@ export default function MachineriesPage() {
   const statusOptions = ['operational', 'maintenance', 'broken'];
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: 'transparent' }]}>
+    <ThemedView style={[styles.container, { backgroundColor: '#F1E7DF' }]}>
       <BackgroundPattern />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.headerRow}>

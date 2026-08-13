@@ -220,7 +220,7 @@ export default function ChemicalsPage() {
   const hazardOptions = ['low', 'medium', 'high'];
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: 'transparent' }]}>
+    <ThemedView style={[styles.container, { backgroundColor: '#F1E7DF' }]}>
       <BackgroundPattern />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.headerRow}>

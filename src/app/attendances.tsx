@@ -232,7 +232,7 @@ export default function AttendancesPage() {
   };
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: 'transparent' }]}>
+    <ThemedView style={[styles.container, { backgroundColor: isDark ? "#121212" : "#F1E7DF" }]}>
       <BackgroundPattern />
       <SafeAreaView style={{ flex: 1 }}>
         {/* Header */}

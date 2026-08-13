@@ -235,7 +235,7 @@ export default function AssetsPage() {
   const statusOptions = ['available', 'in-use', 'maintenance', 'retired'];
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: 'transparent' }]}>
+    <ThemedView style={[styles.container, { backgroundColor: '#F1E7DF' }]}>
       <BackgroundPattern />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.headerRow}>
