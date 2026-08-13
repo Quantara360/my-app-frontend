@@ -157,6 +157,7 @@ export default function Root({ children }: { children: React.ReactNode }) {
         <style dangerouslySetInnerHTML={{ __html: `
           html, body { overscroll-behavior: none; }
           .r-1rnoaur { overscroll-behavior: none; }
+          #root { overscroll-behavior: none; }
         ` }} />
 
         {/* Must be inline (not an imported bundle) so it still runs even if
