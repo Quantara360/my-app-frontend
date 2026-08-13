@@ -234,6 +234,89 @@ export default function Root({ children }: { children: React.ReactNode }) {
           }}
         />
 
+        {/* TEMPORARY, round 2: the previous overlay measured
+            scrollHeight/clientHeight and confirmed real (non-bounce)
+            overflow, so body/#root were given the tan background as a
+            catch-all fix - but the reporter confirmed in a fresh Incognito
+            tab (no caching involved) that the gap is still plain white.
+            That rules out "gap outside our content, falls through to page
+            background" as the mechanism entirely - if it were that, the
+            body/#root background-color would have caught it unconditionally.
+            The white must be coming from an element INSIDE our own
+            rendered tree that has an explicit white background, which a
+            page-background fallback can never override (an inner
+            element's own paint always wins over whatever's behind it).
+
+            This directly identifies that element via
+            document.elementFromPoint at coordinates sampled near the
+            bottom of the viewport, both before and after scrolling #root
+            to its max scrollTop, and walks up a few ancestors showing each
+            one's tag/class/background so the actual white-painted element
+            (and everything wrapping it) is visible instead of inferred.
+            Small and bottom-positioned this time so it doesn't cover page
+            titles. Remove once the real element is identified and fixed. */}
+        <script
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function () {
+                function describe(el, depth) {
+                  if (!el) return '(null)';
+                  var cs = getComputedStyle(el);
+                  var rect = el.getBoundingClientRect();
+                  var s = el.tagName + '#' + (el.id || '-') + '.' + (el.className || '-').toString().slice(0, 22)
+                    + ' bg=' + cs.backgroundColor + ' h=' + Math.round(rect.height) + ' top=' + Math.round(rect.top);
+                  if (depth > 0 && el.parentElement) {
+                    return s + '\\n  ^' + describe(el.parentElement, depth - 1);
+                  }
+                  return s;
+                }
+                function sample(label, x, y, lines) {
+                  var el = document.elementFromPoint(x, y);
+                  lines.push(label + ' (' + x + ',' + y + '):');
+                  lines.push(describe(el, 2));
+                }
+                function update() {
+                  var box = document.getElementById('diag2');
+                  if (!box) {
+                    box = document.createElement('div');
+                    box.id = 'diag2';
+                    box.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:999998;'
+                      + 'background:rgba(0,0,0,0.85);color:#0f0;padding:4px 6px;'
+                      + 'font:9px/1.35 monospace;white-space:pre-wrap;pointer-events:none;'
+                      + 'max-height:45vh;overflow:hidden;';
+                    document.body.appendChild(box);
+                  }
+                  var w = window.innerWidth, h = window.innerHeight;
+                  var lines = ['innerHeight=' + h];
+                  sample('75%', Math.round(w / 2), Math.round(h * 0.75), lines);
+                  sample('90%', Math.round(w / 2), Math.round(h * 0.90), lines);
+                  sample('98%', Math.round(w / 2), Math.round(h * 0.98), lines);
+                  var root = document.getElementById('root');
+                  if (root && root.scrollHeight > root.clientHeight) {
+                    root.scrollTop = root.scrollHeight;
+                    setTimeout(function () {
+                      var lines2 = ['-- after scroll to max --'];
+                      sample('75%', Math.round(w / 2), Math.round(h * 0.75), lines2);
+                      sample('90%', Math.round(w / 2), Math.round(h * 0.90), lines2);
+                      sample('98%', Math.round(w / 2), Math.round(h * 0.98), lines2);
+                      box.textContent = lines.concat(lines2).join('\\n');
+                    }, 200);
+                  } else {
+                    box.textContent = lines.join('\\n');
+                  }
+                }
+                if (document.body) {
+                  update();
+                } else {
+                  document.addEventListener('DOMContentLoaded', update);
+                }
+                window.addEventListener('resize', update);
+              })();
+            `,
+          }}
+        />
+
       </head>
       <body>
         {/* Same reasoning as the <title>/<meta description> above: real,
