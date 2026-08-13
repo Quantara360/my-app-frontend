@@ -57,6 +57,24 @@ export default function Root({ children }: { children: React.ReactNode }) {
 
         <ScrollViewStyleReset />
 
+        {/* ScrollViewStyleReset above sets #root/body/html to height:100%.
+            On mobile browsers, % height resolves against the *initial*
+            viewport (address bar visible) and does not update as the
+            address bar auto-hides while scrolling/interacting - the
+            viewport then grows, but our content was already sized to the
+            smaller initial height, leaving the newly-revealed strip at the
+            bottom unstyled/blank. This is what was reported as "background
+            only covers half the screen" / a white gap appearing after
+            scrolling on nearly every page. 100dvh (dynamic viewport height)
+            continuously tracks the actual visible viewport instead. Browsers
+            without dvh support (very old browsers only, at this point)
+            simply ignore this rule and keep the 100% fallback above. */}
+        <style dangerouslySetInnerHTML={{ __html: `
+          @supports (height: 100dvh) {
+            #root, body, html { height: 100dvh; }
+          }
+        ` }} />
+
         {/* Must be inline (not an imported bundle) so it still runs even if
             the main RN bundle fails to load or throws while evaluating. */}
         <script
