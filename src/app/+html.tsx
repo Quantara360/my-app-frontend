@@ -87,6 +87,35 @@ export default function Root({ children }: { children: React.ReactNode }) {
           }
         ` }} />
 
+        {/* The actual cause of the gap-after-scrolling bug (confirmed by
+            before/after-scroll screenshots showing no gap on first paint,
+            one appearing only once scrolled - including inside the
+            installed PWA, which has no address bar at all, ruling out the
+            viewport-unit fix above for this specific case): every
+            ScrollView across the app was passed bounces={false} and
+            overScrollMode="never" in an earlier fix, intending to stop
+            rubber-band/overscroll from revealing space beyond the actual
+            content. Those are React Native NATIVE-ONLY props - grep across
+            react-native-web's ScrollView source confirms it does not read
+            either one, so on web (the platform actually being tested here)
+            that fix silently did nothing. The overscrolled region is
+            outside the ScrollView's own rendered content, so none of the
+            background-color fixes from other rounds could ever cover it
+            either - it falls through to the page's default background.
+
+            The real web equivalent is the CSS property
+            overscroll-behavior. react-native-web assigns every vertical
+            ScrollView's outer div the same reused atomic class for its
+            overflow-y:auto rule (r-1rnoaur as of the current
+            react-native-web version - verified present across every
+            screen's build output). Overriding that one class stops
+            overscroll on every ScrollView in the app at once, with
+            html/body containment as a second layer of defense. */}
+        <style dangerouslySetInnerHTML={{ __html: `
+          html, body { overscroll-behavior: none; }
+          .r-1rnoaur { overscroll-behavior: contain; }
+        ` }} />
+
         {/* Must be inline (not an imported bundle) so it still runs even if
             the main RN bundle fails to load or throws while evaluating. */}
         <script
