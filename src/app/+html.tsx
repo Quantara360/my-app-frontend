@@ -85,7 +85,42 @@ export default function Root({ children }: { children: React.ReactNode }) {
           @supports (height: 100svh) {
             #root, body, html { height: 100svh; }
           }
+          #root, body, html { height: var(--app-height, 100svh); }
         ` }} />
+
+        {/* Belt-and-suspenders on top of the CSS unit above: two rounds of
+            viewport-unit fixes (100dvh, then 100svh) each looked correct in
+            testing but the reporter's real device still showed the gap -
+            CSS viewport units have a long history of cross-browser/cross-
+            version inconsistency that's hard to fully account for from here.
+            This measures the ACTUAL visible height via JS
+            (window.visualViewport, which is what a real mobile browser uses
+            internally to track keyboard/toolbar changes) and applies it as
+            a plain pixel value via a CSS custom property, re-measuring on
+            every resize/orientation change. This is independent of whichever
+            viewport-unit keyword a given browser version does or doesn't
+            support correctly - it reads the same number the browser itself
+            is tracking, rather than asking the browser to compute it again
+            via a CSS unit. 100svh above is the pre-JS/no-JS fallback only. */}
+        <script
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function () {
+                function setAppHeight() {
+                  var h = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+                  document.documentElement.style.setProperty('--app-height', h + 'px');
+                }
+                setAppHeight();
+                window.addEventListener('resize', setAppHeight);
+                window.addEventListener('orientationchange', setAppHeight);
+                if (window.visualViewport) {
+                  window.visualViewport.addEventListener('resize', setAppHeight);
+                }
+              })();
+            `,
+          }}
+        />
 
         {/* The actual cause of the gap-after-scrolling bug (confirmed by
             before/after-scroll screenshots showing no gap on first paint,
@@ -110,10 +145,18 @@ export default function Root({ children }: { children: React.ReactNode }) {
             react-native-web version - verified present across every
             screen's build output). Overriding that one class stops
             overscroll on every ScrollView in the app at once, with
-            html/body containment as a second layer of defense. */}
+            html/body containment as a second layer of defense.
+
+            Reset confirmed the reporter tested a fresh reinstall of this
+            exact fix and the gap was still there - overscroll-behavior:
+            contain on the ScrollView's own class was the bug. `contain`
+            only stops the overscroll from chaining to ancestor scroll
+            containers; it does NOT suppress the local rubber-band/glow
+            effect on the element itself, which is exactly the visual
+            artifact this needs to kill. `none` disables both. */}
         <style dangerouslySetInnerHTML={{ __html: `
           html, body { overscroll-behavior: none; }
-          .r-1rnoaur { overscroll-behavior: contain; }
+          .r-1rnoaur { overscroll-behavior: none; }
         ` }} />
 
         {/* Must be inline (not an imported bundle) so it still runs even if
