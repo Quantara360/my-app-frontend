@@ -168,7 +168,11 @@ const styles = StyleSheet.create({
     width: 300,
     height: 300,
     backgroundColor: "#8b6f5d",
-    bottom: -120,
+    // SafeAreaView (react-native core) only applies real inset padding on iOS,
+    // which shrinks the centered card's box and exposes more of this fixed
+    // decorative circle underneath it than on Android. Tuck it further down
+    // on iOS so the exposed amount matches the Android/design intent.
+    bottom: Platform.select({ ios: -170, default: -120 }),
     left: 40,
   },
   safeArea: {
