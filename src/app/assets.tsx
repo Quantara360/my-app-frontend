@@ -287,7 +287,7 @@ export default function AssetsPage() {
                 <Text style={styles.columnHeaderRight}>Actions</Text>
               </View>
 
-              <ScrollView style={styles.tableBody} showsVerticalScrollIndicator={false}>
+              <ScrollView style={styles.tableBody} showsVerticalScrollIndicator={false} bounces={false} overScrollMode="never">
                 {filteredAssets.map((asset) => (
                   <View key={asset.id} style={styles.tableRow}>
                     <Text style={[styles.rowCell, { width: 60, minWidth: 60, flex: 0 }]} numberOfLines={1}>{asset.id}</Text>

@@ -40,10 +40,12 @@ export default function NationalHospitalUnits() {
           </ThemedText>
         </View>
 
-        <ScrollView 
-          style={{ flex: 1, width: "100%" }} 
+        <ScrollView
+          style={{ flex: 1, width: "100%" }}
           contentContainerStyle={styles.centerContent}
           showsVerticalScrollIndicator={false}
+          bounces={false}
+          overScrollMode="never"
         >
 
           <View style={styles.list}>

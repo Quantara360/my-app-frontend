@@ -298,7 +298,7 @@ export default function BankPage() {
                 </View>
 
                 {/* Table body */}
-                <ScrollView style={styles.tableBody} showsVerticalScrollIndicator={false} nestedScrollEnabled>
+                <ScrollView style={styles.tableBody} showsVerticalScrollIndicator={false} nestedScrollEnabled bounces={false} overScrollMode="never">
                   {filtered.length === 0 ? (
                     <View style={styles.emptyRow}>
                       <Text style={{ color: '#aaa', fontSize: 13 }}>No records found</Text>

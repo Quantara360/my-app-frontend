@@ -224,7 +224,7 @@ export default function BooksPage() {
       </View>
     );
     return (
-      <ScrollView style={{ flex: 1, width: "100%" }} contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{ flex: 1, width: "100%" }} contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false} bounces={false} overScrollMode="never">
         {items.map((item) => (
           <Pressable key={item.id} style={({ pressed }) => [styles.listCard, { backgroundColor: theme.backgroundElement }, pressed && styles.listCardPressed]} onPress={() => onSelect(item)}>
             <ThemedText type="subtitle" style={styles.listCardText}>{item.name}</ThemedText>
@@ -238,7 +238,7 @@ export default function BooksPage() {
   const renderBooks = () => {
     if (isLoading) return <View style={styles.centered}><ActivityIndicator size="large" color={theme.text} /></View>;
     return (
-      <ScrollView style={{ flex: 1, width: "100%" }} contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{ flex: 1, width: "100%" }} contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false} bounces={false} overScrollMode="never">
         {[1, 2, 3].map((bid) => {
           const count = images.filter((img) => img.book_id === bid).length;
           return (
@@ -341,7 +341,7 @@ export default function BooksPage() {
           />
         )}
         
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.feedScrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.feedScrollContent} showsVerticalScrollIndicator={false} bounces={false} overScrollMode="never">
           {displayImages.length === 0 ? (
             <View style={styles.centered}>
               <Text style={styles.emptyIcon}>🖼️</Text>

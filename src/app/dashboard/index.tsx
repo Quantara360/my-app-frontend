@@ -148,6 +148,8 @@ export default function DashboardScreen() {
             contentContainerStyle={styles.staffScrollContent}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
+            bounces={false}
+            overScrollMode="never"
           >
             <View style={styles.staffHeader}>
               <View style={{ flex: 1, paddingRight: 10 }}>

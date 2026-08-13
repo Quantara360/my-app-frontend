@@ -331,7 +331,7 @@ export default function PeticashPage() {
                 <Text style={styles.columnHeaderRight}>Actions</Text>
               </View>
 
-              <ScrollView style={styles.tableBody} showsVerticalScrollIndicator={false}>
+              <ScrollView style={styles.tableBody} showsVerticalScrollIndicator={false} bounces={false} overScrollMode="never">
                 {filteredTransactions.map((t) => (
                   <View key={t.id} style={styles.tableRow}>
                     <Text style={[styles.rowCell, { width: 60, minWidth: 60, flex: 0 }]} numberOfLines={1}>

@@ -355,7 +355,7 @@ export default function FaceRecognition() {
       <View style={[styles.background, { backgroundColor: isDark ? "#121212" : "#F1E7DF" }]} />
       <View style={[styles.backgroundCircleLarge, { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(255, 255, 255, 0.65)" }]} />
       <View style={[styles.backgroundCircleSmall, { backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(255, 255, 255, 0.5)" }]} />
-      <ScrollView contentContainerStyle={styles.container} style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={styles.container} style={{ flex: 1 }} showsVerticalScrollIndicator={false} bounces={false} overScrollMode="never">
       <View style={styles.headerRow}>
         <Pressable style={[styles.backButton, { backgroundColor: theme.backgroundElement, borderColor: "rgba(128,128,128,0.2)" }]} onPress={goBack} accessibilityLabel="Back">
           <ThemedText type="subtitle" style={styles.backText}>←</ThemedText>
