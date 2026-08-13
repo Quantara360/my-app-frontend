@@ -26,8 +26,8 @@
       "favicon": "./assets/images/logo.png",
       "name": "Abeysone",
       "shortName": "Abeysone",
-      "themeColor": "#000000",
-      "backgroundColor": "#000000",
+      "themeColor": "#F1E7DF",
+      "backgroundColor": "#F1E7DF",
       "display": "standalone",
       "startUrl": "/"
     },
