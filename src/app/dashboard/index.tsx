@@ -379,6 +379,7 @@ const styles = StyleSheet.create({
     paddingBottom: BottomTabInset + Spacing.four,
     gap: Spacing.three,
     flexGrow: 1,
+    justifyContent: 'center',
   },
   topRightControls: {
     width: "100%",

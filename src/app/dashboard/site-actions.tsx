@@ -174,6 +174,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+    justifyContent: 'center',
     paddingBottom: Spacing.four,
   },
   headerRow: {

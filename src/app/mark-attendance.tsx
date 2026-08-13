@@ -356,6 +356,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     width: '100%',
     alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: Spacing.three,
     paddingBottom: BottomTabInset + Spacing.four,
   },
