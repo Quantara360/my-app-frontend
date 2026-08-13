@@ -20,6 +20,8 @@
           html, body { overscroll-behavior: none; }
           .r-1rnoaur { overscroll-behavior: none; }
           #root { overscroll-behavior: none; }
+        </style><style>
+          body, #root { background-color: #F1E7DF; }
         </style><script>
               (function () {
                 function showFatalError(message) {
@@ -55,79 +57,6 @@
                   if (reason && reason.stack) msg += '\n' + String(reason.stack);
                   showFatalError(msg);
                 });
-              })();
-            </script><script>
-              (function () {
-                function findScroller() {
-                  var all = document.querySelectorAll('*');
-                  var matches = [];
-                  for (var i = 0; i < all.length; i++) {
-                    var el = all[i];
-                    if (el === document.documentElement || el === document.body) continue;
-                    if (el.scrollHeight > el.clientHeight + 2) {
-                      var cs = getComputedStyle(el);
-                      if (cs.overflowY === 'auto' || cs.overflowY === 'scroll') matches.push(el);
-                    }
-                  }
-                  return matches;
-                }
-                function update() {
-                  var box = document.getElementById('diag-overlay');
-                  if (!box) {
-                    box = document.createElement('div');
-                    box.id = 'diag-overlay';
-                    box.style.cssText = 'position:fixed;top:0;left:0;z-index:999998;'
-                      + 'background:rgba(0,0,0,0.75);color:#0f0;padding:6px 8px;'
-                      + 'font:10px/1.4 monospace;white-space:pre;pointer-events:none;';
-                    document.body.appendChild(box);
-                  }
-                  var vv = window.visualViewport;
-                  var appHeight = getComputedStyle(document.documentElement).getPropertyValue('--app-height');
-                  var root = document.getElementById('root');
-                  var scrollers = findScroller();
-                  var lines = [
-                    'innerHeight=' + window.innerHeight,
-                    'visualViewport.height=' + (vv ? vv.height : 'n/a'),
-                    '--app-height=' + (appHeight || 'unset'),
-                    'html.clientHeight=' + document.documentElement.clientHeight,
-                    'html overscroll-behavior=' + getComputedStyle(document.documentElement).overscrollBehavior,
-                    'body.scrollHeight=' + document.body.scrollHeight,
-                    'body overscroll-behavior=' + getComputedStyle(document.body).overscrollBehavior,
-                    'root.rect.height=' + (root ? Math.round(root.getBoundingClientRect().height) : 'n/a'),
-                    'bodyBg=' + getComputedStyle(document.body).backgroundColor,
-                    'scrollers found=' + scrollers.length,
-                  ];
-                  scrollers.slice(0, 4).forEach(function (scroller, idx) {
-                    var scs = getComputedStyle(scroller);
-                    var srect = scroller.getBoundingClientRect();
-                    lines.push('[' + idx + '] ' + scroller.tagName + '#' + (scroller.id || '-') + '.' + (scroller.className || '-').toString().slice(0, 25));
-                    lines.push('    scrollTop/scrollH/clientH=' + scroller.scrollTop + '/' + scroller.scrollHeight + '/' + scroller.clientHeight);
-                    lines.push('    overscroll-behavior=' + scs.overscrollBehavior + ' bg=' + scs.backgroundColor);
-                    lines.push('    rect.top/bottom=' + Math.round(srect.top) + '/' + Math.round(srect.bottom));
-                  });
-                  if (scrollers.length === 0) {
-                    lines.push('scroller=NOT FOUND');
-                  }
-                  box.textContent = lines.join('\n');
-                }
-                function start() {
-                  update();
-                  window.addEventListener('resize', update);
-                  window.addEventListener('scroll', update, true);
-                  setInterval(update, 500);
-                }
-                // This script runs while the browser is still parsing <head>,
-                // before <body> exists yet - calling update() (which touches
-                // document.body) synchronously here throws immediately and
-                // silently kills the rest of this IIFE, including the event
-                // listeners below it. That was the actual bug in the first
-                // version of this overlay (it never appeared at all, on any
-                // device, because it errored out on its own first line).
-                if (document.body) {
-                  start();
-                } else {
-                  document.addEventListener('DOMContentLoaded', start);
-                }
               })();
             </script><style id="react-native-stylesheet">[stylesheet-group="0"]{}
 body{margin:0;}

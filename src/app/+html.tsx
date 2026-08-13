@@ -160,6 +160,35 @@ export default function Root({ children }: { children: React.ReactNode }) {
           #root { overscroll-behavior: none; }
         ` }} />
 
+        {/* The diagnostic overlay proved #root now correctly reports
+            overscroll-behavior:none, and that its scrollTop caps at exactly
+            scrollHeight-clientHeight (922-822=100 on the reporter's device)
+            - the TRUE end of content, not a rubber-band position beyond it.
+            So overscroll-behavior was never the mechanism for this gap:
+            #root's scrollable content genuinely needs ~100px more height
+            than the visible viewport provides, and that ~100px genuinely
+            isn't covered by any of our own background-color fixes (all of
+            which sized themselves to the viewport, not to whatever #root's
+            content naturally measures to on a given real device).
+
+            Rather than keep chasing the exact source of that ~100px (it's
+            reasonably explained by the sum of BottomTabInset/Spacing
+            padding constants used across screens, but real-device font
+            metrics/rendering can shift it further and vary by screen), set
+            the tan color as body/#root's actual background. Whatever
+            residual gap exists between our content's real height and the
+            viewport is now tan instead of white on every screen using this
+            color (the large majority - the dashboard/list screens). This
+            file wraps every route identically, so this can't be scoped to
+            skip login/register (which use a white page background with tan
+            accents) - but tan is this app's accent color everywhere,
+            including on login/register's own decorative circles, so a tan
+            sliver in the same gap scenario there reads as consistent rather
+            than as a new mismatch. */}
+        <style dangerouslySetInnerHTML={{ __html: `
+          body, #root { background-color: #F1E7DF; }
+        ` }} />
+
         {/* Must be inline (not an imported bundle) so it still runs even if
             the main RN bundle fails to load or throws while evaluating. */}
         <script
@@ -205,93 +234,6 @@ export default function Root({ children }: { children: React.ReactNode }) {
           }}
         />
 
-        {/* TEMPORARY diagnostic overlay for the persistent white-gap-below-
-            content bug - five fixes across five rounds (cache headers, dvh,
-            svh, overscroll-behavior, JS-measured height) have each looked
-            right from here but the reporter's real device still shows the
-            gap. Rather than guess a sixth blind fix, show the actual
-            measured numbers directly on screen so a single screenshot from
-            the reporter gives real data instead of another visual-only
-            report. Remove once the bug is confirmed fixed. */}
-        <script
-          // eslint-disable-next-line react/no-danger
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function () {
-                function findScroller() {
-                  var all = document.querySelectorAll('*');
-                  var matches = [];
-                  for (var i = 0; i < all.length; i++) {
-                    var el = all[i];
-                    if (el === document.documentElement || el === document.body) continue;
-                    if (el.scrollHeight > el.clientHeight + 2) {
-                      var cs = getComputedStyle(el);
-                      if (cs.overflowY === 'auto' || cs.overflowY === 'scroll') matches.push(el);
-                    }
-                  }
-                  return matches;
-                }
-                function update() {
-                  var box = document.getElementById('diag-overlay');
-                  if (!box) {
-                    box = document.createElement('div');
-                    box.id = 'diag-overlay';
-                    box.style.cssText = 'position:fixed;top:0;left:0;z-index:999998;'
-                      + 'background:rgba(0,0,0,0.75);color:#0f0;padding:6px 8px;'
-                      + 'font:10px/1.4 monospace;white-space:pre;pointer-events:none;';
-                    document.body.appendChild(box);
-                  }
-                  var vv = window.visualViewport;
-                  var appHeight = getComputedStyle(document.documentElement).getPropertyValue('--app-height');
-                  var root = document.getElementById('root');
-                  var scrollers = findScroller();
-                  var lines = [
-                    'innerHeight=' + window.innerHeight,
-                    'visualViewport.height=' + (vv ? vv.height : 'n/a'),
-                    '--app-height=' + (appHeight || 'unset'),
-                    'html.clientHeight=' + document.documentElement.clientHeight,
-                    'html overscroll-behavior=' + getComputedStyle(document.documentElement).overscrollBehavior,
-                    'body.scrollHeight=' + document.body.scrollHeight,
-                    'body overscroll-behavior=' + getComputedStyle(document.body).overscrollBehavior,
-                    'root.rect.height=' + (root ? Math.round(root.getBoundingClientRect().height) : 'n/a'),
-                    'bodyBg=' + getComputedStyle(document.body).backgroundColor,
-                    'scrollers found=' + scrollers.length,
-                  ];
-                  scrollers.slice(0, 4).forEach(function (scroller, idx) {
-                    var scs = getComputedStyle(scroller);
-                    var srect = scroller.getBoundingClientRect();
-                    lines.push('[' + idx + '] ' + scroller.tagName + '#' + (scroller.id || '-') + '.' + (scroller.className || '-').toString().slice(0, 25));
-                    lines.push('    scrollTop/scrollH/clientH=' + scroller.scrollTop + '/' + scroller.scrollHeight + '/' + scroller.clientHeight);
-                    lines.push('    overscroll-behavior=' + scs.overscrollBehavior + ' bg=' + scs.backgroundColor);
-                    lines.push('    rect.top/bottom=' + Math.round(srect.top) + '/' + Math.round(srect.bottom));
-                  });
-                  if (scrollers.length === 0) {
-                    lines.push('scroller=NOT FOUND');
-                  }
-                  box.textContent = lines.join('\\n');
-                }
-                function start() {
-                  update();
-                  window.addEventListener('resize', update);
-                  window.addEventListener('scroll', update, true);
-                  setInterval(update, 500);
-                }
-                // This script runs while the browser is still parsing <head>,
-                // before <body> exists yet - calling update() (which touches
-                // document.body) synchronously here throws immediately and
-                // silently kills the rest of this IIFE, including the event
-                // listeners below it. That was the actual bug in the first
-                // version of this overlay (it never appeared at all, on any
-                // device, because it errored out on its own first line).
-                if (document.body) {
-                  start();
-                } else {
-                  document.addEventListener('DOMContentLoaded', start);
-                }
-              })();
-            `,
-          }}
-        />
       </head>
       <body>
         {/* Same reasoning as the <title>/<meta description> above: real,
