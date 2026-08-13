@@ -76,10 +76,25 @@ export const MaxContentWidth = 800;
 // to this so they scale up/down proportionally on every device.
 import { Dimensions, PixelRatio } from 'react-native';
 
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 const BASE_WIDTH = 375;
 
-const _scale = SCREEN_W / BASE_WIDTH;
+// Dimensions.get('window') was previously destructured once at module load
+// (`const { width } = Dimensions.get('window')`), freezing rf()/rs()/vw()/
+// isLandscape at whatever size the screen happened to be when the JS bundle
+// first evaluated. That value never updated again for the life of the app -
+// rotating the device, resizing the browser window (web/PWA), or entering
+// split-screen/foldable states had no effect on any style computed from it.
+// Reading Dimensions.get('window') fresh inside each function call fixes the
+// value at the moment of use instead of at import time. Note this still
+// isn't fully reactive on its own: a StyleSheet.create() at module scope
+// only calls these once too, so a screen that wants to actually re-layout
+// when the window resizes still needs React Native's useWindowDimensions()
+// hook to trigger a re-render - these helpers just stop returning stale data
+// when they ARE called from somewhere reactive (inline styles, a component
+// body, useWindowDimensions-triggered re-renders, etc).
+function scale(): number {
+  return Dimensions.get('window').width / BASE_WIDTH;
+}
 
 /**
  * Responsive font size.
@@ -88,7 +103,7 @@ const _scale = SCREEN_W / BASE_WIDTH;
  * screens.
  */
 export function rf(size: number, min?: number, max?: number): number {
-  const scaled = Math.round(PixelRatio.roundToNearestPixel(size * _scale));
+  const scaled = Math.round(PixelRatio.roundToNearestPixel(size * scale()));
   if (min !== undefined && scaled < min) return min;
   if (max !== undefined && scaled > max) return max;
   return scaled;
@@ -99,15 +114,18 @@ export function rf(size: number, min?: number, max?: number): number {
  * Same scaling as rf() but typically used for non-font measurements.
  */
 export function rs(size: number, min?: number, max?: number): number {
-  const scaled = Math.round(size * _scale);
+  const scaled = Math.round(size * scale());
   if (min !== undefined && scaled < min) return min;
   if (max !== undefined && scaled > max) return max;
   return scaled;
 }
 
 /** True if the current device is in landscape orientation */
-export const isLandscape = SCREEN_W > SCREEN_H;
+export function isLandscape(): boolean {
+  const { width, height } = Dimensions.get('window');
+  return width > height;
+}
 
 /** Shorthand for a percentage of screen width */
-export const vw = (pct: number) => (SCREEN_W * pct) / 100;
+export const vw = (pct: number) => (Dimensions.get('window').width * pct) / 100;
 
