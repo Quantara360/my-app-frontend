@@ -122,7 +122,7 @@ export default function RegisterScreen() {
 
       <SafeAreaView style={styles.safeArea}>
         <ScrollView
-          style={{ flex: 1, width: '100%' }}
+          style={{ flex: 1, width: '100%', overscrollBehavior: 'none' } as any}
           contentContainerStyle={styles.formContainer}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}

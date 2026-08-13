@@ -130,7 +130,7 @@ export default function AddImagePage() {
         </View>
 
         <ScrollView
-          style={{ flex: 1, width: '100%' }}
+          style={{ flex: 1, width: '100%', overscrollBehavior: 'none' } as any}
           contentContainerStyle={styles.cardsScrollContent}
           showsVerticalScrollIndicator={false}
           bounces={false}

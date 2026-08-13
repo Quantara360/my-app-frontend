@@ -143,6 +143,7 @@ export default function MarkAttendance() {
 
       <SafeAreaView style={styles.safeArea}>
         <ScrollView
+          style={{ overscrollBehavior: 'none' } as any}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}

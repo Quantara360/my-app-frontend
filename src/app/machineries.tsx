@@ -288,7 +288,7 @@ export default function MachineriesPage() {
             <Text style={styles.columnHeaderRight}>Actions</Text>
           </View>
 
-          <ScrollView style={styles.tableBody} showsVerticalScrollIndicator={false} bounces={false} overScrollMode="never">
+          <ScrollView style={[styles.tableBody, { overscrollBehavior: 'none' } as any]} showsVerticalScrollIndicator={false} bounces={false} overScrollMode="never">
             {filteredMachineries.map((machinery) => (
               <View key={machinery.id} style={styles.tableRow}>
                 <Text style={[styles.rowCell, { width: 60, minWidth: 60, flex: 0 }]} numberOfLines={1}>{machinery.id}</Text>

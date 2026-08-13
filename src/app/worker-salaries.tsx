@@ -714,7 +714,7 @@ export default function WorkerSalariesPage() {
                 <Text style={styles.columnHeaderRight}>Actions</Text>
               </View>
 
-              <ScrollView style={styles.tableBody} showsVerticalScrollIndicator={false} bounces={false} overScrollMode="never">
+              <ScrollView style={[styles.tableBody, { overscrollBehavior: 'none' } as any]} showsVerticalScrollIndicator={false} bounces={false} overScrollMode="never">
                 {filteredSalaries.map((salary) => (
                   <View key={salary.id} style={styles.tableRow}>
                     <Text style={[styles.rowCell, { width: 60, minWidth: 60, flex: 0 }]} numberOfLines={1}>

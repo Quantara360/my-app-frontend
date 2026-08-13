@@ -95,7 +95,7 @@ export default function SelectSites() {
         </View>
 
         <ScrollView
-          style={{ flex: 1, width: "100%" }}
+          style={{ flex: 1, width: "100%", overscrollBehavior: 'none' } as any}
           contentContainerStyle={styles.centerContent}
           showsVerticalScrollIndicator={false}
           bounces={false}

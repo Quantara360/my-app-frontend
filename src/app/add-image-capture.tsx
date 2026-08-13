@@ -340,6 +340,7 @@ export default function AddImageCapture() {
       <View style={[styles.backgroundCircleSmall, { backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(255, 255, 255, 0.5)" }]} />
 
       <ScrollView
+        style={{ overscrollBehavior: 'none' } as any}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         bounces={false}

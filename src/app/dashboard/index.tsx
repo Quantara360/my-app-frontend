@@ -144,7 +144,7 @@ export default function DashboardScreen() {
 
         <SafeAreaView style={styles.safeArea}>
           <ScrollView
-            style={styles.staffScroll}
+            style={[styles.staffScroll, { overscrollBehavior: 'none' } as any]}
             contentContainerStyle={styles.staffScrollContent}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
