@@ -286,7 +286,7 @@ export default function OtherPaymentsPage() {
                 <Text style={styles.columnHeaderRight}>Actions</Text>
               </View>
 
-              <ScrollView style={[styles.tableBody, { overscrollBehavior: 'none' } as any]} showsVerticalScrollIndicator={false} bounces={false} overScrollMode="never">
+              <ScrollView style={styles.tableBody} showsVerticalScrollIndicator={false} bounces={false} overScrollMode="never">
                 {filteredPayments.map((payment) => (
                   <View key={payment.id} style={styles.tableRow}>
                     <View style={{ width: 30, minWidth: 30, maxWidth: 30, overflow: 'hidden', alignItems: 'center' }}>
