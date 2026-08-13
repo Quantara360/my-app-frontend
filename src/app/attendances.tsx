@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View, useColorScheme } from "react-native";
+import { Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { BackgroundPattern } from '@/components/BackgroundPattern';
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
@@ -8,6 +8,7 @@ import { DateInput } from "@/components/ui/date-input";
 import { BottomTabInset, Spacing, MaxContentWidth } from "@/constants/theme";
 
 import { useTheme } from "@/hooks/use-theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import * as AttendancesService from "@/services/adminAttendancesService";
 import { useGoBack } from "@/hooks/use-go-back";
 import { API_BASE_URL, getAuthHeaders } from "@/services/authService";

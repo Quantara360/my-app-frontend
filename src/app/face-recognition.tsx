@@ -13,7 +13,6 @@ import {
   StyleSheet,
   View,
   Modal,
-  useColorScheme,
 } from "react-native";
 
 import { BackgroundPattern } from '@/components/BackgroundPattern';
@@ -21,6 +20,7 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { BottomTabInset, Spacing, rf, MaxContentWidth } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { API_BASE_URL } from "@/services/authService";
 import { useRouter, useLocalSearchParams } from "expo-router";

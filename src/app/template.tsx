@@ -252,7 +252,8 @@ async function downloadPdfCard(worker: Worker) {
 
 
 // -------------------------------------------------------------------------
-import { useWindowDimensions, useColorScheme } from "react-native";
+import { useWindowDimensions } from "react-native";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 // Detect mobile browser (web running on a phone/tablet)
 const isMobileBrowser =
