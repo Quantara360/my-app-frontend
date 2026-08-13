@@ -15,7 +15,7 @@ export default function AccountsPage() {
   const styles = createStyles(theme);
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: 'transparent' }]}>
+    <ThemedView style={[styles.container, { backgroundColor: '#F1E7DF' }]}>
       <BackgroundPattern />
       <SafeAreaView style={styles.safeArea}>
         {/* Center wrapper */}

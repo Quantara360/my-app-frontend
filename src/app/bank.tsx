@@ -216,7 +216,7 @@ export default function BankPage() {
   const columns = ['Date', 'Cheque No', 'Description', 'Credit', 'Debit', 'Balance', 'Actions'];
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: 'transparent' }]}>
+    <ThemedView style={[styles.container, { backgroundColor: '#F1E7DF' }]}>
       <BackgroundPattern />
       <SafeAreaView style={styles.safeArea}>
         {/* Header row */}
