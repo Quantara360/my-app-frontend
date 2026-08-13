@@ -2,9 +2,23 @@
           @supports (height: 100svh) {
             #root, body, html { height: 100svh; }
           }
-        </style><style>
+          #root, body, html { height: var(--app-height, 100svh); }
+        </style><script>
+              (function () {
+                function setAppHeight() {
+                  var h = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+                  document.documentElement.style.setProperty('--app-height', h + 'px');
+                }
+                setAppHeight();
+                window.addEventListener('resize', setAppHeight);
+                window.addEventListener('orientationchange', setAppHeight);
+                if (window.visualViewport) {
+                  window.visualViewport.addEventListener('resize', setAppHeight);
+                }
+              })();
+            </script><style>
           html, body { overscroll-behavior: none; }
-          .r-1rnoaur { overscroll-behavior: contain; }
+          .r-1rnoaur { overscroll-behavior: none; }
         </style><script>
               (function () {
                 function showFatalError(message) {
