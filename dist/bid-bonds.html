@@ -22,6 +22,12 @@
           #root { overscroll-behavior: none; }
         </style><style>
           body, #root { background-color: #F1E7DF !important; }
+        </style><style>
+          #root {
+            box-sizing: border-box;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+          }
         </style><script>
               (function () {
                 function showFatalError(message) {
