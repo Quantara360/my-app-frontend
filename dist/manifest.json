@@ -3,8 +3,8 @@
   "short_name": "Abeysone",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "background_color": "#F1E7DF",
+  "theme_color": "#F1E7DF",
   "icons": [
     {
       "src": "/favicon.ico",

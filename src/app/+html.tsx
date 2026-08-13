@@ -175,18 +175,29 @@ export default function Root({ children }: { children: React.ReactNode }) {
             reasonably explained by the sum of BottomTabInset/Spacing
             padding constants used across screens, but real-device font
             metrics/rendering can shift it further and vary by screen), set
-            the tan color as body/#root's actual background. Whatever
-            residual gap exists between our content's real height and the
-            viewport is now tan instead of white on every screen using this
-            color (the large majority - the dashboard/list screens). This
-            file wraps every route identically, so this can't be scoped to
-            skip login/register (which use a white page background with tan
+            the tan color as body/#root's actual background. This file
+            wraps every route identically, so this can't be scoped to skip
+            login/register (which use a white page background with tan
             accents) - but tan is this app's accent color everywhere,
             including on login/register's own decorative circles, so a tan
             sliver in the same gap scenario there reads as consistent rather
-            than as a new mismatch. */}
+            than as a new mismatch.
+
+            The elementFromPoint diagnostic proved this rule alone wasn't
+            enough: body/#root's COMPUTED background came back as pure
+            black (rgb(0,0,0)), not the tan set here - overridden by
+            something else. app.json's web.backgroundColor/themeColor were
+            "#000000" (a leftover/unintentional value, not this app's
+            design), which becomes manifest.json's background_color/
+            theme_color - fixed those to the actual tan color too, since an
+            installed PWA's OS-level splash/background handling can use the
+            manifest color independently of anything in our own CSS.
+            !important here as a second, immediate guarantee this rule wins
+            regardless of where a same-or-higher-priority black rule comes
+            from (the manifest fix requires a fresh PWA install to take
+            effect since it's read at install time; this doesn't). */}
         <style dangerouslySetInnerHTML={{ __html: `
-          body, #root { background-color: #F1E7DF; }
+          body, #root { background-color: #F1E7DF !important; }
         ` }} />
 
         {/* Must be inline (not an imported bundle) so it still runs even if
