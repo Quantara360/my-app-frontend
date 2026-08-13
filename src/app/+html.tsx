@@ -264,10 +264,24 @@ export default function Root({ children }: { children: React.ReactNode }) {
                   }
                   box.textContent = lines.join('\\n');
                 }
-                update();
-                window.addEventListener('resize', update);
-                window.addEventListener('scroll', update, true);
-                setInterval(update, 500);
+                function start() {
+                  update();
+                  window.addEventListener('resize', update);
+                  window.addEventListener('scroll', update, true);
+                  setInterval(update, 500);
+                }
+                // This script runs while the browser is still parsing <head>,
+                // before <body> exists yet - calling update() (which touches
+                // document.body) synchronously here throws immediately and
+                // silently kills the rest of this IIFE, including the event
+                // listeners below it. That was the actual bug in the first
+                // version of this overlay (it never appeared at all, on any
+                // device, because it errored out on its own first line).
+                if (document.body) {
+                  start();
+                } else {
+                  document.addEventListener('DOMContentLoaded', start);
+                }
               })();
             `,
           }}
