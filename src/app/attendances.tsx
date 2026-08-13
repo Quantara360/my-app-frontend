@@ -402,7 +402,7 @@ export default function AttendancesPage() {
         </View>
 
         {/* Table */}
-        <ScrollView style={[styles.tableScrollContainer, { overscrollBehavior: 'none' } as any]} showsVerticalScrollIndicator nestedScrollEnabled bounces={false} overScrollMode="never">
+        <ScrollView style={styles.tableScrollContainer} showsVerticalScrollIndicator nestedScrollEnabled bounces={false} overScrollMode="never">
           <ScrollView horizontal showsHorizontalScrollIndicator>
             <View style={[styles.tableCard, { minWidth: 620 }]}>
               {/* Header */}

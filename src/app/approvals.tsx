@@ -285,7 +285,7 @@ export default function ApprovalsPage() {
                   <Text style={[styles.columnHeader, { flex: 1.5, textAlign: 'center' }]}>Status</Text>
                   <Text style={[styles.columnHeader, { flex: 1, textAlign: 'center' }]}>Action</Text>
                 </View>
-                <ScrollView style={[styles.tableBody, { overscrollBehavior: 'none' } as any]} showsVerticalScrollIndicator={false} bounces={false} overScrollMode="never">
+                <ScrollView style={styles.tableBody} showsVerticalScrollIndicator={false} bounces={false} overScrollMode="never">
                   {filteredApprovals.map((a, index) => (
                     <View key={a.id} style={[styles.tableRow, index % 2 === 0 ? styles.rowEven : styles.rowOdd]}>
                       <Text style={[styles.rowCell, { flex: 0.5, textAlign: 'center' }]} numberOfLines={1}>{a.id}</Text>
@@ -332,7 +332,7 @@ export default function ApprovalsPage() {
                   <Text style={[styles.columnHeader, { flex: 1.5, textAlign: 'center' }]}>Date</Text>
                   <Text style={[styles.columnHeader, { flex: 1.5, textAlign: 'center' }]}>Holder</Text>
                 </View>
-                <ScrollView style={[styles.tableBody, { overscrollBehavior: 'none' } as any]} showsVerticalScrollIndicator={false} bounces={false} overScrollMode="never">
+                <ScrollView style={styles.tableBody} showsVerticalScrollIndicator={false} bounces={false} overScrollMode="never">
                   {approvals.filter((a) => a.status.toLowerCase() === 'approved').length === 0 ? (
                     <View style={{ paddingVertical: Spacing.four, alignItems: 'center' }}>
                       <Text style={{ color: theme.textSecondary, fontSize: 13 }}>No approved records yet.</Text>

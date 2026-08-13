@@ -1650,7 +1650,7 @@ export default function AdminDashboard() {
       )}
 
       <ScrollView
-        style={[styles.tableScrollContainer, { overscrollBehavior: 'none' } as any]}
+        style={styles.tableScrollContainer}
         showsVerticalScrollIndicator={true}
         nestedScrollEnabled={true}
         bounces={false}
@@ -3937,7 +3937,7 @@ export default function AdminDashboard() {
       </View>
 
       <ScrollView
-        style={[styles.tableScrollContainer, { overscrollBehavior: 'none' } as any]}
+        style={styles.tableScrollContainer}
         showsVerticalScrollIndicator={true}
         nestedScrollEnabled={true}
         bounces={false}
@@ -4289,7 +4289,7 @@ export default function AdminDashboard() {
       </View>
 
       <ScrollView
-        style={[styles.tableScrollContainer, { overscrollBehavior: 'none' } as any]}
+        style={styles.tableScrollContainer}
         showsVerticalScrollIndicator={true}
         nestedScrollEnabled={true}
         bounces={false}
