@@ -200,6 +200,31 @@ export default function Root({ children }: { children: React.ReactNode }) {
           body, #root { background-color: #F1E7DF !important; }
         ` }} />
 
+        {/* apple-mobile-web-app-status-bar-style is "black-translucent"
+            above, which makes an installed iOS PWA render edge-to-edge
+            under the status bar/notch instead of the status bar reserving
+            its own opaque strip - the page itself is responsible for
+            padding that area away. Every screen's own top spacing comes
+            from React Native's core SafeAreaView, which (like on Android)
+            doesn't do anything real on web - it's a plain, non-inset-aware
+            wrapper here - so on iOS specifically there was nothing pushing
+            content down from under the status bar at all, and it rendered
+            up under the clock/battery icons.
+
+            env(safe-area-inset-top) is the real notch/status-bar height on
+            iOS (only resolves to a non-zero value with viewport-fit=cover
+            on the viewport meta tag above, which is already set) and 0 on
+            every other platform/browser, so this is safe everywhere.
+            box-sizing:border-box keeps the padding inside #root's existing
+            fixed height instead of adding to it and creating new overflow. */}
+        <style dangerouslySetInnerHTML={{ __html: `
+          #root {
+            box-sizing: border-box;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+          }
+        ` }} />
+
         {/* Must be inline (not an imported bundle) so it still runs even if
             the main RN bundle fails to load or throws while evaluating. */}
         <script
