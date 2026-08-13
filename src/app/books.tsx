@@ -370,7 +370,7 @@ export default function BooksPage() {
   };
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: "transparent" }]}>
+    <ThemedView style={[styles.container, { backgroundColor: isDark ? "#121212" : "#F1E7DF" }]}>
       <View style={[styles.bgFill, { backgroundColor: isDark ? "#121212" : "#F1E7DF" }]} />
       <View style={[styles.bgCircleLarge, { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.65)" }]} />
       <View style={[styles.bgCircleSmall, { backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.5)" }]} />
