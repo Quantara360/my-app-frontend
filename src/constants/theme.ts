@@ -61,7 +61,14 @@ export const Spacing = {
   six: 64,
 } as const;
 
-export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
+// Leftover from the Expo template's bottom tab navigator - this app uses
+// <Slot /> at the root (see _layout.tsx), not <Tabs>, and has no bottom tab
+// bar anywhere in the real navigation. The old 50/80px reserved for it was
+// pure dead space at the bottom of nearly every screen, which was enough
+// extra height to make otherwise-short screens (login, dashboard, etc.)
+// scrollable when they shouldn't be. A small fixed gap is kept for visual
+// breathing room only.
+export const BottomTabInset = Spacing.three;
 export const MaxContentWidth = 800;
 
 // ─── Responsive Helpers ───────────────────────────────────────────────────────
