@@ -200,7 +200,7 @@ export default function PerformanceBondsPage() {
                 <Text style={[styles.columnHeader, { width: 110, minWidth: 110, flex: 0 }]}>Tender Status</Text>
                 <Text style={styles.columnHeaderRight}>Actions</Text>
               </View>
-              <ScrollView style={styles.tableBody} showsVerticalScrollIndicator={false}>
+              <ScrollView style={styles.tableBody} showsVerticalScrollIndicator={false} bounces={false} overScrollMode="never">
                 {filtered.map((b) => (
                   <View key={b.id} style={styles.tableRow}>
                     <Text style={[styles.rowCell, { width: 50, minWidth: 50, flex: 0 }]} numberOfLines={1}>{b.id}</Text>

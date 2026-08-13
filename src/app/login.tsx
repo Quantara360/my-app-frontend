@@ -57,7 +57,7 @@ export default function LoginScreen() {
       </View>
 
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.formContainer} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={styles.formContainer} keyboardShouldPersistTaps="handled" bounces={false} overScrollMode="never">
           <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}> 
             <Text style={[styles.title, { color: theme.text }]}>Login</Text>
 

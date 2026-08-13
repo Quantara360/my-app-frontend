@@ -353,7 +353,7 @@ export default function TemplatePage() {
         {loading ? (
           <ActivityIndicator color="#6a0dad" style={{ marginTop: 40 }} />
         ) : (
-          <ScrollView style={{ flex: 1 }} nestedScrollEnabled>
+          <ScrollView style={{ flex: 1 }} nestedScrollEnabled bounces={false} overScrollMode="never">
             <ScrollView horizontal>
               <View style={[styles.tableCard, { minWidth: 580 }]}>
                 <View style={[styles.row, styles.headerRow]}>

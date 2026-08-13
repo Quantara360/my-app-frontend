@@ -133,6 +133,8 @@ export default function AddImagePage() {
           style={{ flex: 1, width: '100%' }}
           contentContainerStyle={styles.cardsScrollContent}
           showsVerticalScrollIndicator={false}
+          bounces={false}
+          overScrollMode="never"
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.cardsContainer}>

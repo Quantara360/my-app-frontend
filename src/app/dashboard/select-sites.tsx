@@ -98,6 +98,8 @@ export default function SelectSites() {
           style={{ flex: 1, width: "100%" }}
           contentContainerStyle={styles.centerContent}
           showsVerticalScrollIndicator={false}
+          bounces={false}
+          overScrollMode="never"
         >
           {sites.map((site) => (
             <Pressable

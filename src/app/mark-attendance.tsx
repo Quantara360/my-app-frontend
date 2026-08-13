@@ -146,6 +146,8 @@ export default function MarkAttendance() {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          bounces={false}
+          overScrollMode="never"
         >
         <View style={styles.headerRow}>
           <ThemedText type="title" style={styles.title}>

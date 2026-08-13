@@ -126,6 +126,8 @@ export default function RegisterScreen() {
           contentContainerStyle={styles.formContainer}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          bounces={false}
+          overScrollMode="never"
         >
           <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}>
             <Text style={[styles.title, { color: theme.text }]}>Register</Text>

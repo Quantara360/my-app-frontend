@@ -56,6 +56,8 @@ export default function SiteActionsPage() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          bounces={false}
+          overScrollMode="never"
         >
         <View style={styles.headerRow}>
           <Pressable

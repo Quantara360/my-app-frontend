@@ -342,6 +342,8 @@ export default function AddImageCapture() {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        bounces={false}
+        overScrollMode="never"
       >
         <View style={styles.topRow}>
           <Pressable
