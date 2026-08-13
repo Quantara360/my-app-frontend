@@ -1650,7 +1650,7 @@ export default function AdminDashboard() {
       )}
 
       <ScrollView
-        style={styles.tableScrollContainer}
+        style={[styles.tableScrollContainer, { overscrollBehavior: 'none' } as any]}
         showsVerticalScrollIndicator={true}
         nestedScrollEnabled={true}
         bounces={false}
@@ -1913,7 +1913,7 @@ export default function AdminDashboard() {
       </View>
 
       <ScrollView
-        style={styles.tableScrollContainer}
+        style={[styles.tableScrollContainer, { overscrollBehavior: 'none' } as any]}
         showsVerticalScrollIndicator={true}
         nestedScrollEnabled={true}
         bounces={false}
@@ -2311,7 +2311,7 @@ export default function AdminDashboard() {
         </SafeView>
 
         <ScrollView
-          style={styles.manageSiteList}
+          style={[styles.manageSiteList, { overscrollBehavior: 'none' } as any]}
           contentContainerStyle={{ paddingBottom: 40 }}
           bounces={false}
           overScrollMode="never"
@@ -2616,7 +2616,7 @@ export default function AdminDashboard() {
       </View>
 
       <ScrollView
-        style={styles.assetsTableVerticalScroll}
+        style={[styles.assetsTableVerticalScroll, { overscrollBehavior: 'none' } as any]}
         showsVerticalScrollIndicator={true}
         bounces={false}
         overScrollMode="never"
@@ -3115,7 +3115,7 @@ export default function AdminDashboard() {
         </View>
 
         <ScrollView
-          style={styles.personalTableScroll}
+          style={[styles.personalTableScroll, { overscrollBehavior: 'none' } as any]}
           showsVerticalScrollIndicator={false}
           bounces={false}
           overScrollMode="never"
@@ -3799,7 +3799,7 @@ export default function AdminDashboard() {
       </View>
 
       <ScrollView
-        style={styles.tableScrollContainer}
+        style={[styles.tableScrollContainer, { overscrollBehavior: 'none' } as any]}
         showsVerticalScrollIndicator={true}
         nestedScrollEnabled={true}
         bounces={false}
@@ -3927,7 +3927,7 @@ export default function AdminDashboard() {
       </View>
 
       <ScrollView
-        style={styles.tableScrollContainer}
+        style={[styles.tableScrollContainer, { overscrollBehavior: 'none' } as any]}
         showsVerticalScrollIndicator={true}
         nestedScrollEnabled={true}
         bounces={false}
@@ -4279,7 +4279,7 @@ export default function AdminDashboard() {
       </View>
 
       <ScrollView
-        style={styles.tableScrollContainer}
+        style={[styles.tableScrollContainer, { overscrollBehavior: 'none' } as any]}
         showsVerticalScrollIndicator={true}
         nestedScrollEnabled={true}
         bounces={false}
@@ -5143,7 +5143,7 @@ export default function AdminDashboard() {
           showsVerticalScrollIndicator={false}
           bounces={false}
           overScrollMode="never"
-          style={{ maxWidth: MaxContentWidth, alignSelf: 'center', width: '100%' }}
+          style={{ maxWidth: MaxContentWidth, alignSelf: 'center', width: '100%', overscrollBehavior: 'none' } as any}
         >
           {renderDashboardView()}
         </ScrollView>
@@ -5152,7 +5152,7 @@ export default function AdminDashboard() {
           showsVerticalScrollIndicator={false}
           bounces={false}
           overScrollMode="never"
-          style={{ maxWidth: MaxContentWidth, alignSelf: 'center', width: '100%' }}
+          style={{ maxWidth: MaxContentWidth, alignSelf: 'center', width: '100%', overscrollBehavior: 'none' } as any}
         >
           {selectedView === "attendance"
             ? renderAttendancesView()

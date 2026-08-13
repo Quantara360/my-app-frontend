@@ -53,6 +53,7 @@ export default function SiteActionsPage() {
 
       <SafeAreaView style={styles.safeArea}>
         <ScrollView
+          style={{ overscrollBehavior: 'none' } as any}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"

@@ -206,7 +206,7 @@ export default function BidBondsPage() {
                 <Text style={[styles.columnHeader, { width: 90, minWidth: 90, flex: 0 }]}>Awarded</Text>
                 <Text style={styles.columnHeaderRight}>Actions</Text>
               </View>
-              <ScrollView style={styles.tableBody} showsVerticalScrollIndicator={false} bounces={false} overScrollMode="never">
+              <ScrollView style={[styles.tableBody, { overscrollBehavior: 'none' } as any]} showsVerticalScrollIndicator={false} bounces={false} overScrollMode="never">
                 {filtered.map((b) => (
                   <View key={b.id} style={styles.tableRow}>
                     <Text style={[styles.rowCell, { width: 50, minWidth: 50, flex: 0 }]} numberOfLines={1}>{b.id}</Text>
