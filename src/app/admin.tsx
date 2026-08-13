@@ -5144,6 +5144,7 @@ export default function AdminDashboard() {
           bounces={false}
           overScrollMode="never"
           style={{ maxWidth: MaxContentWidth, alignSelf: 'center', width: '100%', overscrollBehavior: 'none' } as any}
+          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
         >
           {renderDashboardView()}
         </ScrollView>
