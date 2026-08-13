@@ -60,18 +60,30 @@ export default function Root({ children }: { children: React.ReactNode }) {
         {/* ScrollViewStyleReset above sets #root/body/html to height:100%.
             On mobile browsers, % height resolves against the *initial*
             viewport (address bar visible) and does not update as the
-            address bar auto-hides while scrolling/interacting - the
-            viewport then grows, but our content was already sized to the
-            smaller initial height, leaving the newly-revealed strip at the
-            bottom unstyled/blank. This is what was reported as "background
-            only covers half the screen" / a white gap appearing after
-            scrolling on nearly every page. 100dvh (dynamic viewport height)
-            continuously tracks the actual visible viewport instead. Browsers
-            without dvh support (very old browsers only, at this point)
-            simply ignore this rule and keep the 100% fallback above. */}
+            address bar auto-hides while scrolling/interacting, leaving a
+            gap the size of the address bar unstyled/blank at the bottom -
+            reported as "background only covers half the screen".
+
+            First attempt here used 100dvh (dynamic viewport height), which
+            is supposed to continuously track the visible viewport as browser
+            chrome shows/hides - but that requires the browser to reflow the
+            whole layout live as the toolbar animates, and real mobile Chrome
+            has known inconsistency in when/whether that reflow actually
+            fires (this did not reproduce in headless-browser testing, which
+            uses a desktop rendering engine and doesn't have a real
+            collapsing toolbar to expose the bug - only real device testing
+            caught it still failing).
+
+            100svh (small viewport height) sidesteps that entirely: it's a
+            static floor equal to the guaranteed-smallest visible viewport
+            (chrome fully expanded), so there's no reflow to depend on - the
+            page is correctly sized from first paint and never needs to
+            react to a toolbar animation. Trades away reclaiming the extra
+            space when the toolbar happens to be hidden, which is a minor
+            cosmetic loss next to not having a broken-looking gap. */}
         <style dangerouslySetInnerHTML={{ __html: `
-          @supports (height: 100dvh) {
-            #root, body, html { height: 100dvh; }
+          @supports (height: 100svh) {
+            #root, body, html { height: 100svh; }
           }
         ` }} />
 
