@@ -453,6 +453,7 @@ const styles = StyleSheet.create({
   formContainer: {
     flexGrow: 1,
     width: "100%",
+    justifyContent: 'center',
     gap: 18,
     paddingTop: 60,
     paddingBottom: 60,

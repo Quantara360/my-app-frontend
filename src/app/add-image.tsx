@@ -248,6 +248,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     alignItems: "stretch",
+    justifyContent: 'center',
     paddingBottom: BottomTabInset + Spacing.five,
     flexGrow: 1,
   },
@@ -453,6 +454,7 @@ const styles = StyleSheet.create({
   cardsScrollContent: {
     flexGrow: 1,
     alignItems: 'stretch',
+    justifyContent: 'center',
     paddingBottom: BottomTabInset + Spacing.four,
   },
   bigCard: {

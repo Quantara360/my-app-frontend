@@ -523,6 +523,7 @@ const styles = StyleSheet.create({
 
   scrollContent: {
     alignItems: "center",
+    justifyContent: 'center',
     paddingTop: Spacing.six + Spacing.four,
     paddingBottom: BottomTabInset + Spacing.four,
     flexGrow: 1,
