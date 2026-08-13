@@ -203,6 +203,75 @@ export default function Root({ children }: { children: React.ReactNode }) {
             `,
           }}
         />
+
+        {/* TEMPORARY diagnostic overlay for the persistent white-gap-below-
+            content bug - five fixes across five rounds (cache headers, dvh,
+            svh, overscroll-behavior, JS-measured height) have each looked
+            right from here but the reporter's real device still shows the
+            gap. Rather than guess a sixth blind fix, show the actual
+            measured numbers directly on screen so a single screenshot from
+            the reporter gives real data instead of another visual-only
+            report. Remove once the bug is confirmed fixed. */}
+        <script
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function () {
+                function findScroller() {
+                  var all = document.querySelectorAll('*');
+                  for (var i = 0; i < all.length; i++) {
+                    var el = all[i];
+                    if (el.scrollHeight > el.clientHeight + 2) {
+                      var cs = getComputedStyle(el);
+                      if (cs.overflowY === 'auto' || cs.overflowY === 'scroll') return el;
+                    }
+                  }
+                  return null;
+                }
+                function update() {
+                  var box = document.getElementById('diag-overlay');
+                  if (!box) {
+                    box = document.createElement('div');
+                    box.id = 'diag-overlay';
+                    box.style.cssText = 'position:fixed;top:0;left:0;z-index:999998;'
+                      + 'background:rgba(0,0,0,0.75);color:#0f0;padding:6px 8px;'
+                      + 'font:10px/1.4 monospace;white-space:pre;pointer-events:none;';
+                    document.body.appendChild(box);
+                  }
+                  var vv = window.visualViewport;
+                  var appHeight = getComputedStyle(document.documentElement).getPropertyValue('--app-height');
+                  var root = document.getElementById('root');
+                  var scroller = findScroller();
+                  var lines = [
+                    'innerHeight=' + window.innerHeight,
+                    'visualViewport.height=' + (vv ? vv.height : 'n/a'),
+                    '--app-height=' + (appHeight || 'unset'),
+                    'html.clientHeight=' + document.documentElement.clientHeight,
+                    'body.scrollHeight=' + document.body.scrollHeight,
+                    'root.rect.height=' + (root ? Math.round(root.getBoundingClientRect().height) : 'n/a'),
+                    'bodyBg=' + getComputedStyle(document.body).backgroundColor,
+                  ];
+                  if (scroller) {
+                    var scs = getComputedStyle(scroller);
+                    lines.push('scroller.class=' + (scroller.className || '').toString().slice(0, 30));
+                    lines.push('scroller scrollTop/scrollH/clientH=' + scroller.scrollTop + '/' + scroller.scrollHeight + '/' + scroller.clientHeight);
+                    lines.push('scroller overscroll-behavior=' + scs.overscrollBehavior);
+                    lines.push('scroller bg=' + scs.backgroundColor);
+                    var srect = scroller.getBoundingClientRect();
+                    lines.push('scroller rect.bottom=' + Math.round(srect.bottom) + ' vs innerHeight=' + window.innerHeight);
+                  } else {
+                    lines.push('scroller=NOT FOUND');
+                  }
+                  box.textContent = lines.join('\\n');
+                }
+                update();
+                window.addEventListener('resize', update);
+                window.addEventListener('scroll', update, true);
+                setInterval(update, 500);
+              })();
+            `,
+          }}
+        />
       </head>
       <body>
         {/* Same reasoning as the <title>/<meta description> above: real,
