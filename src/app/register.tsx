@@ -411,6 +411,7 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   page: {
     flex: 1,
+    overflow: 'hidden',
   },
   backgroundLayerBackground: {},
   circle: {
