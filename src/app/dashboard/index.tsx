@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
   staffScrollContent: {
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.two,
-    paddingBottom: Platform.OS === 'ios' ? BottomTabInset + Spacing.four + 80 : BottomTabInset + Spacing.four,
+    paddingBottom: BottomTabInset + Spacing.four,
     gap: Spacing.three,
     flexGrow: 1,
   },
