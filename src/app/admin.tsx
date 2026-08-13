@@ -23,6 +23,7 @@ import { exportLedgerToExcel } from "@/utils/exportLedger";
 import { useAuth } from "@/contexts/AuthContext";
 import { API_BASE_URL, getAuthHeaders } from "@/services/authService";
 import { useTheme } from "@/hooks/use-theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
   Alert,
   Animated,
@@ -35,7 +36,6 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme,
   RefreshControl,
 } from "react-native";
 
