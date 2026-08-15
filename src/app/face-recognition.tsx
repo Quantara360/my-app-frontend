@@ -4,7 +4,6 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  FlatList,
   Image,
   Linking,
   Platform,
@@ -357,7 +356,7 @@ export default function FaceRecognition() {
       <View style={[styles.background, { backgroundColor: isDark ? "#121212" : "#F1E7DF" }]} />
       <View style={[styles.backgroundCircleLarge, { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(255, 255, 255, 0.65)" }]} />
       <View style={[styles.backgroundCircleSmall, { backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(255, 255, 255, 0.5)" }]} />
-      <ScrollView contentContainerStyle={styles.container} style={{ flex: 1, overscrollBehavior: 'none' } as any} showsVerticalScrollIndicator={false} bounces={false} overScrollMode="never">
+      <ScrollView contentContainerStyle={styles.container} style={{ flex: 1 } as any} showsVerticalScrollIndicator={false} bounces={false} overScrollMode="never">
       <View style={styles.headerRow}>
         <Pressable style={[styles.backButton, { backgroundColor: theme.backgroundElement, borderColor: "rgba(128,128,128,0.2)" }]} onPress={goBack} accessibilityLabel="Back">
           <ThemedText type="subtitle" style={styles.backText}>←</ThemedText>
@@ -436,26 +435,27 @@ export default function FaceRecognition() {
       </View>
 
       <View style={styles.tableWrap}>
+        {/* A FlatList nested inside a horizontal ScrollView fought the layout:
+            its own `width: '100%'` resolved against the horizontal
+            ScrollView's shrink-to-fit content container, which made the two
+            circularly dependent on each other's size and could collapse back
+            to viewport width - defeating the whole point of `minWidth` and
+            leaving nothing to scroll. A plain View below the ScrollView (the
+            same pattern already working in admin.tsx/attendances.tsx) has an
+            unambiguous minWidth, so it reliably overflows and scrolls. */}
         <ScrollView horizontal showsHorizontalScrollIndicator style={{ width: '100%' }}>
-          <FlatList
-            data={list}
-            scrollEnabled={false}
-            style={{ width: '100%', minWidth: 560 }}
-            contentContainerStyle={{ width: '100%' }}
-            keyExtractor={(i) => String(i.id)}
-            ListHeaderComponent={() => (
-              <View style={styles.tableHeaderRow}>
-                <ThemedText type="smallBold" style={styles.colId}>ID</ThemedText>
-                <ThemedText type="smallBold" style={styles.colName}>Name</ThemedText>
-                <ThemedText type="smallBold" style={styles.colTime}>Time &amp; Date</ThemedText>
-                <ThemedText type="smallBold" style={styles.colState}>State</ThemedText>
-                <ThemedText type="smallBold" style={styles.colHospital}>Hospital</ThemedText>
-                <ThemedText type="smallBold" style={styles.colSite}>Site</ThemedText>
-                <View style={styles.colAction} />
-              </View>
-            )}
-            renderItem={({ item }) => (
-              <View style={styles.tableRow}>
+          <View style={{ minWidth: 560 }}>
+            <View style={styles.tableHeaderRow}>
+              <ThemedText type="smallBold" style={styles.colId}>ID</ThemedText>
+              <ThemedText type="smallBold" style={styles.colName}>Name</ThemedText>
+              <ThemedText type="smallBold" style={styles.colTime}>Time &amp; Date</ThemedText>
+              <ThemedText type="smallBold" style={styles.colState}>State</ThemedText>
+              <ThemedText type="smallBold" style={styles.colHospital}>Hospital</ThemedText>
+              <ThemedText type="smallBold" style={styles.colSite}>Site</ThemedText>
+              <View style={styles.colAction} />
+            </View>
+            {list.map((item) => (
+              <View key={String(item.id)} style={styles.tableRow}>
                 <ThemedText type="small" style={[styles.colId, styles.cellText]} numberOfLines={1}>{item.id}</ThemedText>
                 <ThemedText type="small" style={[styles.colName, styles.cellText]} numberOfLines={1}>{item.name}</ThemedText>
                 <ThemedText type="small" style={[styles.colTime, styles.cellText]} numberOfLines={2}>{item.datetime}</ThemedText>
@@ -476,8 +476,8 @@ export default function FaceRecognition() {
                   </Pressable>
                 )}
               </View>
-            )}
-          />
+            ))}
+          </View>
         </ScrollView>
 
         <Pressable
