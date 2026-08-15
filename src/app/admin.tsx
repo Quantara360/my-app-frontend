@@ -1760,19 +1760,21 @@ export default function AdminDashboard() {
                     >
                       <Text style={styles.assetActionIcon}>✏️</Text>
                     </Pressable>
-                    <Pressable
-                      onPress={() => handleDeleteAttendance(item)}
-                      style={[
-                        styles.assetActionButtonDelete,
-                        {
-                          paddingHorizontal: 8,
-                          paddingVertical: 4,
-                          borderRadius: 8,
-                        },
-                      ]}
-                    >
-                      <Text style={styles.assetActionIcon}>🗑️</Text>
-                    </Pressable>
+                    {user?.role !== "supervisor" && (
+                      <Pressable
+                        onPress={() => handleDeleteAttendance(item)}
+                        style={[
+                          styles.assetActionButtonDelete,
+                          {
+                            paddingHorizontal: 8,
+                            paddingVertical: 4,
+                            borderRadius: 8,
+                          },
+                        ]}
+                      >
+                        <Text style={styles.assetActionIcon}>🗑️</Text>
+                      </Pressable>
+                    )}
                   </View>
                 </View>
               );
