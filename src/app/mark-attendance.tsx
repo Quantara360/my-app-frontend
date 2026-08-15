@@ -25,10 +25,6 @@ export default function MarkAttendance() {
   const [date, setDate] = useState(new Date());
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
-  // manualState: null = follow the clock-derived logic, "IN" or "OUT" = user override
-  const [manualState, setManualState] = useState<"IN" | "OUT" | null>(null);
-  // manualShift: null = use clock shift, override only allowed when marking OUT
-  const [manualShift, setManualShift] = useState<"Morning" | "Evening" | null>(null);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -37,60 +33,72 @@ export default function MarkAttendance() {
 
   const hour = currentTime.getHours();
   const minute = currentTime.getMinutes();
-  const shift = (hour >= 6 && hour < 18) ? "Morning" : "Evening";
 
+  // The day is 6 back-to-back windows. The two "changeover" windows (dawn
+  // and dusk) are where the outgoing shift's on-time OUT and the incoming
+  // shift's on-time IN overlap in the same clock hours, so which one
+  // actually applies is genuinely ambiguous and the toggle picks between
+  // them. The other four windows are unambiguous (Late Attendance / Early
+  // Out for whichever shift is currently running), so there's nothing to
+  // toggle there.
+  let derivedShift: "Morning" | "Evening";
+  let derivedState: "IN" | "OUT";
   let isLate = false;
   let isEarlyOut = false;
-  let derivedState = "IN";
+  let canToggle = false;
 
-  if (shift === "Morning") {
-    if (hour >= 12 && hour < 18) {
-      derivedState = "OUT";
-      if (hour < 17) {
-        isEarlyOut = true;
-      }
-    } else {
-      derivedState = "IN";
-      if (hour >= 7 && hour < 12) {
-        isLate = true;
-      }
-    }
+  if (hour >= 5 && hour < 7) {
+    // 5:00-6:59AM: Day on-time IN <-> Night on-time OUT
+    derivedShift = "Morning";
+    derivedState = "IN";
+    canToggle = true;
+  } else if (hour >= 7 && hour < 12) {
+    // 7:00-11:59AM: Day shift, late attendance
+    derivedShift = "Morning";
+    derivedState = "IN";
+    isLate = true;
+  } else if (hour >= 12 && hour < 17) {
+    // 12:00-4:59PM: Day shift, early out
+    derivedShift = "Morning";
+    derivedState = "OUT";
+    isEarlyOut = true;
+  } else if (hour >= 17 && hour < 19) {
+    // 5:00-6:59PM: Night on-time IN <-> Day on-time OUT
+    derivedShift = "Evening";
+    derivedState = "IN";
+    canToggle = true;
+  } else if (hour >= 19) {
+    // 7:00-11:59PM: Night shift, late attendance
+    derivedShift = "Evening";
+    derivedState = "IN";
+    isLate = true;
   } else {
-    if (hour >= 0 && hour < 6) {
-      derivedState = "OUT";
-      if (hour < 5) {
-        isEarlyOut = true;
-      }
-    } else {
-      derivedState = "IN";
-      if (hour >= 19 && hour <= 23) {
-        isLate = true;
-      }
-    }
+    // 12:00-4:59AM: Night shift, early out
+    derivedShift = "Evening";
+    derivedState = "OUT";
+    isEarlyOut = true;
   }
 
-  // Effective state: user manual override takes priority, falls back to clock-derived
-  const effectiveState = manualState ?? derivedState;
-  const effectiveShift = manualShift ?? shift;
+  // manualCombo: null = use the clock-derived default; "alt" = the other
+  // half of a changeover window (Day IN <-> Night OUT, or Night IN <-> Day
+  // OUT — flipping shift AND state together, since that's the only other
+  // valid combo in either changeover window). Only meaningful while
+  // canToggle is true.
+  const [manualCombo, setManualCombo] = useState<"alt" | null>(null);
 
-  const toggleState = () => setManualState(prev => {
-    const current = prev ?? derivedState;
-    const next = current === "IN" ? "OUT" : "IN";
-    // When toggling back to IN, reset manual shift — IN must always be current shift
-    if (next === "IN") setManualShift(null);
-    return next as "IN" | "OUT";
-  });
+  // Drop a stale override the moment the clock leaves a changeover window,
+  // so it can't leak into an unrelated (unambiguous) window.
+  useEffect(() => {
+    if (!canToggle) setManualCombo(null);
+  }, [canToggle]);
 
-  // Toggle shift: only allowed when marking OUT AND the clock still says IN
-  // (means we're early in the new shift and the previous shift just ended)
-  // Prevents switching to a future shift that hasn't started yet
-  const canToggleShift = effectiveState === "OUT" && derivedState === "IN";
-  const toggleShift = () => {
-    if (!canToggleShift) return;
-    setManualShift(prev => {
-      const current = prev ?? shift;
-      return current === "Morning" ? "Evening" : "Morning";
-    });
+  const useAlt = canToggle && manualCombo === "alt";
+  const effectiveShift = useAlt ? (derivedShift === "Morning" ? "Evening" : "Morning") : derivedShift;
+  const effectiveState = useAlt ? (derivedState === "IN" ? "OUT" : "IN") : derivedState;
+
+  const toggleCombo = () => {
+    if (!canToggle) return;
+    setManualCombo(prev => (prev === "alt" ? null : "alt"));
   };
 
   const [workers, setWorkers] = useState<any[]>([]);
@@ -158,17 +166,17 @@ export default function MarkAttendance() {
 
         <View style={styles.cardWrap}>
           <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}>
-            {(isLate || derivedState === "OUT") && effectiveState === "IN" && (
+            {isLate && (
               <ThemedText type="subtitle" style={{ color: "red", marginBottom: 10, textAlign: "center", fontWeight: "bold" }}>
                 Late Attendance
               </ThemedText>
             )}
-            {isEarlyOut && effectiveState === "OUT" && manualShift === null && (
+            {isEarlyOut && (
               <ThemedText type="subtitle" style={{ color: "orange", marginBottom: 10, textAlign: "center", fontWeight: "bold" }}>
                 Early Out
               </ThemedText>
             )}
-            {manualShift !== null && effectiveState === "OUT" && (
+            {useAlt && (
               <ThemedText type="subtitle" style={{ color: "#888", marginBottom: 10, textAlign: "center", fontWeight: "bold" }}>
                 Late Out — {effectiveShift === "Morning" ? "Day Shift" : "Night Shift"}
               </ThemedText>
@@ -181,13 +189,13 @@ export default function MarkAttendance() {
               <ThemedText type="small">Shift:</ThemedText>
               <Pressable
                 style={[styles.pill, {
-                  backgroundColor: canToggleShift ? (manualShift !== null ? "#6c63ff" : theme.background) : theme.background,
-                  opacity: 1,
+                  backgroundColor: useAlt ? "#6c63ff" : theme.background,
+                  opacity: canToggle ? 1 : 0.6,
                 }]}
-                onPress={toggleShift}
-                disabled={!canToggleShift}
+                onPress={toggleCombo}
+                disabled={!canToggle}
               >
-                <ThemedText type="small" style={canToggleShift && manualShift !== null ? { color: "#fff", fontWeight: "bold" } : {}}>
+                <ThemedText type="small" style={useAlt ? { color: "#fff", fontWeight: "bold" } : {}}>
                   {effectiveShift === "Morning" ? "Day Shift" : "Night Shift"}
                 </ThemedText>
               </Pressable>
@@ -206,11 +214,13 @@ export default function MarkAttendance() {
             <View style={styles.formRow}>
               <ThemedText type="small">State:</ThemedText>
               <Pressable
-                style={[styles.pill, { 
+                style={[styles.pill, {
                   backgroundColor: effectiveState === "IN" ? "#28a745" : "#dc3545",
-                  alignItems: "center"
+                  alignItems: "center",
+                  opacity: canToggle ? 1 : 0.6,
                 }]}
-                onPress={toggleState}
+                onPress={toggleCombo}
+                disabled={!canToggle}
               >
                 <ThemedText type="small" style={{ color: "#fff", fontWeight: "bold" }}>{effectiveState}</ThemedText>
               </Pressable>
