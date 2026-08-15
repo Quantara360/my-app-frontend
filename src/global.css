@@ -24,34 +24,17 @@
   --max-content-width: 800px;
 }
 
-/* Dark theme overrides */
-[data-theme='dark'] {
-  --color-text: #ffffff;
-  --color-background: #000000;
-  --color-background-element: #212225;
-  --color-background-selected: #2E3135;
-  --color-text-secondary: #B0B4BA;
-}
-
-/* Light theme overrides (explicit) */
-[data-theme='light'] {
-  --color-text: #000000;
-  --color-background: #ffffff;
-  --color-background-element: #F0F0F3;
-  --color-background-selected: #E0E1E6;
-  --color-text-secondary: #60646C;
-}
-
-/* Respect system preference as a fallback */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    --color-text: #ffffff;
-    --color-background: #000000;
-    --color-background-element: #212225;
-    --color-background-selected: #2E3135;
-    --color-text-secondary: #B0B4BA;
-  }
-}
+/* The app only ships a light theme (see useColorScheme, which always
+ * reports 'light' regardless of device/browser preference). This file
+ * used to also flip --color-* to dark values via [data-theme='dark'] and
+ * @media (prefers-color-scheme: dark) - that CSS-level switch ran
+ * independently of the JS-level override above, so on a device/browser
+ * with an OS dark-mode preference, html/body/#root still went black with
+ * white text underneath the (still light-styled) React components,
+ * producing invisible white-on-light text in places that inherited color
+ * from these variables instead of an explicit component style. Removed
+ * both blocks so these variables can no longer resolve to anything but
+ * the light values below, no matter the OS/browser preference. */
 
 /* Basic utilities using the variables */
 *, *::before, *::after {
