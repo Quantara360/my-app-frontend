@@ -34,7 +34,7 @@ export default function FaceRecognition() {
   const theme = useTheme();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const goBack = useGoBack();
   const { worksiteId, hospitalId, subSiteId, shift, state } = useLocalSearchParams<{ worksiteId?: string; hospitalId?: string; subSiteId?: string; shift?: string; state?: string }>();
   const currentState = state || "IN";
@@ -463,9 +463,13 @@ export default function FaceRecognition() {
                   </View>
                 </View>
                 <ThemedText type="small" style={[styles.colSite, styles.cellText]} numberOfLines={2}>{item.site}</ThemedText>
-                <Pressable style={styles.colAction} onPress={() => handleDelete(item.id)}>
-                  <ThemedText style={{ color: '#e74c3c', fontSize: 14 }}>🗑</ThemedText>
-                </Pressable>
+                {user?.role === "supervisor" ? (
+                  <View style={styles.colAction} />
+                ) : (
+                  <Pressable style={styles.colAction} onPress={() => handleDelete(item.id)}>
+                    <ThemedText style={{ color: '#e74c3c', fontSize: 14 }}>🗑</ThemedText>
+                  </Pressable>
+                )}
               </View>
             )}
           />
