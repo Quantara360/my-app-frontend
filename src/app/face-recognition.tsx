@@ -127,6 +127,7 @@ export default function FaceRecognition() {
             id: att.id,
             name: att.worker?.name,
             datetime: new Date(att.marked_at).toLocaleString(),
+            hospital: att.hospital?.name || "\u2014",
             site: att.sub_site?.name || att.worksite?.name || "\u2014",
             state: att.out_marked_at ? "OUT" : "IN"
           })));
@@ -293,6 +294,7 @@ export default function FaceRecognition() {
           id: attData.attendance?.id || s.length + 1,
           name: result.name,
           datetime: new Date().toLocaleString(),
+          hospital: attData.attendance?.hospital?.name || "—",
           site: attData.attendance?.sub_site?.name || result.site,
           state: currentState.toUpperCase(),
         },
@@ -434,10 +436,11 @@ export default function FaceRecognition() {
       </View>
 
       <View style={styles.tableWrap}>
+        <ScrollView horizontal showsHorizontalScrollIndicator style={{ width: '100%' }}>
           <FlatList
             data={list}
             scrollEnabled={false}
-            style={{ width: '100%' }}
+            style={{ width: '100%', minWidth: 560 }}
             contentContainerStyle={{ width: '100%' }}
             keyExtractor={(i) => String(i.id)}
             ListHeaderComponent={() => (
@@ -446,6 +449,7 @@ export default function FaceRecognition() {
                 <ThemedText type="smallBold" style={styles.colName}>Name</ThemedText>
                 <ThemedText type="smallBold" style={styles.colTime}>Time &amp; Date</ThemedText>
                 <ThemedText type="smallBold" style={styles.colState}>State</ThemedText>
+                <ThemedText type="smallBold" style={styles.colHospital}>Hospital</ThemedText>
                 <ThemedText type="smallBold" style={styles.colSite}>Site</ThemedText>
                 <View style={styles.colAction} />
               </View>
@@ -462,6 +466,7 @@ export default function FaceRecognition() {
                     </ThemedText>
                   </View>
                 </View>
+                <ThemedText type="small" style={[styles.colHospital, styles.cellText]} numberOfLines={2}>{item.hospital}</ThemedText>
                 <ThemedText type="small" style={[styles.colSite, styles.cellText]} numberOfLines={2}>{item.site}</ThemedText>
                 {user?.role === "supervisor" ? (
                   <View style={styles.colAction} />
@@ -473,6 +478,7 @@ export default function FaceRecognition() {
               </View>
             )}
           />
+        </ScrollView>
 
         <Pressable
           style={styles.bottomButton}
@@ -721,6 +727,13 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#fff",
   },
+  colHospital: {
+    flex: 1.4,
+    paddingRight: 4,
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#fff",
+  },
   colSite: {
     flex: 1.4,
     paddingRight: 4,
@@ -733,8 +746,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   cellText: {
+    // Overrides the colId/colName/colTime/colHospital/colSite white text
+    // color (meant for the header row, which sits on the purple
+    // tableHeaderRow background) for actual data rows, which sit on the
+    // "transparent" tableRow background over a light card - white text
+    // there was invisible.
     fontSize: 11,
     lineHeight: 15,
+    color: "#1f2937",
   },
   stateBadge: {
     borderRadius: 8,

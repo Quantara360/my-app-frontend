@@ -404,11 +404,12 @@ export default function AttendancesPage() {
         {/* Table */}
         <ScrollView style={styles.tableScrollContainer} showsVerticalScrollIndicator nestedScrollEnabled bounces={false} overScrollMode="never">
           <ScrollView horizontal showsHorizontalScrollIndicator>
-            <View style={[styles.tableCard, { minWidth: 620 }]}>
+            <View style={[styles.tableCard, { minWidth: 740 }]}>
               {/* Header */}
               <View style={[styles.tableRow, styles.tableHeaderRow]}>
                 <Text style={[styles.tableHeaderCell, { flex: 1 }]}>ID</Text>
                 <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Worker</Text>
+                <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Hospital</Text>
                 <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Date</Text>
                 <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Shift</Text>
                 <Text style={[styles.tableHeaderCell, { flex: 2 }]}>
@@ -434,6 +435,9 @@ export default function AttendancesPage() {
                     <Text style={[styles.tableCell, { flex: 1 }]}>{item.id}</Text>
                     <Text style={[styles.tableCell, { flex: 2 }]}>
                       {item.worker?.name || `Worker #${item.worker_id}`}
+                    </Text>
+                    <Text style={[styles.tableCell, { flex: 2 }]}>
+                      {item.hospital?.name || "—"}
                     </Text>
                     <Text style={[styles.tableCell, { flex: 2 }]}>
                       {item.date ? item.date.split("T")[0] : "—"}
