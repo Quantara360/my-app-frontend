@@ -53,11 +53,18 @@ export default function AddImagePage() {
         if (response.ok) {
           const data = await response.json();
           const loaded: Record<number, string | null> = { 1: null, 2: null, 3: null };
+          const dayAgo = Date.now() - 24 * 60 * 60 * 1000;
 
-          // Group by book_id and take the first one
+          // Group by book_id and take the most recent one - but only as the
+          // card's preview thumbnail if it was uploaded within the last 24
+          // hours. The query itself (?book_id=) and the upload endpoint's
+          // own 10-image cap are both untouched by this - older images stay
+          // stored, this only affects which one (if any) shows here as
+          // "today's" preview, so a photo from days ago doesn't look like
+          // it still covers today and get mistaken for already being done.
           for (let i = 1; i <= 3; i++) {
             const bookImages = data.filter((img: any) => img.book_id === i);
-            if (bookImages.length > 0) {
+            if (bookImages.length > 0 && new Date(bookImages[0].created_at).getTime() >= dayAgo) {
               loaded[i] = `${API_BASE_URL.replace("/api", "")}/storage/${bookImages[0].image_path}`;
             }
           }
