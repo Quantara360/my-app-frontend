@@ -143,27 +143,26 @@ export default function DashboardScreen() {
 
         <SafeAreaView style={styles.safeArea}>
           <ScrollView
-            style={[styles.staffScroll, { overscrollBehavior: 'none', display: 'grid', placeContent: 'center' } as any]}
+            style={[styles.staffScroll, { overscrollBehavior: 'none' } as any]}
             contentContainerStyle={styles.staffScrollContent}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
             bounces={false}
             overScrollMode="never"
           >
-            {/* Centers the grid vertically when it's shorter than the
-                viewport, scrolls normally from the top when it's taller.
-                Flexbox's justifyContent:'center' can't do both reliably on
-                iOS Safari specifically - WebKit has long-documented bugs
-                centering flex content inside a container that also has
-                overflow:auto (this file used to fight that with a
-                justifyContent:'center' + margin:'auto' combo that still
-                fell back to flush-top, dumping all the leftover space at
-                the bottom). CSS Grid's alignment properties don't share
-                that bug: display:'grid' + placeContent:'center' on the
-                ScrollView's own (scrolling) element centers its single
-                child when there's room, and simply lets it overflow/scroll
-                from the natural start position when there isn't - no JS
-                measurement or reinforcement wrapper required. */}
+            {/* Previously tried to vertically center short content here via
+                justifyContent:'center' (+ a margin:'auto' wrapper as
+                reinforcement) - but that's unreliable on iOS Safari
+                specifically (WebKit has long-documented issues centering
+                flex content inside a container that also has overflow:auto
+                plus -webkit-overflow-scrolling:touch, which RN's ScrollView
+                always sets on web). In practice it silently fell back to
+                flush-top, dumping ALL the leftover space at the bottom
+                instead of splitting it top/bottom - which read as a broken
+                "blank space at the bottom" rather than an intentionally
+                centered layout. The supervisor dashboard below never
+                attempted this centering and renders correctly, so this now
+                matches that: content just flows naturally from the top. */}
             <View style={styles.staffHeader}>
               <View style={{ flex: 1, paddingRight: 10 }}>
                 <Text
