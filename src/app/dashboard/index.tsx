@@ -366,12 +366,23 @@ const styles = StyleSheet.create({
 
   safeArea: {
     flex: 1,
+    // NOT alignSelf: 'center' - container is flexDirection: 'row' (the
+    // desktop-max-width-centering pattern used across screens), so the
+    // cross axis there is VERTICAL. alignSelf: 'center' overrides the
+    // default 'stretch' on that axis, so this box sized itself to its own
+    // content height and centered within container's full viewport height
+    // instead of filling it - leaving equal dead space above and below on
+    // any screen taller than the content (every phone, since the officeStaff
+    // tile grid and the supervisor worksite list are both short). The
+    // horizontal centering this was also trying to do already comes from
+    // container's own justifyContent: 'center' plus this box's maxWidth,
+    // so dropping this loses nothing there.
     paddingTop: 60,
     gap: Spacing.three,
     paddingBottom: BottomTabInset + Spacing.three,
     maxWidth: MaxContentWidth,
     width: '100%',
-    alignSelf: 'center',
+    alignSelf: 'stretch',
     overflow: 'hidden',
   },
   scrollContent: {
