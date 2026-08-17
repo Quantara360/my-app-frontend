@@ -60,7 +60,7 @@ export default function BondsPage() {
 }
 
 const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
-  container: { flex: 1, padding: Spacing.four, paddingTop: 80, paddingBottom: BottomTabInset, backgroundColor: 'transparent' },
+  container: { flex: 1, padding: Spacing.four, paddingTop: 80, paddingBottom: BottomTabInset, backgroundColor: 'transparent', overflow: 'hidden' },
   safeArea: { flex: 1, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, marginBottom: Spacing.four },
   backButton: { padding: Spacing.two, borderRadius: 16 },

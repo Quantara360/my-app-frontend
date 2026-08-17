@@ -1257,6 +1257,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) =>
       padding: Spacing.four,
       paddingBottom: BottomTabInset,
       backgroundColor: 'transparent',
+      overflow: 'hidden',
     },
     safeArea: {
       flex: 1,

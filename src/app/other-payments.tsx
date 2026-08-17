@@ -612,7 +612,7 @@ export default function OtherPaymentsPage() {
 
 const createStyles = (theme: ReturnType<typeof useTheme>) =>
   StyleSheet.create({
-    container: { flex: 1, padding: Spacing.four, paddingBottom: BottomTabInset, backgroundColor: 'transparent' },
+    container: { flex: 1, padding: Spacing.four, paddingBottom: BottomTabInset, backgroundColor: 'transparent', overflow: 'hidden' },
     safeArea: { flex: 1, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', gap: Spacing.three },
     headerRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
     backButton: { padding: Spacing.two, borderRadius: 14 },

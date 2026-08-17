@@ -352,7 +352,7 @@ export default function FaceRecognition() {
     );
 
   return (
-    <ThemedView style={{ flex: 1, backgroundColor: isDark ? "#121212" : "#F1E7DF" }}>
+    <ThemedView style={{ flex: 1, backgroundColor: isDark ? "#121212" : "#F1E7DF", overflow: 'hidden' }}>
       <View style={[styles.background, { backgroundColor: isDark ? "#121212" : "#F1E7DF" }]} />
       <View style={[styles.backgroundCircleLarge, { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(255, 255, 255, 0.65)" }]} />
       <View style={[styles.backgroundCircleSmall, { backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(255, 255, 255, 0.5)" }]} />

@@ -329,6 +329,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     flexDirection: Platform.OS === "web" ? "row" : "column",
+    overflow: 'hidden',
   },
 
   safeArea: {

@@ -487,6 +487,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     padding: Spacing.four,
     paddingBottom: BottomTabInset,
     backgroundColor: 'transparent',
+    overflow: 'hidden',
   },
   safeArea: {
     flex: 1,
