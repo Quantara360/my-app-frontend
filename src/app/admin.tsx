@@ -5155,11 +5155,20 @@ export default function AdminDashboard() {
     <ThemedView style={[styles.container, { backgroundColor: isDark ? "#121212" : "#F1E7DF" }]}>
       <BackgroundPattern />
       {selectedView === "dashboard" ? (
+        // display:'grid' + placeContent:'center' centers renderDashboardView's
+        // content vertically when it's shorter than the viewport, and just
+        // scrolls normally from the top when it's taller - unlike flexbox's
+        // justifyContent:'center', which has long-documented bugs on iOS
+        // Safari specifically when combined with overflow:auto (silently
+        // falls back to flush-top, dumping all the leftover space at the
+        // bottom instead of centering). CSS Grid's alignment properties
+        // don't share that bug, so this restores real centering without
+        // needing a margin:'auto' reinforcement wrapper around the content.
         <ScrollView
           showsVerticalScrollIndicator={false}
           bounces={false}
           overScrollMode="never"
-          style={{ maxWidth: MaxContentWidth, alignSelf: 'center', width: '100%', overscrollBehavior: 'none' } as any}
+          style={{ maxWidth: MaxContentWidth, alignSelf: 'center', width: '100%', overscrollBehavior: 'none', display: 'grid', placeContent: 'center' } as any}
           contentContainerStyle={{ flexGrow: 1 }}
         >
           {renderDashboardView()}
