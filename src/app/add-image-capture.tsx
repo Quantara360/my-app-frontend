@@ -134,7 +134,14 @@ export default function AddImageCapture() {
       );
       if (response.ok) {
         const data = await response.json();
-        setCaptured(data);
+        // This "Preview" grid (and the 10-image limit it's checked against
+        // in onCapture) is meant to be a rolling 24-hour window, matching
+        // the "within the last 24 hours" wording already promised in this
+        // screen's own limit-reached error message and now enforced the
+        // same way server-side - not a lifetime archive of every photo ever
+        // uploaded for this book, which is what it showed before this fix.
+        const dayAgo = Date.now() - 24 * 60 * 60 * 1000;
+        setCaptured(data.filter((img: any) => new Date(img.created_at).getTime() >= dayAgo));
       }
     } catch (e) {
       console.error(e);
