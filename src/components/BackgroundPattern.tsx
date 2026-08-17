@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export function BackgroundPattern() {
@@ -15,24 +15,27 @@ export function BackgroundPattern() {
   );
 }
 
+// Sized to match the original per-screen circles (280/180 on web, 420/260 on
+// native) that most screens carried before being unified onto this shared
+// component - a 600/300 size was tried and was too large/dominant.
 const styles = StyleSheet.create({
   background: {
     ...StyleSheet.absoluteFillObject,
   },
   backgroundCircleLarge: {
     position: "absolute",
-    width: 600,
-    height: 600,
-    borderRadius: 300,
-    top: -150,
-    right: -200,
+    width: Platform.select({ web: 280, default: 420 }),
+    height: Platform.select({ web: 280, default: 420 }),
+    borderRadius: Platform.select({ web: 140, default: 210 }),
+    top: -160,
+    right: -90,
   },
   backgroundCircleSmall: {
     position: "absolute",
-    width: 300,
-    height: 300,
-    borderRadius: 150,
-    bottom: -50,
-    left: -100,
+    width: Platform.select({ web: 180, default: 260 }),
+    height: Platform.select({ web: 180, default: 260 }),
+    borderRadius: Platform.select({ web: 90, default: 130 }),
+    bottom: -100,
+    left: -80,
   },
 });
