@@ -1,12 +1,13 @@
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState, useEffect } from "react";
-import { Platform, Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View, Image } from 'react-native';
+import { Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View, Image } from 'react-native';
 import * as ImagePicker from "expo-image-picker";
 import * as SecureStore from "expo-secure-store";
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { BackgroundPattern } from "@/components/BackgroundPattern";
 import { BottomTabInset, MaxContentWidth, Spacing, rf } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/contexts/AuthContext";
@@ -110,9 +111,7 @@ export default function AddImagePage() {
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: isDark ? "#121212" : "#F1E7DF" }]}>
-      <View style={[styles.background, { backgroundColor: isDark ? "#121212" : "#F1E7DF" }]} />
-      <View style={[styles.backgroundCircleLarge, { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(255, 255, 255, 0.65)" }]} />
-      <View style={[styles.backgroundCircleSmall, { backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(255, 255, 255, 0.5)" }]} />
+      <BackgroundPattern />
 
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.headerRow}>
@@ -223,26 +222,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.four,
   },
-  background: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  backgroundCircleLarge: {
-    position: "absolute",
-    width: Platform.select({ web: 280, default: 420 }),
-    height: Platform.select({ web: 280, default: 420 }),
-    borderRadius: Platform.select({ web: 140, default: 210 }),
-    top: -160,
-    right: -90,
-  },
-  backgroundCircleSmall: {
-    position: "absolute",
-    width: Platform.select({ web: 180, default: 260 }),
-    height: Platform.select({ web: 180, default: 260 }),
-    borderRadius: Platform.select({ web: 90, default: 130 }),
-    bottom: -100,
-    left: -80,
-  },
-
   safeArea: {
     flex: 1,
     width: "100%",

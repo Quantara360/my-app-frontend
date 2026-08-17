@@ -1,6 +1,7 @@
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { BackgroundPattern } from "@/components/BackgroundPattern";
 import { BottomTabInset, MaxContentWidth, Spacing } from "@/constants/theme";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Camera } from "expo-camera";
@@ -145,9 +146,7 @@ export default function MarkAttendance() {
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: isDark ? "#121212" : "#F1E7DF" }]}>
-      <View style={[styles.background, { backgroundColor: isDark ? "#121212" : "#F1E7DF" }]} />
-      <View style={[styles.backgroundCircleLarge, { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(255, 255, 255, 0.65)" }]} />
-      <View style={[styles.backgroundCircleSmall, { backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(255, 255, 255, 0.5)" }]} />
+      <BackgroundPattern />
 
       <SafeAreaView style={styles.safeArea}>
         <ScrollView
@@ -330,25 +329,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     flexDirection: Platform.OS === "web" ? "row" : "column",
-  },
-  background: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  backgroundCircleLarge: {
-    position: "absolute",
-    width: Platform.select({ web: 280, default: 420 }),
-    height: Platform.select({ web: 280, default: 420 }),
-    borderRadius: Platform.select({ web: 140, default: 210 }),
-    top: -160,
-    right: -90,
-  },
-  backgroundCircleSmall: {
-    position: "absolute",
-    width: Platform.select({ web: 180, default: 260 }),
-    height: Platform.select({ web: 180, default: 260 }),
-    borderRadius: Platform.select({ web: 90, default: 130 }),
-    bottom: -100,
-    left: -80,
   },
 
   safeArea: {
