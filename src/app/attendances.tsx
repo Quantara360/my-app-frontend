@@ -499,6 +499,7 @@ const createStyles = (isDark: boolean) =>
       maxWidth: MaxContentWidth,
       width: '100%',
       alignSelf: 'center',
+      overflow: 'hidden',
     },
     header: {
       flexDirection: "row",

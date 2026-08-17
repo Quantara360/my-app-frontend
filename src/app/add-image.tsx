@@ -221,6 +221,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.four,
+    overflow: 'hidden',
   },
   safeArea: {
     flex: 1,
