@@ -12,12 +12,13 @@ import {
   StyleSheet,
   View,
   Modal,
+  useWindowDimensions,
 } from "react-native";
 
 import { BackgroundPattern } from '@/components/BackgroundPattern';
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { BottomTabInset, Spacing, rf, MaxContentWidth } from "@/constants/theme";
+import { BottomTabInset, Spacing, rf, rs, MaxContentWidth } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuth } from "@/contexts/AuthContext";
@@ -33,6 +34,12 @@ export default function FaceRecognition() {
   const theme = useTheme();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
+  // useWindowDimensions (not Dimensions.get) so this re-renders on rotation/
+  // resize - rs() itself reads the current width fresh on every call, same
+  // fix already applied to ThemedText and the shared BackgroundPattern.
+  useWindowDimensions();
+  const bgLargeSize = rs(280, 220, 340);
+  const bgSmallSize = rs(180, 140, 220);
   const { token, user } = useAuth();
   const goBack = useGoBack();
   const { worksiteId, hospitalId, subSiteId, shift, state } = useLocalSearchParams<{ worksiteId?: string; hospitalId?: string; subSiteId?: string; shift?: string; state?: string }>();
@@ -354,8 +361,32 @@ export default function FaceRecognition() {
   return (
     <ThemedView style={{ flex: 1, backgroundColor: isDark ? "#121212" : "#F1E7DF", overflow: 'hidden' }}>
       <View style={[styles.background, { backgroundColor: isDark ? "#121212" : "#F1E7DF" }]} />
-      <View style={[styles.backgroundCircleLarge, { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(255, 255, 255, 0.65)" }]} />
-      <View style={[styles.backgroundCircleSmall, { backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(255, 255, 255, 0.5)" }]} />
+      <View
+        style={[
+          styles.backgroundCircleLarge,
+          {
+            width: bgLargeSize,
+            height: bgLargeSize,
+            borderRadius: bgLargeSize / 2,
+            top: -bgLargeSize * 0.57,
+            right: -bgLargeSize * 0.32,
+            backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(255, 255, 255, 0.65)",
+          },
+        ]}
+      />
+      <View
+        style={[
+          styles.backgroundCircleSmall,
+          {
+            width: bgSmallSize,
+            height: bgSmallSize,
+            borderRadius: bgSmallSize / 2,
+            bottom: -bgSmallSize * 0.56,
+            left: -bgSmallSize * 0.44,
+            backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(255, 255, 255, 0.5)",
+          },
+        ]}
+      />
       <ScrollView contentContainerStyle={styles.container} style={{ flex: 1 } as any} showsVerticalScrollIndicator={false} bounces={false} overScrollMode="never">
       <View style={styles.headerRow}>
         <Pressable style={[styles.backButton, { backgroundColor: theme.backgroundElement, borderColor: "rgba(128,128,128,0.2)" }]} onPress={goBack} accessibilityLabel="Back">
@@ -525,22 +556,23 @@ const styles = StyleSheet.create({
   background: {
     ...StyleSheet.absoluteFillObject,
     ...Platform.select({ web: { position: "fixed" as any } }),
+    margin: 0,
+    padding: 0,
   },
+  // Size/borderRadius/offsets are computed inline per-render (see
+  // bgLargeSize/bgSmallSize above) so they scale with screen width instead
+  // of being fixed pixel values - only the position mode (which must stay
+  // 'fixed' on web specifically, see the historical fix this preserves)
+  // lives in the static stylesheet.
   backgroundCircleLarge: {
     position: Platform.select({ web: "fixed" as any, default: "absolute" }),
-    width: Platform.select({ web: 280, default: 420 }),
-    height: Platform.select({ web: 280, default: 420 }),
-    borderRadius: Platform.select({ web: 140, default: 210 }),
-    top: -160,
-    right: -90,
+    margin: 0,
+    padding: 0,
   },
   backgroundCircleSmall: {
     position: Platform.select({ web: "fixed" as any, default: "absolute" }),
-    width: Platform.select({ web: 180, default: 260 }),
-    height: Platform.select({ web: 180, default: 260 }),
-    borderRadius: Platform.select({ web: 90, default: 130 }),
-    bottom: -100,
-    left: -80,
+    margin: 0,
+    padding: 0,
   },
   container: {
     flexGrow: 1,
