@@ -1,4 +1,5 @@
-import { Platform, StyleSheet, Text, type TextProps } from 'react-native';
+import { Platform, StyleSheet, Text, useWindowDimensions, type TextProps } from 'react-native';
+import { useMemo } from 'react';
 
 import { Fonts, rf, ThemeColor } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -10,19 +11,38 @@ export type ThemedTextProps = TextProps & {
 
 export function ThemedText({ style, type = 'default', themeColor, ...rest }: ThemedTextProps) {
   const theme = useTheme();
+  // rf() itself reads the current window width fresh on every call - the
+  // staleness was entirely in title/subtitle living in the module-level
+  // `styles` object below, which StyleSheet.create() only ever evaluates
+  // once for the lifetime of the JS bundle. That freezes them at whatever
+  // size the screen happened to be on first load (rotating the device,
+  // resizing a desktop/PWA window, or a foldable unfolding never updated
+  // them again). useWindowDimensions() makes this component itself
+  // re-render on those changes; recomputing the rf()-derived sizes here
+  // (not in the static `styles` object) picks up the fresh value each time.
+  const { width } = useWindowDimensions();
+  const responsiveStyle = useMemo(() => {
+    if (type === 'title') {
+      return { fontSize: rf(48, 32, 48), fontWeight: 600 as const, lineHeight: rf(52, 36, 52) };
+    }
+    if (type === 'subtitle') {
+      return { fontSize: rf(32, 24, 32), lineHeight: rf(44, 32, 44), fontWeight: 600 as const };
+    }
+    return undefined;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [type, width]);
 
   return (
     <Text
       style={[
         { color: theme[themeColor ?? 'text'] },
         type === 'default' && styles.default,
-        type === 'title' && styles.title,
         type === 'small' && styles.small,
         type === 'smallBold' && styles.smallBold,
-        type === 'subtitle' && styles.subtitle,
         type === 'link' && styles.link,
         type === 'linkPrimary' && styles.linkPrimary,
         type === 'code' && styles.code,
+        responsiveStyle,
         style,
       ]}
       {...rest}
@@ -45,16 +65,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     fontWeight: 500,
-  },
-  title: {
-    fontSize: rf(48, 32, 48),
-    fontWeight: 600,
-    lineHeight: rf(52, 36, 52),
-  },
-  subtitle: {
-    fontSize: rf(32, 24, 32),
-    lineHeight: rf(44, 32, 44),
-    fontWeight: 600,
   },
   link: {
     lineHeight: 30,
