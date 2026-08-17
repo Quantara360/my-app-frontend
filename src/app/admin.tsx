@@ -1,6 +1,7 @@
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { SafeView } from "@/components/safe-view";
+import { BackgroundPattern } from "@/components/BackgroundPattern";
 import { SelectInput } from "@/components/ui/select-input";
 import { DateInput } from "@/components/ui/date-input";
 import { BottomTabInset, Spacing, rf, MaxContentWidth } from "@/constants/theme";
@@ -1987,17 +1988,18 @@ export default function AdminDashboard() {
   );
 
   const renderDashboardView = () => (
-    // justifyContent:'center' on the wrapping ScrollView's own
-    // contentContainerStyle is unreliable on iOS Safari specifically -
-    // WebKit has long-documented issues centering flex content inside a
-    // container that also has overflow:auto plus
-    // -webkit-overflow-scrolling:touch (momentum scroll, which RN's
-    // ScrollView always sets on web), sometimes just leaving content flush
-    // at the start regardless of justifyContent. margin:'auto' on the
-    // actual content is the more cross-browser-reliable way to center
-    // within leftover flex space, so it's added here as reinforcement
-    // rather than relying on justifyContent alone.
-    <View style={{ margin: 'auto', width: '100%' }}>
+    // Previously tried to vertically center this view (via justifyContent:
+    // 'center' on the wrapping ScrollView's contentContainerStyle, plus a
+    // margin:'auto' wrapper here as reinforcement) when its content is
+    // shorter than the viewport - but that's a documented WebKit bug on iOS
+    // Safari specifically (issues centering flex content inside a container
+    // that also has overflow:auto plus -webkit-overflow-scrolling:touch,
+    // which RN's ScrollView always sets on web). In practice it silently
+    // fell back to flush-top, dumping ALL the leftover space at the bottom
+    // instead of splitting it top/bottom - reported as a "blank space at
+    // the bottom" bug rather than a centered layout. Content now just flows
+    // naturally from the top instead of fighting that.
+    <>
       {/* Header with greeting */}
       <View
         style={[
@@ -2244,7 +2246,7 @@ export default function AdminDashboard() {
           })()}
         </View>
       </View>
-    </View>
+    </>
   );
 
   const renderManageSiteView = () => {
@@ -5151,16 +5153,14 @@ export default function AdminDashboard() {
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: isDark ? "#121212" : "#F1E7DF" }]}>
-      <View style={[styles.background, { backgroundColor: isDark ? "#121212" : "#F1E7DF" }]} />
-      <View style={[styles.backgroundCircleLarge, { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(255, 255, 255, 0.65)" }]} />
-      <View style={[styles.backgroundCircleSmall, { backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(255, 255, 255, 0.5)" }]} />
+      <BackgroundPattern />
       {selectedView === "dashboard" ? (
         <ScrollView
           showsVerticalScrollIndicator={false}
           bounces={false}
           overScrollMode="never"
           style={{ maxWidth: MaxContentWidth, alignSelf: 'center', width: '100%', overscrollBehavior: 'none' } as any}
-          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
+          contentContainerStyle={{ flexGrow: 1 }}
         >
           {renderDashboardView()}
         </ScrollView>
@@ -5230,25 +5230,6 @@ const createStyles = (isDark: boolean) =>
       paddingBottom: BottomTabInset,
       backgroundColor: "transparent",
       overflow: 'hidden',
-    },
-    background: {
-      ...StyleSheet.absoluteFillObject,
-    },
-    backgroundCircleLarge: {
-      position: "absolute",
-      width: Platform.select({ web: 280, default: 420 }),
-      height: Platform.select({ web: 280, default: 420 }),
-      borderRadius: Platform.select({ web: 140, default: 210 }),
-      top: -160,
-      right: -90,
-    },
-    backgroundCircleSmall: {
-      position: "absolute",
-      width: Platform.select({ web: 180, default: 260 }),
-      height: Platform.select({ web: 180, default: 260 }),
-      borderRadius: Platform.select({ web: 90, default: 130 }),
-      bottom: -100,
-      left: -80,
     },
     headerSection: {
       marginBottom: Spacing.three,
