@@ -1,10 +1,11 @@
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Redirect, useRouter } from "expo-router";
-import { Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View, Image } from 'react-native';
+import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View, Image } from 'react-native';
 import { useEffect, useState } from "react";
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { BackgroundPattern } from "@/components/BackgroundPattern";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/hooks/use-theme";
 import { API_BASE_URL, getAuthHeaders } from "@/services/authService";
@@ -138,9 +139,7 @@ export default function DashboardScreen() {
   if (user.role === "officeStaff") {
     return (
       <ThemedView style={[styles.container, { backgroundColor: isDark ? "#121212" : "#F1E7DF" }]}>
-        <View style={[styles.background, { backgroundColor: isDark ? "#121212" : "#F1E7DF" }]} />
-        <View style={[styles.backgroundCircleLarge, { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(255, 255, 255, 0.65)" }]} />
-        <View style={[styles.backgroundCircleSmall, { backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(255, 255, 255, 0.5)" }]} />
+        <BackgroundPattern />
 
         <SafeAreaView style={styles.safeArea}>
           <ScrollView
@@ -151,18 +150,19 @@ export default function DashboardScreen() {
             bounces={false}
             overScrollMode="never"
           >
-            {/* justifyContent:'center' on the ScrollView's own
-                contentContainerStyle (staffScrollContent) is unreliable on
-                iOS Safari specifically - WebKit has long-documented issues
-                centering flex content inside a container that also has
-                overflow:auto plus -webkit-overflow-scrolling:touch
-                (momentum scroll, which RN's ScrollView always sets on web),
-                sometimes just leaving content flush at the start regardless
-                of justifyContent. margin:'auto' on the actual content is
-                the more cross-browser-reliable way to center within
-                leftover flex space, so it's added here as reinforcement
-                rather than relying on justifyContent alone. */}
-            <View style={{ margin: 'auto', width: '100%' }}>
+            {/* Previously tried to vertically center short content here via
+                justifyContent:'center' (+ a margin:'auto' wrapper as
+                reinforcement) - but that's unreliable on iOS Safari
+                specifically (WebKit has long-documented issues centering
+                flex content inside a container that also has overflow:auto
+                plus -webkit-overflow-scrolling:touch, which RN's ScrollView
+                always sets on web). In practice it silently fell back to
+                flush-top, dumping ALL the leftover space at the bottom
+                instead of splitting it top/bottom - which read as a broken
+                "blank space at the bottom" rather than an intentionally
+                centered layout. The supervisor dashboard below never
+                attempted this centering and renders correctly, so this now
+                matches that: content just flows naturally from the top. */}
             <View style={styles.staffHeader}>
               <View style={{ flex: 1, paddingRight: 10 }}>
                 <Text
@@ -231,7 +231,6 @@ export default function DashboardScreen() {
                   </View>
                 ))}
               </View>
-            </View>
           </ScrollView>
         </SafeAreaView>
       </ThemedView>
@@ -240,9 +239,7 @@ export default function DashboardScreen() {
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: isDark ? "#121212" : "#F1E7DF" }]}>
-      <View style={[styles.background, { backgroundColor: isDark ? "#121212" : "#F1E7DF" }]} />
-      <View style={[styles.backgroundCircleLarge, { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(255, 255, 255, 0.65)" }]} />
-      <View style={[styles.backgroundCircleSmall, { backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(255, 255, 255, 0.5)" }]} />
+      <BackgroundPattern />
 
       <SafeAreaView style={styles.safeArea}>
         <View
@@ -344,25 +341,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     overflow: 'hidden',
   },
-  background: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  backgroundCircleLarge: {
-    position: "absolute",
-    width: Platform.select({ web: 280, default: 420 }),
-    height: Platform.select({ web: 280, default: 420 }),
-    borderRadius: Platform.select({ web: 140, default: 210 }),
-    top: -160,
-    right: -90,
-  },
-  backgroundCircleSmall: {
-    position: "absolute",
-    width: Platform.select({ web: 180, default: 260 }),
-    height: Platform.select({ web: 180, default: 260 }),
-    borderRadius: Platform.select({ web: 90, default: 130 }),
-    bottom: -100,
-    left: -80,
-  },
 
   safeArea: {
     flex: 1,
@@ -403,7 +381,6 @@ const styles = StyleSheet.create({
     paddingBottom: BottomTabInset + Spacing.four,
     gap: Spacing.three,
     flexGrow: 1,
-    justifyContent: 'center',
   },
   topRightControls: {
     width: "100%",
