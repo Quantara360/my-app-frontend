@@ -154,13 +154,21 @@ const styles = StyleSheet.create({
 
   safeArea: {
     flex: 1,
+    // alignSelf: 'stretch', not 'center' - container is flexDirection:
+    // "row" for the desktop-max-width-centering pattern, which makes the
+    // cross axis here VERTICAL. alignSelf: 'center' sized this box to its
+    // own content height and centered it within container's full height
+    // instead of filling it, leaving blank space above/below (see
+    // dashboard/index.tsx for the same bug). Horizontal centering still
+    // comes from container's justifyContent: 'center' plus this box's own
+    // maxWidth/width: '100%'.
     paddingTop: 60,
     paddingHorizontal: Spacing.four,
     gap: Spacing.three,
     paddingBottom: BottomTabInset + Spacing.three,
     maxWidth: MaxContentWidth,
     width: '100%',
-    alignSelf: 'center',
+    alignSelf: 'stretch',
   },
   header: {
     width: "100%",
