@@ -308,8 +308,18 @@ export default function CashInHandPage() {
                   ))}
                 </View>
 
-                {/* Table body */}
-                <ScrollView style={styles.tableBody} showsVerticalScrollIndicator={false} nestedScrollEnabled bounces={false} overScrollMode="never">
+                {/* Table body - a plain View, not its own nested ScrollView.
+                    A vertical scroller boxed to maxHeight and nested inside
+                    this horizontal ScrollView, which is itself nested inside
+                    the page's own vertical ScrollView, is 3 alternating-axis
+                    scroll containers deep - exactly the kind of nesting that
+                    breaks touch gesture routing on mobile (same root cause as
+                    the earlier Android horizontal-scroll bug elsewhere in
+                    this app, just one nesting level worse here). Every other
+                    working table in the app uses a simpler 2-level structure
+                    (outer vertical + inner horizontal, no separate bounded
+                    inner vertical scroller) - matching that here instead. */}
+                <View>
                   {filtered.length === 0 ? (
                     <View style={styles.emptyRow}>
                       <Text style={{ color: '#aaa', fontSize: 13 }}>No records found</Text>
@@ -344,7 +354,7 @@ export default function CashInHandPage() {
                       </View>
                     ))
                   )}
-                </ScrollView>
+                </View>
               </View>
             </ScrollView>
             {/* Summary section — inside card, below grid */}
@@ -613,9 +623,6 @@ const createStyles = (theme: ReturnType<typeof useTheme>) =>
       fontWeight: '700',
       color: theme.text,
       fontSize: 12,
-    },
-    tableBody: {
-      maxHeight: 300,
     },
     tableRow: {
       flexDirection: 'row',

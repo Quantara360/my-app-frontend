@@ -297,8 +297,15 @@ export default function BankPage() {
                   ))}
                 </View>
 
-                {/* Table body */}
-                <ScrollView style={styles.tableBody} showsVerticalScrollIndicator={false} nestedScrollEnabled bounces={false} overScrollMode="never">
+                {/* Table body - a plain View, not its own nested ScrollView.
+                    Same fix as cash-in-hand.tsx: a vertical scroller boxed
+                    to maxHeight and nested inside this horizontal
+                    ScrollView, itself nested inside the page's own vertical
+                    ScrollView, is 3 alternating-axis scroll containers deep
+                    - breaks touch gesture routing on mobile. Every other
+                    working table in the app uses the simpler 2-level
+                    structure this now matches. */}
+                <View>
                   {filtered.length === 0 ? (
                     <View style={styles.emptyRow}>
                       <Text style={{ color: '#aaa', fontSize: 13 }}>No records found</Text>
@@ -333,7 +340,7 @@ export default function BankPage() {
                       </View>
                     ))
                   )}
-                </ScrollView>
+                </View>
               </View>
             </ScrollView>
 
@@ -615,9 +622,6 @@ const createStyles = (theme: ReturnType<typeof useTheme>) =>
       fontWeight: '700',
       color: theme.text,
       fontSize: 12,
-    },
-    tableBody: {
-      maxHeight: 300,
     },
     tableRow: {
       flexDirection: 'row',
