@@ -1,8 +1,9 @@
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ActivityIndicator, Platform, Pressable, SafeAreaView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, SafeAreaView, StyleSheet, View } from 'react-native';
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { BackgroundPattern } from "@/components/BackgroundPattern";
 import { Spacing, MaxContentWidth, BottomTabInset, rf } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 
@@ -77,9 +78,7 @@ export default function SelectHospitals() {
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: isDark ? "#121212" : "#F1E7DF" }]}>
-      <View style={[styles.background, { backgroundColor: isDark ? "#121212" : "#F1E7DF" }]} />
-      <View style={[styles.backgroundCircleLarge, { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(255, 255, 255, 0.65)" }]} />
-      <View style={[styles.backgroundCircleSmall, { backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(255, 255, 255, 0.5)" }]} />
+      <BackgroundPattern />
 
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
@@ -132,25 +131,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.four,
     overflow: 'hidden',
-  },
-  background: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  backgroundCircleLarge: {
-    position: "absolute",
-    width: Platform.select({ web: 280, default: 420 }),
-    height: Platform.select({ web: 280, default: 420 }),
-    borderRadius: Platform.select({ web: 140, default: 210 }),
-    top: -160,
-    right: -90,
-  },
-  backgroundCircleSmall: {
-    position: "absolute",
-    width: Platform.select({ web: 180, default: 260 }),
-    height: Platform.select({ web: 180, default: 260 }),
-    borderRadius: Platform.select({ web: 90, default: 130 }),
-    bottom: -100,
-    left: -80,
   },
 
   safeArea: {
