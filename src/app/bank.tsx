@@ -18,7 +18,7 @@ import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useGoBack } from '@/hooks/use-go-back';
-import { getBankEntries, createBankEntry, updateBankEntry, deleteBankEntry, getLedgerPrevBalance, setLedgerPrevBalance } from '@/services/accountsService';
+import { getBankEntries, createBankEntry, updateBankEntry, deleteBankEntry, getLedgerPrevBalance, setLedgerPrevBalance, createAccountTransfer } from '@/services/accountsService';
 import { exportLedgerToExcel } from '@/utils/exportLedger';
 
 type BankEntry = {
@@ -29,6 +29,8 @@ type BankEntry = {
   debit: number | null;
   credit: number | null;
   balance: number;
+  /** Set on both legs of a Bank<->Cash transfer, shared between them - null for a normal entry. */
+  linkedTransferId: string | null;
 };
 
 /** Returns today's date string in YYYY-MM-DD using Sri Lanka timezone (UTC+5:30) */
@@ -52,6 +54,16 @@ export default function BankPage() {
   const [transactionType, setTransactionType] = useState<'debit' | 'credit'>('debit');
   const [editingId, setEditingId] = useState<number | null>(null);
 
+  // Transfer to Cash: a single action that creates one linked entry in
+  // both this ledger and Cash in Hand's, per the Bank<->Cash transfer spec.
+  const [transferModalOpen, setTransferModalOpen] = useState(false);
+  const [transferSaving, setTransferSaving] = useState(false);
+  const [transferForm, setTransferForm] = useState({
+    date: getSriLankaDate(),
+    chequeNo: '',
+    amount: '',
+  });
+
   const [manualPrevBalanceStr, setManualPrevBalanceStr] = useState<string | null>(null);
 
   useEffect(() => {
@@ -72,6 +84,7 @@ export default function BankPage() {
           debit:       r.debit,
           credit:      r.credit,
           balance:     r.balance,
+          linkedTransferId: r.linked_transfer_id ?? null,
         }));
         setEntries(mapped);
       })
@@ -204,13 +217,64 @@ export default function BankPage() {
   };
 
   const handleDelete = (id: number) => {
-    Alert.alert('Delete', 'Are you sure you want to delete this entry?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => {
-        setEntries((prev) => prev.filter((e) => e.id !== id));
-        deleteBankEntry(id).catch(err => console.warn('delete error', err));
-      } }
-    ]);
+    const entry = entries.find((e) => e.id === id);
+    Alert.alert(
+      'Delete',
+      entry?.linkedTransferId
+        ? 'This entry is one leg of a Cash in Hand transfer - deleting it will also delete the matching entry in Cash in Hand. Continue?'
+        : 'Are you sure you want to delete this entry?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: () => {
+          setEntries((prev) => prev.filter((e) => e.id !== id));
+          deleteBankEntry(id).catch(err => console.warn('delete error', err));
+        } }
+      ]
+    );
+  };
+
+  // Transfer to Cash: Bank is always the Debit (losing) side, Cash in Hand
+  // is always the Credit (receiving) side - see the "BANK -> CASH IN HAND"
+  // spec. Bank's own balance is computed here (this page has that data);
+  // Cash's balance is left for the backend to compute from Cash's own
+  // latest entry, since this page doesn't have Cash's entries loaded.
+  const handleTransfer = async () => {
+    if (!transferForm.date) { Alert.alert('Validation', 'Date is required.'); return; }
+    const amount = parseFloat(transferForm.amount);
+    if (!amount || amount <= 0) { Alert.alert('Validation', 'Enter a valid amount.'); return; }
+
+    setTransferSaving(true);
+    try {
+      const result = await createAccountTransfer({
+        direction: 'bank_to_cash',
+        date: transferForm.date,
+        cheque_no: transferForm.chequeNo || null,
+        amount,
+        bank_description: 'Cash Withdrawal',
+        bank_balance: prevMonthBalance - amount,
+        cash_description: 'Cash Received from Bank',
+      });
+
+      setEntries((prev) => [...prev, {
+        id: result.bank.id,
+        date: result.bank.date,
+        chequeNo: result.bank.cheque_no ?? '',
+        description: result.bank.description ?? '',
+        debit: result.bank.debit,
+        credit: result.bank.credit,
+        balance: result.bank.balance,
+        linkedTransferId: result.bank.linked_transfer_id ?? null,
+      }]);
+
+      setTransferForm({ date: getSriLankaDate(), chequeNo: '', amount: '' });
+      setTransferModalOpen(false);
+      setSuccessVisible(true);
+    } catch (err: any) {
+      console.warn('[Bank] transfer error', err);
+      Alert.alert('Error', err?.message || 'Failed to record transfer.');
+    } finally {
+      setTransferSaving(false);
+    }
   };
 
   const columns = ['Date', 'Cheque No', 'Description', 'Credit', 'Debit', 'Balance', 'Actions'];
@@ -283,6 +347,17 @@ export default function BankPage() {
               >
                 <Text style={styles.actionBtnText}>＋ Add</Text>
               </Pressable>
+
+              {/* Transfer to Cash button */}
+              <Pressable
+                style={[styles.actionBtn, { backgroundColor: '#8b5cf6' }]}
+                onPress={() => {
+                  setTransferForm({ date: getSriLankaDate(), chequeNo: '', amount: '' });
+                  setTransferModalOpen(true);
+                }}
+              >
+                <Text style={styles.actionBtnText}>⇄ Transfer to Cash</Text>
+              </Pressable>
             </View>
 
             {/* Table */}
@@ -321,7 +396,9 @@ export default function BankPage() {
                       >
                         <Text style={styles.rowCell} numberOfLines={1}>{entry.date}</Text>
                         <Text style={styles.rowCell} numberOfLines={1}>{entry.chequeNo || '-'}</Text>
-                        <Text style={styles.rowCell} numberOfLines={1}>{entry.description || '-'}</Text>
+                        <Text style={styles.rowCell} numberOfLines={1}>
+                          {entry.linkedTransferId ? '🔗 ' : ''}{entry.description || '-'}
+                        </Text>
                         <Text style={styles.rowCell} numberOfLines={1}>
                           {entry.debit != null ? entry.debit.toFixed(2) : '-'}
                         </Text>
@@ -450,7 +527,7 @@ export default function BankPage() {
                     <Text style={[
                       styles.typeToggleBtnText,
                       { color: transactionType === 'debit' ? '#fff' : '#ef4444' },
-                    ]}>Credit</Text>
+                    ]}>Debit</Text>
                   </Pressable>
 
                   <Pressable
@@ -465,7 +542,7 @@ export default function BankPage() {
                     <Text style={[
                       styles.typeToggleBtnText,
                       { color: transactionType === 'credit' ? '#fff' : '#22c55e' },
-                    ]}>Debit</Text>
+                    ]}>Credit</Text>
                   </Pressable>
                 </View>
               </View>
@@ -473,7 +550,7 @@ export default function BankPage() {
               {/* Amount input — label and border color match selected type */}
               <View style={styles.fieldRow}>
                 <Text style={[styles.fieldLabel, { color: transactionType === 'debit' ? '#ef4444' : '#22c55e' }]}>
-                  {transactionType === 'debit' ? 'Credit Amount' : 'Debit Amount'}
+                  {transactionType === 'debit' ? 'Debit Amount' : 'Credit Amount'}
                 </Text>
                 <TextInput
                   style={[
@@ -499,6 +576,71 @@ export default function BankPage() {
                 onPress={handleSave}
               >
                 <Text style={styles.saveBtnText}>{editingId ? 'Update Entry' : 'Save Entry'}</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Transfer to Cash Modal */}
+      <Modal visible={transferModalOpen} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCard, { backgroundColor: theme.backgroundElement }]}>
+            <View style={styles.modalHeader}>
+              <ThemedText type="title" style={{ marginTop: 6 }}>Transfer to Cash</ThemedText>
+              <Pressable onPress={() => setTransferModalOpen(false)}>
+                <Text style={{ fontSize: 20, color: theme.text }}>✕</Text>
+              </Pressable>
+            </View>
+
+            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+              <Text style={{ color: theme.text, opacity: 0.7, fontSize: 13, marginBottom: 12 }}>
+                Records cash withdrawn from the bank: a Debit here (Bank) and a matching Credit
+                in Cash in Hand, linked together.
+              </Text>
+
+              <View style={styles.fieldRow}>
+                <Text style={[styles.fieldLabel, { color: theme.text }]}>Date (YYYY-MM-DD)</Text>
+                <TextInput
+                  style={[styles.textInput, { color: theme.text, borderColor: theme.backgroundSelected }]}
+                  placeholder="YYYY-MM-DD"
+                  placeholderTextColor="#aaa"
+                  value={transferForm.date}
+                  onChangeText={(v) => setTransferForm((prev) => ({ ...prev, date: v }))}
+                />
+              </View>
+
+              <View style={styles.fieldRow}>
+                <Text style={[styles.fieldLabel, { color: theme.text }]}>Cheque No / Reference (optional)</Text>
+                <TextInput
+                  style={[styles.textInput, { color: theme.text, borderColor: theme.backgroundSelected }]}
+                  placeholder="e.g. CHQ-001"
+                  placeholderTextColor="#aaa"
+                  value={transferForm.chequeNo}
+                  onChangeText={(v) => setTransferForm((prev) => ({ ...prev, chequeNo: v }))}
+                />
+              </View>
+
+              <View style={styles.fieldRow}>
+                <Text style={[styles.fieldLabel, { color: theme.text }]}>Amount</Text>
+                <TextInput
+                  style={[styles.textInput, { color: theme.text, borderColor: theme.backgroundSelected }]}
+                  placeholder="0.00"
+                  placeholderTextColor="#aaa"
+                  keyboardType="decimal-pad"
+                  value={transferForm.amount}
+                  onChangeText={(v) => setTransferForm((prev) => ({ ...prev, amount: v }))}
+                />
+              </View>
+            </ScrollView>
+
+            <View style={styles.modalFooter}>
+              <Pressable
+                style={[styles.saveBtn, { backgroundColor: '#8b5cf6', opacity: transferSaving ? 0.7 : 1 }]}
+                onPress={handleTransfer}
+                disabled={transferSaving}
+              >
+                <Text style={styles.saveBtnText}>{transferSaving ? 'Saving…' : 'Save Transfer'}</Text>
               </Pressable>
             </View>
           </View>

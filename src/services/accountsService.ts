@@ -10,6 +10,8 @@ export interface AccountEntry {
   debit: number | null;
   credit: number | null;
   balance: number;
+  /** Set on both legs of a Bank<->Cash transfer, shared between them - null for a normal entry. */
+  linked_transfer_id?: string | null;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -161,4 +163,33 @@ export async function setLedgerPrevBalance(
   value: number
 ): Promise<void> {
   await putJson(`ledger-settings/${ledgerType}`, { manual_prev_balance: value });
+}
+
+// — Bank <-> Cash in Hand Transfer ───────────────────────────────────────────
+// Creates one linked entry in each ledger atomically. direction determines
+// which side receives the money (Credit) and which loses it (Debit) - see
+// OfficeController::createAccountTransfer for the exact mapping.
+
+export interface AccountTransferRequest {
+  direction: 'bank_to_cash' | 'cash_to_bank';
+  date: string;
+  cheque_no?: string | null;
+  amount: number;
+  cash_description?: string | null;
+  // Whichever side you're initiating from computes its own balance (it has
+  // that ledger's data loaded); omit the other side and the backend
+  // computes it from that ledger's own latest entry instead.
+  cash_balance?: number;
+  bank_description?: string | null;
+  bank_balance?: number;
+}
+
+export async function createAccountTransfer(
+  data: AccountTransferRequest
+): Promise<{ cash: AccountEntry; bank: AccountEntry }> {
+  const result = await postJson<{ data: { cash: AccountEntry; bank: AccountEntry } }>(
+    'account-transfers',
+    { ...data }
+  );
+  return result.data ?? (result as any);
 }
