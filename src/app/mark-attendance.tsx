@@ -177,7 +177,7 @@ export default function MarkAttendance() {
             )}
             {useAlt && (
               <ThemedText type="subtitle" style={{ color: "#888", marginBottom: 10, textAlign: "center", fontWeight: "bold" }}>
-                Late Out — {effectiveShift === "Morning" ? "Day Shift" : "Night Shift"}
+                {effectiveShift === "Morning" ? "Day Shift" : "Night Shift"} - Out
               </ThemedText>
             )}
             <ThemedText type="subtitle" style={[styles.cardTitle, { backgroundColor: theme.background }]}>
