@@ -418,11 +418,14 @@ export default function CashInHandPage() {
                         <Text style={styles.rowCell} numberOfLines={1}>
                           {entry.linkedTransferId ? '🔗 ' : ''}{entry.description || '-'}
                         </Text>
-                        <Text style={styles.rowCell} numberOfLines={1}>
-                          {entry.debit != null ? entry.debit.toFixed(2) : '-'}
-                        </Text>
+                        {/* Header order is Credit, Debit (columns array above) -
+                            these two must render in the same order or the
+                            values land under the wrong header. */}
                         <Text style={styles.rowCell} numberOfLines={1}>
                           {entry.credit != null ? entry.credit.toFixed(2) : '-'}
+                        </Text>
+                        <Text style={styles.rowCell} numberOfLines={1}>
+                          {entry.debit != null ? entry.debit.toFixed(2) : '-'}
                         </Text>
                         <Text style={styles.rowCell} numberOfLines={1}>{entry.runningBalance.toFixed(2)}</Text>
                         <View style={[styles.rowCell, { flexDirection: 'row', justifyContent: 'center', gap: 10 }]}>
