@@ -96,7 +96,8 @@ export default function CashInHandPage() {
 
   const totalDebit = entries.reduce((s, e) => s + (e.debit ?? 0), 0);
   const totalCredit = entries.reduce((s, e) => s + (e.credit ?? 0), 0);
-  const currentBalance = totalCredit - totalDebit;
+  // Cash in Hand: New Balance = Previous Balance + Debit - Credit
+  const currentBalance = totalDebit - totalCredit;
 
   /** Closing balance = balance field of the last entry in the previous calendar month */
   const computedPrevMonthBalance = (() => {
@@ -129,7 +130,8 @@ export default function CashInHandPage() {
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .reduce((acc, entry) => {
       const prevBal = acc.length > 0 ? acc[acc.length - 1].runningBalance : prevMonthBalance;
-      const runningBalance = prevBal + (entry.credit ?? 0) - (entry.debit ?? 0);
+      // Cash in Hand: New Balance = Previous Balance + Debit - Credit
+      const runningBalance = prevBal + (entry.debit ?? 0) - (entry.credit ?? 0);
       acc.push({ ...entry, runningBalance });
       return acc;
     }, [] as (CashEntry & { runningBalance: number })[]);
@@ -158,7 +160,8 @@ export default function CashInHandPage() {
       setManualPrevBalanceStr(form.prevBalance);
     }
 
-    const newBalance = prevBalance + (credit ?? 0) - (debit ?? 0);
+    // Cash in Hand: New Balance = Previous Balance + Debit - Credit
+    const newBalance = prevBalance + (debit ?? 0) - (credit ?? 0);
 
     if (editingId) {
       setEntries((prev) => prev.map((e) => e.id === editingId ? { ...e, date: form.date, chequeNo: form.chequeNo, description: form.description, debit, credit, balance: newBalance } : e));
@@ -278,7 +281,7 @@ export default function CashInHandPage() {
               {/* Export button */}
               <Pressable
                 style={[styles.actionBtn, { backgroundColor: '#22c55e' }]}
-                onPress={() => exportLedgerToExcel('Cash_In_Hand', filtered, prevMonthBalance)}
+                onPress={() => exportLedgerToExcel('Cash_In_Hand', filtered, prevMonthBalance, false)}
               >
                 <Text style={styles.actionBtnText}>⬇ Export</Text>
               </Pressable>

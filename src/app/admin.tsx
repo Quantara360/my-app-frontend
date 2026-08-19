@@ -4564,7 +4564,8 @@ export default function AdminDashboard() {
   const renderAdminCashInHandView = () => {
     const totalDebit = adminCashEntries.reduce((s, e) => s + (e.debit ?? 0), 0);
     const totalCredit = adminCashEntries.reduce((s, e) => s + (e.credit ?? 0), 0);
-    const currentBalance = totalCredit - totalDebit;
+    // Cash in Hand: New Balance = Previous Balance + Debit - Credit
+    const currentBalance = totalDebit - totalCredit;
 
     const filtered = adminCashEntries
       .filter(
@@ -4583,7 +4584,8 @@ export default function AdminDashboard() {
       const debit = adminCashTransactionType === "debit" && adminCashForm.amount ? parseFloat(adminCashForm.amount) : null;
       const credit = adminCashTransactionType === "credit" && adminCashForm.amount ? parseFloat(adminCashForm.amount) : null;
       const prev = parseFloat(adminCashForm.prevBalance || "0");
-      const newBalance = prev + (credit ?? 0) - (debit ?? 0);
+      // Cash in Hand: New Balance = Previous Balance + Debit - Credit
+      const newBalance = prev + (debit ?? 0) - (credit ?? 0);
       const entry: AdminCashEntry = {
         id: Date.now(),
         date: adminCashForm.date,
@@ -4677,7 +4679,7 @@ export default function AdminDashboard() {
                   })
                   .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
                 const prevBalance = prevMonthEntries.length > 0 ? prevMonthEntries[prevMonthEntries.length - 1].balance : 0;
-                exportLedgerToExcel('Admin_Cash_In_Hand', filtered, prevBalance);
+                exportLedgerToExcel('Admin_Cash_In_Hand', filtered, prevBalance, false);
               }}
             >
               <Text style={{ color: "#fff", fontWeight: "700", fontSize: 13 }}>⬇ Export</Text>
