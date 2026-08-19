@@ -53,6 +53,7 @@ export default function BankPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [transactionType, setTransactionType] = useState<'debit' | 'credit'>('debit');
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [deleteConfirmEntry, setDeleteConfirmEntry] = useState<BankEntry | null>(null);
 
   // Transfer to Cash: a single action that creates one linked entry in
   // both this ledger and Cash in Hand's, per the Bank<->Cash transfer spec.
@@ -218,19 +219,15 @@ export default function BankPage() {
 
   const handleDelete = (id: number) => {
     const entry = entries.find((e) => e.id === id);
-    Alert.alert(
-      'Delete',
-      entry?.linkedTransferId
-        ? 'This entry is one leg of a Cash in Hand transfer - deleting it will also delete the matching entry in Cash in Hand. Continue?'
-        : 'Are you sure you want to delete this entry?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => {
-          setEntries((prev) => prev.filter((e) => e.id !== id));
-          deleteBankEntry(id).catch(err => console.warn('delete error', err));
-        } }
-      ]
-    );
+    if (entry) setDeleteConfirmEntry(entry);
+  };
+
+  const confirmDelete = () => {
+    if (!deleteConfirmEntry) return;
+    const id = deleteConfirmEntry.id;
+    setEntries((prev) => prev.filter((e) => e.id !== id));
+    deleteBankEntry(id).catch(err => console.warn('delete error', err));
+    setDeleteConfirmEntry(null);
   };
 
   // Transfer to Cash: Bank is always the Debit (losing) side, Cash in Hand
@@ -644,6 +641,33 @@ export default function BankPage() {
                 disabled={transferSaving}
               >
                 <Text style={styles.saveBtnText}>{transferSaving ? 'Saving…' : 'Save Transfer'}</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Delete confirmation - a real Modal, not Alert.alert (a no-op on web) */}
+      <Modal visible={!!deleteConfirmEntry} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCard, { backgroundColor: theme.backgroundElement, paddingVertical: 24 }]}>
+            <Text style={{ color: theme.text, fontSize: 15, marginBottom: 20, textAlign: 'center' }}>
+              {deleteConfirmEntry?.linkedTransferId
+                ? 'This entry is one leg of a Cash in Hand transfer - deleting it will also delete the matching entry in Cash in Hand. Continue?'
+                : 'Are you sure you want to delete this entry?'}
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 12, justifyContent: 'center' }}>
+              <Pressable
+                style={[styles.saveBtn, { backgroundColor: theme.backgroundSelected, flex: 0, paddingHorizontal: 24 }]}
+                onPress={() => setDeleteConfirmEntry(null)}
+              >
+                <Text style={[styles.saveBtnText, { color: theme.text }]}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.saveBtn, { backgroundColor: '#ef4444', flex: 0, paddingHorizontal: 24 }]}
+                onPress={confirmDelete}
+              >
+                <Text style={styles.saveBtnText}>Delete</Text>
               </Pressable>
             </View>
           </View>

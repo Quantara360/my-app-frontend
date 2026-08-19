@@ -190,6 +190,7 @@ export default function AdminDashboard() {
   const [adminCashSuccessVisible, setAdminCashSuccessVisible] = useState(false);
   const [adminCashTransactionType, setAdminCashTransactionType] = useState<"debit" | "credit">("debit");
   const [adminCashEditingId, setAdminCashEditingId] = useState<number | null>(null);
+  const [adminCashDeleteConfirm, setAdminCashDeleteConfirm] = useState<AdminCashEntry | null>(null);
   const [adminCashForm, setAdminCashForm] = useState({
     date: "",
     chequeNo: "",
@@ -212,6 +213,7 @@ export default function AdminDashboard() {
   const [adminBankSuccessVisible, setAdminBankSuccessVisible] = useState(false);
   const [adminBankTransactionType, setAdminBankTransactionType] = useState<"debit" | "credit">("debit");
   const [adminBankEditingId, setAdminBankEditingId] = useState<number | null>(null);
+  const [adminBankDeleteConfirm, setAdminBankDeleteConfirm] = useState<AdminBankEntry | null>(null);
   const [adminBankForm, setAdminBankForm] = useState({
     date: "",
     chequeNo: "",
@@ -4684,21 +4686,15 @@ export default function AdminDashboard() {
 
     const handleDelete = (id: number) => {
       const entry = adminCashEntries.find((e) => e.id === id);
-      Alert.alert(
-        "Delete",
-        entry?.linkedTransferId
-          ? "This entry is one leg of a Bank transfer - deleting it will also delete the matching entry in Bank. Continue?"
-          : "Are you sure you want to delete this entry?",
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Delete", style: "destructive", onPress: () => {
-              setAdminCashEntries((prev2) => prev2.filter((e) => e.id !== id));
-              deleteCashInHandEntry(id).catch((err) => console.warn('[Admin] cash delete error', err));
-            }
-          }
-        ]
-      );
+      if (entry) setAdminCashDeleteConfirm(entry);
+    };
+
+    const confirmDelete = () => {
+      if (!adminCashDeleteConfirm) return;
+      const id = adminCashDeleteConfirm.id;
+      setAdminCashEntries((prev2) => prev2.filter((e) => e.id !== id));
+      deleteCashInHandEntry(id).catch((err) => console.warn('[Admin] cash delete error', err));
+      setAdminCashDeleteConfirm(null);
     };
 
     // Transfer to Bank: Cash in Hand is always the Debit (losing) side, Bank
@@ -5037,6 +5033,33 @@ export default function AdminDashboard() {
           </View>
         </Modal>
 
+        {/* Delete confirmation - a real Modal, not Alert.alert (a no-op on web) */}
+        <Modal visible={!!adminCashDeleteConfirm} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalCard, { backgroundColor: isDark ? "#1e1e1e" : "#fff", paddingVertical: 24 }]}>
+              <Text style={{ color: isDark ? "#fff" : "#111", fontSize: 15, marginBottom: 20, textAlign: "center" }}>
+                {adminCashDeleteConfirm?.linkedTransferId
+                  ? "This entry is one leg of a Bank transfer - deleting it will also delete the matching entry in Bank. Continue?"
+                  : "Are you sure you want to delete this entry?"}
+              </Text>
+              <View style={{ flexDirection: "row", gap: 12, justifyContent: "center" }}>
+                <Pressable
+                  style={[styles.addSiteButton, { backgroundColor: isDark ? "#333" : "#e5e7eb", flex: 0, paddingHorizontal: 24 }]}
+                  onPress={() => setAdminCashDeleteConfirm(null)}
+                >
+                  <Text style={[styles.addSiteButtonText, { color: isDark ? "#fff" : "#111" }]}>Cancel</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.addSiteButton, { backgroundColor: "#ef4444", flex: 0, paddingHorizontal: 24 }]}
+                  onPress={confirmDelete}
+                >
+                  <Text style={styles.addSiteButtonText}>Delete</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
         {/* Success banner */}
         {adminCashSuccessVisible && (
           <Modal visible transparent animationType="fade">
@@ -5160,21 +5183,15 @@ export default function AdminDashboard() {
 
     const handleDelete = (id: number) => {
       const entry = adminBankEntries.find((e) => e.id === id);
-      Alert.alert(
-        "Delete",
-        entry?.linkedTransferId
-          ? "This entry is one leg of a Cash in Hand transfer - deleting it will also delete the matching entry in Cash in Hand. Continue?"
-          : "Are you sure you want to delete this entry?",
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Delete", style: "destructive", onPress: () => {
-              setAdminBankEntries((prev2) => prev2.filter((e) => e.id !== id));
-              deleteBankEntry(id).catch((err) => console.warn('[Admin] bank delete error', err));
-            }
-          }
-        ]
-      );
+      if (entry) setAdminBankDeleteConfirm(entry);
+    };
+
+    const confirmDelete = () => {
+      if (!adminBankDeleteConfirm) return;
+      const id = adminBankDeleteConfirm.id;
+      setAdminBankEntries((prev2) => prev2.filter((e) => e.id !== id));
+      deleteBankEntry(id).catch((err) => console.warn('[Admin] bank delete error', err));
+      setAdminBankDeleteConfirm(null);
     };
 
     // Transfer to Cash: Bank is always the Debit (losing) side, Cash in Hand
@@ -5507,6 +5524,33 @@ export default function AdminDashboard() {
                   disabled={adminBankTransferSaving}
                 >
                   <Text style={styles.addSiteButtonText}>{adminBankTransferSaving ? "Saving…" : "Save Transfer"}</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Delete confirmation - a real Modal, not Alert.alert (a no-op on web) */}
+        <Modal visible={!!adminBankDeleteConfirm} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalCard, { backgroundColor: isDark ? "#1e1e1e" : "#fff", paddingVertical: 24 }]}>
+              <Text style={{ color: isDark ? "#fff" : "#111", fontSize: 15, marginBottom: 20, textAlign: "center" }}>
+                {adminBankDeleteConfirm?.linkedTransferId
+                  ? "This entry is one leg of a Cash in Hand transfer - deleting it will also delete the matching entry in Cash in Hand. Continue?"
+                  : "Are you sure you want to delete this entry?"}
+              </Text>
+              <View style={{ flexDirection: "row", gap: 12, justifyContent: "center" }}>
+                <Pressable
+                  style={[styles.addSiteButton, { backgroundColor: isDark ? "#333" : "#e5e7eb", flex: 0, paddingHorizontal: 24 }]}
+                  onPress={() => setAdminBankDeleteConfirm(null)}
+                >
+                  <Text style={[styles.addSiteButtonText, { color: isDark ? "#fff" : "#111" }]}>Cancel</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.addSiteButton, { backgroundColor: "#ef4444", flex: 0, paddingHorizontal: 24 }]}
+                  onPress={confirmDelete}
+                >
+                  <Text style={styles.addSiteButtonText}>Delete</Text>
                 </Pressable>
               </View>
             </View>
