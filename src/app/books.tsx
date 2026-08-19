@@ -27,7 +27,7 @@ import { useGoBack } from "@/hooks/use-go-back";
 interface Worksite { id: number; name: string; }
 interface Hospital { id: number; name: string; }
 interface SubSite { id: number; name: string; }
-interface BookImage { id: number; sub_site_id: number; book_id: number; image_path: string; created_at: string; }
+interface BookImage { id: number; sub_site_id: number; book_id: number; image_path: string; created_at: string; uploaded_by: number | null; uploaded_by_name: string | null; }
 
 const BOOK_NAMES: Record<number, string> = { 1: "Hospital Book", 2: "Attendance Book", 3: "Other Documents" };
 const BOOK_COLORS: Record<number, string> = { 1: "#4A90D9", 2: "#27AE60", 3: "#E67E22" };
@@ -355,7 +355,12 @@ export default function BooksPage() {
                     <Image source={{ uri: imageUrl(img.image_path) }} style={styles.feedImage} resizeMode="cover" />
                   </Pressable>
                   <View style={styles.feedFooter}>
-                    <Text style={[styles.feedDate, { color: theme.textSecondary }]}>{new Date(img.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.feedUploader, { color: theme.text }]}>
+                        {img.uploaded_by_name ? `👤 ${img.uploaded_by_name}` : "Unknown uploader"}
+                      </Text>
+                      <Text style={[styles.feedDate, { color: theme.textSecondary }]}>{new Date(img.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</Text>
+                    </View>
                     <Pressable style={styles.downloadBtn} onPress={() => handleDownload(img)} disabled={downloading}>
                       <Text style={styles.downloadBtnText}>⬇ Download</Text>
                     </Pressable>
@@ -446,6 +451,9 @@ export default function BooksPage() {
                     <Text style={styles.modalDownloadText}>{downloading ? "..." : "Download"}</Text>
                   </Pressable>
                 </View>
+                <Text style={styles.modalUploaderText}>
+                  {previewImage.uploaded_by_name ? `👤 Uploaded by ${previewImage.uploaded_by_name}` : "Uploaded by unknown"}
+                </Text>
                 <Text style={styles.modalDateText}>{new Date(previewImage.created_at).toLocaleString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</Text>
               </View>
             </>
@@ -490,8 +498,9 @@ const styles = StyleSheet.create({
   feedCard: { borderRadius: 16, overflow: "hidden", shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 3 },
   feedImageContainer: { width: "100%", aspectRatio: 4 / 3, backgroundColor: "#e0e0e0" },
   feedImage: { width: "100%", height: "100%" },
-  feedFooter: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 12 },
-  feedDate: { fontSize: 13, fontWeight: "500" },
+  feedFooter: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 12, gap: 8 },
+  feedUploader: { fontSize: 13, fontWeight: "700", marginBottom: 2 },
+  feedDate: { fontSize: 12, fontWeight: "500" },
   downloadBtn: { backgroundColor: "#f0f0f0", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
   downloadBtnText: { fontSize: 12, fontWeight: "600", color: "#333" },
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.92)", alignItems: "center", justifyContent: "center" },
@@ -503,5 +512,6 @@ const styles = StyleSheet.create({
   modalBookText: { color: "#fff", fontWeight: "700", fontSize: 13 },
   modalDownloadBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 16, backgroundColor: "#fff" },
   modalDownloadText: { color: "#000", fontWeight: "700", fontSize: 13 },
+  modalUploaderText: { color: "#fff", fontSize: 13, fontWeight: "600" },
   modalDateText: { color: "#ccc", fontSize: 12 },
 });
