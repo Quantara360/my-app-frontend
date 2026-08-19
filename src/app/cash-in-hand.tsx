@@ -96,7 +96,6 @@ export default function CashInHandPage() {
 
   const totalDebit = entries.reduce((s, e) => s + (e.debit ?? 0), 0);
   const totalCredit = entries.reduce((s, e) => s + (e.credit ?? 0), 0);
-  const currentBalance = totalCredit - totalDebit;
 
   /** Closing balance = balance field of the last entry in the previous calendar month */
   const computedPrevMonthBalance = (() => {
@@ -123,6 +122,12 @@ export default function CashInHandPage() {
   const prevMonthBalance = manualPrevBalanceStr !== null
     ? parseFloat(manualPrevBalanceStr)
     : computedPrevMonthBalance;
+
+  // Closing Balance = Opening Balance + Total Credit - Total Debit. This
+  // used to omit the opening balance entirely (just totalCredit -
+  // totalDebit), so the summary card didn't match the final row's Balance
+  // whenever there was a nonzero opening/previous-month balance.
+  const currentBalance = prevMonthBalance + totalCredit - totalDebit;
 
   // Calculate running balances chronologically first
   const entriesWithBalances = [...entries]
@@ -363,7 +368,7 @@ export default function CashInHandPage() {
                 <Text style={[styles.summaryLabel, { color: theme.text }]}>Total Credit balance</Text>
                 <View style={[styles.summaryPill, { backgroundColor: theme.backgroundSelected }]}>
                   <Text style={[styles.summaryValue, { color: theme.text }]}>
-                    {totalDebit.toFixed(2)}
+                    {totalCredit.toFixed(2)}
                   </Text>
                 </View>
               </View>
@@ -371,12 +376,12 @@ export default function CashInHandPage() {
                 <Text style={[styles.summaryLabel, { color: theme.text }]}>Total Debit balance</Text>
                 <View style={[styles.summaryPill, { backgroundColor: theme.backgroundSelected }]}>
                   <Text style={[styles.summaryValue, { color: theme.text }]}>
-                    {totalCredit.toFixed(2)}
+                    {totalDebit.toFixed(2)}
                   </Text>
                 </View>
               </View>
               <View style={styles.summaryRow}>
-                <Text style={[styles.summaryLabel, { color: theme.text }]}>Current Bank Balance</Text>
+                <Text style={[styles.summaryLabel, { color: theme.text }]}>Current Cash Balance</Text>
                 <View style={[styles.summaryPill, { backgroundColor: theme.backgroundSelected }]}>
                   <Text style={[styles.summaryValue, { color: theme.text }]}>
                     {currentBalance.toFixed(2)}

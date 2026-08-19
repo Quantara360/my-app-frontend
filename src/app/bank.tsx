@@ -350,7 +350,7 @@ export default function BankPage() {
                 <Text style={[styles.summaryLabel, { color: theme.text }]}>Total Debit balance</Text>
                 <View style={[styles.summaryPill, { backgroundColor: theme.backgroundSelected }]}>
                   <Text style={[styles.summaryValue, { color: theme.text }]}>
-                    {totalCredit.toFixed(2)}
+                    {totalDebit.toFixed(2)}
                   </Text>
                 </View>
               </View>
@@ -358,7 +358,7 @@ export default function BankPage() {
                 <Text style={[styles.summaryLabel, { color: theme.text }]}>Total Credit balance</Text>
                 <View style={[styles.summaryPill, { backgroundColor: theme.backgroundSelected }]}>
                   <Text style={[styles.summaryValue, { color: theme.text }]}>
-                    {totalDebit.toFixed(2)}
+                    {totalCredit.toFixed(2)}
                   </Text>
                 </View>
               </View>
