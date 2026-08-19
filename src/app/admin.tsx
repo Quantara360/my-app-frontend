@@ -19,7 +19,7 @@ import * as ApprovalsService from "@/services/adminApprovalsService";
 import * as PersonalAssetsService from "@/services/adminPersonalAssetsService";
 import * as PersonalDocumentsService from "@/services/adminPersonalDocumentsService";
 import * as AttendancesService from "@/services/adminAttendancesService";
-import { getCashInHandEntries, createCashInHandEntry, getBankEntries, createBankEntry } from "@/services/accountsService";
+import { getCashInHandEntries, createCashInHandEntry, updateCashInHandEntry, deleteCashInHandEntry, getBankEntries, createBankEntry, updateBankEntry, deleteBankEntry, createAccountTransfer } from "@/services/accountsService";
 import { exportLedgerToExcel } from "@/utils/exportLedger";
 import { useAuth } from "@/contexts/AuthContext";
 import { API_BASE_URL, getAuthHeaders } from "@/services/authService";
@@ -172,6 +172,8 @@ export default function AdminDashboard() {
     debit: number | null;
     credit: number | null;
     balance: number;
+    /** Set on both legs of a Bank<->Cash transfer, shared between them - null for a normal entry. */
+    linkedTransferId: string | null;
   };
   type AdminBankEntry = AdminCashEntry;
 
@@ -187,12 +189,20 @@ export default function AdminDashboard() {
   const [adminCashAddModalOpen, setAdminCashAddModalOpen] = useState(false);
   const [adminCashSuccessVisible, setAdminCashSuccessVisible] = useState(false);
   const [adminCashTransactionType, setAdminCashTransactionType] = useState<"debit" | "credit">("debit");
+  const [adminCashEditingId, setAdminCashEditingId] = useState<number | null>(null);
   const [adminCashForm, setAdminCashForm] = useState({
     date: "",
     chequeNo: "",
     description: "",
     amount: "",
     prevBalance: "0.00",
+  });
+  const [adminCashTransferModalOpen, setAdminCashTransferModalOpen] = useState(false);
+  const [adminCashTransferSaving, setAdminCashTransferSaving] = useState(false);
+  const [adminCashTransferForm, setAdminCashTransferForm] = useState({
+    date: "",
+    chequeNo: "",
+    amount: "",
   });
 
   const [adminBankEntries, setAdminBankEntries] = useState<AdminBankEntry[]>([]);
@@ -201,12 +211,20 @@ export default function AdminDashboard() {
   const [adminBankAddModalOpen, setAdminBankAddModalOpen] = useState(false);
   const [adminBankSuccessVisible, setAdminBankSuccessVisible] = useState(false);
   const [adminBankTransactionType, setAdminBankTransactionType] = useState<"debit" | "credit">("debit");
+  const [adminBankEditingId, setAdminBankEditingId] = useState<number | null>(null);
   const [adminBankForm, setAdminBankForm] = useState({
     date: "",
     chequeNo: "",
     description: "",
     amount: "",
     prevBalance: "0.00",
+  });
+  const [adminBankTransferModalOpen, setAdminBankTransferModalOpen] = useState(false);
+  const [adminBankTransferSaving, setAdminBankTransferSaving] = useState(false);
+  const [adminBankTransferForm, setAdminBankTransferForm] = useState({
+    date: "",
+    chequeNo: "",
+    amount: "",
   });
   // ──────────────────────────────────────────────────────────────────────────
 
@@ -1217,6 +1235,7 @@ export default function AdminDashboard() {
           debit: r.debit,
           credit: r.credit,
           balance: r.balance,
+          linkedTransferId: r.linked_transfer_id ?? null,
         }))
       );
     } catch (err) {
@@ -1233,6 +1252,7 @@ export default function AdminDashboard() {
           debit: r.debit,
           credit: r.credit,
           balance: r.balance,
+          linkedTransferId: r.linked_transfer_id ?? null,
         }))
       );
     } catch (err) {
@@ -4606,32 +4626,124 @@ export default function AdminDashboard() {
       const credit = adminCashTransactionType === "credit" && adminCashForm.amount ? parseFloat(adminCashForm.amount) : null;
       const prev = parseFloat(adminCashForm.prevBalance || "0");
       const newBalance = prev + (credit ?? 0) - (debit ?? 0);
-      const entry: AdminCashEntry = {
-        id: Date.now(),
-        date: adminCashForm.date,
-        chequeNo: adminCashForm.chequeNo,
-        description: adminCashForm.description,
-        debit,
-        credit,
-        balance: newBalance,
-      };
-      setAdminCashEntries((prev2) => [...prev2, entry]);
-      // Persist to backend (fire-and-forget)
-      createCashInHandEntry({
-        date: entry.date,
-        cheque_no: entry.chequeNo || null,
-        description: entry.description || null,
-        debit: entry.debit,
-        credit: entry.credit,
-        balance: entry.balance,
-      }).catch((err) => console.warn('[Admin] cash save error', err));
+
+      if (adminCashEditingId) {
+        setAdminCashEntries((prev2) => prev2.map((e) => e.id === adminCashEditingId
+          ? { ...e, date: adminCashForm.date, chequeNo: adminCashForm.chequeNo, description: adminCashForm.description, debit, credit, balance: newBalance }
+          : e));
+        updateCashInHandEntry(adminCashEditingId, {
+          date: adminCashForm.date,
+          cheque_no: adminCashForm.chequeNo || null,
+          description: adminCashForm.description || null,
+          debit,
+          credit,
+          balance: newBalance,
+        }).catch((err) => console.warn('[Admin] cash update error', err));
+      } else {
+        const entry: AdminCashEntry = {
+          id: Date.now(),
+          date: adminCashForm.date,
+          chequeNo: adminCashForm.chequeNo,
+          description: adminCashForm.description,
+          debit,
+          credit,
+          balance: newBalance,
+          linkedTransferId: null,
+        };
+        setAdminCashEntries((prev2) => [...prev2, entry]);
+        // Persist to backend (fire-and-forget)
+        createCashInHandEntry({
+          date: entry.date,
+          cheque_no: entry.chequeNo || null,
+          description: entry.description || null,
+          debit: entry.debit,
+          credit: entry.credit,
+          balance: entry.balance,
+        }).catch((err) => console.warn('[Admin] cash save error', err));
+      }
+
       setAdminCashForm({ date: getAdminSriLankaDate(), chequeNo: "", description: "", amount: "", prevBalance: "0.00" });
       setAdminCashTransactionType("debit");
+      setAdminCashEditingId(null);
       setAdminCashAddModalOpen(false);
       setAdminCashSuccessVisible(true);
     };
 
-    const columns = ["Date", "Cheque No", "Description", "Debit", "Credit", "Balance"];
+    const handleEdit = (entry: AdminCashEntry) => {
+      setAdminCashEditingId(entry.id);
+      setAdminCashForm({
+        date: entry.date,
+        chequeNo: entry.chequeNo || "",
+        description: entry.description || "",
+        amount: (entry.debit || entry.credit || "").toString(),
+        prevBalance: adminCashPrevMonthBalance.toFixed(2),
+      });
+      setAdminCashTransactionType(entry.debit != null ? "debit" : "credit");
+      setAdminCashAddModalOpen(true);
+    };
+
+    const handleDelete = (id: number) => {
+      const entry = adminCashEntries.find((e) => e.id === id);
+      Alert.alert(
+        "Delete",
+        entry?.linkedTransferId
+          ? "This entry is one leg of a Bank transfer - deleting it will also delete the matching entry in Bank. Continue?"
+          : "Are you sure you want to delete this entry?",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete", style: "destructive", onPress: () => {
+              setAdminCashEntries((prev2) => prev2.filter((e) => e.id !== id));
+              deleteCashInHandEntry(id).catch((err) => console.warn('[Admin] cash delete error', err));
+            }
+          }
+        ]
+      );
+    };
+
+    // Transfer to Bank: Cash in Hand is always the Debit (losing) side, Bank
+    // is always the Credit (receiving) side - matches cash-in-hand.tsx's
+    // own Transfer to Bank button, just wired to admin's local state.
+    const handleTransfer = async () => {
+      if (!adminCashTransferForm.date) { Alert.alert("Validation", "Date is required."); return; }
+      const amount = parseFloat(adminCashTransferForm.amount);
+      if (!amount || amount <= 0) { Alert.alert("Validation", "Enter a valid amount."); return; }
+
+      setAdminCashTransferSaving(true);
+      try {
+        const result = await createAccountTransfer({
+          direction: 'cash_to_bank',
+          date: adminCashTransferForm.date,
+          cheque_no: adminCashTransferForm.chequeNo || null,
+          amount,
+          cash_description: 'Cash Deposit to Bank',
+          cash_balance: adminCashPrevMonthBalance - amount,
+          bank_description: 'Cash Deposit',
+        });
+
+        setAdminCashEntries((prev2) => [...prev2, {
+          id: result.cash.id,
+          date: result.cash.date,
+          chequeNo: result.cash.cheque_no ?? '',
+          description: result.cash.description ?? '',
+          debit: result.cash.debit,
+          credit: result.cash.credit,
+          balance: result.cash.balance,
+          linkedTransferId: result.cash.linked_transfer_id ?? null,
+        }]);
+
+        setAdminCashTransferForm({ date: getAdminSriLankaDate(), chequeNo: "", amount: "" });
+        setAdminCashTransferModalOpen(false);
+        setAdminCashSuccessVisible(true);
+      } catch (err: any) {
+        console.warn('[Admin] cash transfer error', err);
+        Alert.alert('Error', err?.message || 'Failed to record transfer.');
+      } finally {
+        setAdminCashTransferSaving(false);
+      }
+    };
+
+    const columns = ["Date", "Cheque No", "Description", "Credit", "Debit", "Balance", "Actions"];
 
     return (
       <View style={styles.personalContainer}>
@@ -4692,21 +4804,34 @@ export default function AdminDashboard() {
             {/* Add button */}
             <Pressable
               style={{ backgroundColor: "#3b82f6", paddingVertical: 9, paddingHorizontal: 16, borderRadius: 24, alignItems: "center", justifyContent: "center" }}
-              onPress={() => { setAdminCashForm((p) => ({ ...p, date: getAdminSriLankaDate() })); setAdminCashAddModalOpen(true); }}
+              onPress={() => { setAdminCashEditingId(null); setAdminCashForm({ date: getAdminSriLankaDate(), chequeNo: "", description: "", amount: "", prevBalance: adminCashPrevMonthBalance.toFixed(2) }); setAdminCashAddModalOpen(true); }}
             >
               <Text style={{ color: "#fff", fontWeight: "700", fontSize: 13 }}>＋ Add</Text>
+            </Pressable>
+
+            {/* Transfer to Bank button */}
+            <Pressable
+              style={{ backgroundColor: "#8b5cf6", paddingVertical: 9, paddingHorizontal: 16, borderRadius: 24, alignItems: "center", justifyContent: "center" }}
+              onPress={() => { setAdminCashTransferForm({ date: getAdminSriLankaDate(), chequeNo: "", amount: "" }); setAdminCashTransferModalOpen(true); }}
+            >
+              <Text style={{ color: "#fff", fontWeight: "700", fontSize: 13 }}>⇄ Transfer to Bank</Text>
             </Pressable>
           </View>
 
           {/* Table */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={{ minWidth: 540 }}>
+            <View style={{ minWidth: 620 }}>
               <View style={[styles.tableRow, styles.tableHeaderRow]}>
                 {columns.map((col) => (
                   <Text key={col} style={[styles.tableCell, styles.tableHeaderCell, { width: 90, textAlign: "center" }]}>{col}</Text>
                 ))}
               </View>
-              <ScrollView style={{ maxHeight: 280 }} showsVerticalScrollIndicator={false} nestedScrollEnabled>
+              {/* A plain View, not its own nested ScrollView - see
+                  cash-in-hand.tsx's identical fix for why a vertical
+                  scroller boxed to maxHeight and nested inside this
+                  horizontal ScrollView (itself nested inside the page's own
+                  vertical scroll) broke touch gesture routing on mobile. */}
+              <View>
                 {filtered.length === 0 ? (
                   <View style={styles.emptyRow}><Text style={styles.emptyText}>No records found</Text></View>
                 ) : (
@@ -4714,14 +4839,24 @@ export default function AdminDashboard() {
                     <View key={entry.id} style={[styles.tableRow, { backgroundColor: idx % 2 === 0 ? (isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)") : "transparent" }]}>
                       <Text style={[styles.tableCell, { width: 90, textAlign: "center" }]} numberOfLines={1}>{entry.date}</Text>
                       <Text style={[styles.tableCell, { width: 90, textAlign: "center" }]} numberOfLines={1}>{entry.chequeNo || "-"}</Text>
-                      <Text style={[styles.tableCell, { width: 90, textAlign: "center" }]} numberOfLines={1}>{entry.description || "-"}</Text>
-                      <Text style={[styles.tableCell, { width: 90, textAlign: "center" }]} numberOfLines={1}>{entry.debit != null ? entry.debit.toFixed(2) : "-"}</Text>
+                      <Text style={[styles.tableCell, { width: 90, textAlign: "center" }]} numberOfLines={1}>
+                        {entry.linkedTransferId ? "🔗 " : ""}{entry.description || "-"}
+                      </Text>
                       <Text style={[styles.tableCell, { width: 90, textAlign: "center" }]} numberOfLines={1}>{entry.credit != null ? entry.credit.toFixed(2) : "-"}</Text>
+                      <Text style={[styles.tableCell, { width: 90, textAlign: "center" }]} numberOfLines={1}>{entry.debit != null ? entry.debit.toFixed(2) : "-"}</Text>
                       <Text style={[styles.tableCell, { width: 90, textAlign: "center" }]} numberOfLines={1}>{entry.balance.toFixed(2)}</Text>
+                      <View style={[styles.tableCell, { width: 90, flexDirection: "row", justifyContent: "center", gap: 8 }]}>
+                        <Pressable onPress={() => handleEdit(entry)} style={{ padding: 4, backgroundColor: "rgba(59, 130, 246, 0.1)", borderRadius: 6 }}>
+                          <Text style={{ fontSize: 14 }}>✏️</Text>
+                        </Pressable>
+                        <Pressable onPress={() => handleDelete(entry.id)} style={{ padding: 4, backgroundColor: "rgba(239, 68, 68, 0.1)", borderRadius: 6 }}>
+                          <Text style={{ fontSize: 14 }}>🗑️</Text>
+                        </Pressable>
+                      </View>
                     </View>
                   ))
                 )}
-              </ScrollView>
+              </View>
             </View>
           </ScrollView>
 
@@ -4747,8 +4882,8 @@ export default function AdminDashboard() {
           <View style={styles.modalOverlay}>
             <View style={[styles.modalCard, { backgroundColor: isDark ? "#1e1e1e" : "#fff" }]}>
               <View style={[styles.modalHeader, { paddingTop: 26 }]}>
-                <ThemedText type="title">Add Entry</ThemedText>
-                <Pressable style={styles.modalClose} onPress={() => setAdminCashAddModalOpen(false)}>
+                <ThemedText type="title">{adminCashEditingId ? "Edit Entry" : "Add Entry"}</ThemedText>
+                <Pressable style={styles.modalClose} onPress={() => { setAdminCashEditingId(null); setAdminCashAddModalOpen(false); }}>
                   <Text style={styles.modalCloseText}>✕</Text>
                 </Pressable>
               </View>
@@ -4835,7 +4970,67 @@ export default function AdminDashboard() {
               </ScrollView>
               <View style={styles.modalFooter}>
                 <Pressable style={[styles.addSiteButton, { backgroundColor: "#3b82f6" }]} onPress={handleAdd}>
-                  <Text style={styles.addSiteButtonText}>Save Entry</Text>
+                  <Text style={styles.addSiteButtonText}>{adminCashEditingId ? "Update Entry" : "Save Entry"}</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Transfer to Bank Modal */}
+        <Modal visible={adminCashTransferModalOpen} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalCard, { backgroundColor: isDark ? "#1e1e1e" : "#fff" }]}>
+              <View style={[styles.modalHeader, { paddingTop: 26 }]}>
+                <ThemedText type="title">Transfer to Bank</ThemedText>
+                <Pressable style={styles.modalClose} onPress={() => setAdminCashTransferModalOpen(false)}>
+                  <Text style={styles.modalCloseText}>✕</Text>
+                </Pressable>
+              </View>
+              <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+                <Text style={{ color: isDark ? "#ccc" : "#666", fontSize: 13, marginBottom: 12 }}>
+                  Records cash deposited into the bank: a Debit here (Cash in Hand) and a matching
+                  Credit in Bank, linked together.
+                </Text>
+                <View style={styles.formRow}>
+                  <Text style={styles.formLabel}>Date (YYYY-MM-DD)</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor="#aaa"
+                    value={adminCashTransferForm.date}
+                    onChangeText={(v) => setAdminCashTransferForm((p) => ({ ...p, date: v }))}
+                  />
+                </View>
+                <View style={styles.formRow}>
+                  <Text style={styles.formLabel}>Cheque No / Reference (optional)</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="e.g. CHQ-001"
+                    placeholderTextColor="#aaa"
+                    value={adminCashTransferForm.chequeNo}
+                    onChangeText={(v) => setAdminCashTransferForm((p) => ({ ...p, chequeNo: v }))}
+                  />
+                </View>
+                <View style={styles.formRow}>
+                  <Text style={styles.formLabel}>Amount</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="0.00"
+                    placeholderTextColor="#aaa"
+                    keyboardType="decimal-pad"
+                    value={adminCashTransferForm.amount}
+                    onChangeText={(v) => setAdminCashTransferForm((p) => ({ ...p, amount: v }))}
+                  />
+                </View>
+              </ScrollView>
+              <View style={styles.modalFooter}>
+                <Pressable
+                  style={[styles.addSiteButton, { backgroundColor: "#8b5cf6", opacity: adminCashTransferSaving ? 0.7 : 1 }]}
+                  onPress={handleTransfer}
+                  disabled={adminCashTransferSaving}
+                >
+                  <Text style={styles.addSiteButtonText}>{adminCashTransferSaving ? "Saving…" : "Save Transfer"}</Text>
                 </Pressable>
               </View>
             </View>
@@ -4907,32 +5102,124 @@ export default function AdminDashboard() {
       const credit = adminBankTransactionType === "credit" && adminBankForm.amount ? parseFloat(adminBankForm.amount) : null;
       const prev = parseFloat(adminBankForm.prevBalance || "0");
       const newBalance = prev + (credit ?? 0) - (debit ?? 0);
-      const entry: AdminBankEntry = {
-        id: Date.now(),
-        date: adminBankForm.date,
-        chequeNo: adminBankForm.chequeNo,
-        description: adminBankForm.description,
-        debit,
-        credit,
-        balance: newBalance,
-      };
-      setAdminBankEntries((prev2) => [...prev2, entry]);
-      // Persist to backend (fire-and-forget)
-      createBankEntry({
-        date: entry.date,
-        cheque_no: entry.chequeNo || null,
-        description: entry.description || null,
-        debit: entry.debit,
-        credit: entry.credit,
-        balance: entry.balance,
-      }).catch((err) => console.warn('[Admin] bank save error', err));
+
+      if (adminBankEditingId) {
+        setAdminBankEntries((prev2) => prev2.map((e) => e.id === adminBankEditingId
+          ? { ...e, date: adminBankForm.date, chequeNo: adminBankForm.chequeNo, description: adminBankForm.description, debit, credit, balance: newBalance }
+          : e));
+        updateBankEntry(adminBankEditingId, {
+          date: adminBankForm.date,
+          cheque_no: adminBankForm.chequeNo || null,
+          description: adminBankForm.description || null,
+          debit,
+          credit,
+          balance: newBalance,
+        }).catch((err) => console.warn('[Admin] bank update error', err));
+      } else {
+        const entry: AdminBankEntry = {
+          id: Date.now(),
+          date: adminBankForm.date,
+          chequeNo: adminBankForm.chequeNo,
+          description: adminBankForm.description,
+          debit,
+          credit,
+          balance: newBalance,
+          linkedTransferId: null,
+        };
+        setAdminBankEntries((prev2) => [...prev2, entry]);
+        // Persist to backend (fire-and-forget)
+        createBankEntry({
+          date: entry.date,
+          cheque_no: entry.chequeNo || null,
+          description: entry.description || null,
+          debit: entry.debit,
+          credit: entry.credit,
+          balance: entry.balance,
+        }).catch((err) => console.warn('[Admin] bank save error', err));
+      }
+
       setAdminBankForm({ date: getAdminSriLankaDate(), chequeNo: "", description: "", amount: "", prevBalance: "0.00" });
       setAdminBankTransactionType("debit");
+      setAdminBankEditingId(null);
       setAdminBankAddModalOpen(false);
       setAdminBankSuccessVisible(true);
     };
 
-    const columns = ["Date", "Cheque No", "Description", "Debit", "Credit", "Balance"];
+    const handleEdit = (entry: AdminBankEntry) => {
+      setAdminBankEditingId(entry.id);
+      setAdminBankForm({
+        date: entry.date,
+        chequeNo: entry.chequeNo || "",
+        description: entry.description || "",
+        amount: (entry.debit || entry.credit || "").toString(),
+        prevBalance: adminBankPrevMonthBalance.toFixed(2),
+      });
+      setAdminBankTransactionType(entry.debit != null ? "debit" : "credit");
+      setAdminBankAddModalOpen(true);
+    };
+
+    const handleDelete = (id: number) => {
+      const entry = adminBankEntries.find((e) => e.id === id);
+      Alert.alert(
+        "Delete",
+        entry?.linkedTransferId
+          ? "This entry is one leg of a Cash in Hand transfer - deleting it will also delete the matching entry in Cash in Hand. Continue?"
+          : "Are you sure you want to delete this entry?",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete", style: "destructive", onPress: () => {
+              setAdminBankEntries((prev2) => prev2.filter((e) => e.id !== id));
+              deleteBankEntry(id).catch((err) => console.warn('[Admin] bank delete error', err));
+            }
+          }
+        ]
+      );
+    };
+
+    // Transfer to Cash: Bank is always the Debit (losing) side, Cash in Hand
+    // is always the Credit (receiving) side - matches bank.tsx's own
+    // Transfer to Cash button, just wired to admin's local state.
+    const handleTransfer = async () => {
+      if (!adminBankTransferForm.date) { Alert.alert("Validation", "Date is required."); return; }
+      const amount = parseFloat(adminBankTransferForm.amount);
+      if (!amount || amount <= 0) { Alert.alert("Validation", "Enter a valid amount."); return; }
+
+      setAdminBankTransferSaving(true);
+      try {
+        const result = await createAccountTransfer({
+          direction: 'bank_to_cash',
+          date: adminBankTransferForm.date,
+          cheque_no: adminBankTransferForm.chequeNo || null,
+          amount,
+          bank_description: 'Cash Withdrawal',
+          bank_balance: adminBankPrevMonthBalance - amount,
+          cash_description: 'Cash Received from Bank',
+        });
+
+        setAdminBankEntries((prev2) => [...prev2, {
+          id: result.bank.id,
+          date: result.bank.date,
+          chequeNo: result.bank.cheque_no ?? '',
+          description: result.bank.description ?? '',
+          debit: result.bank.debit,
+          credit: result.bank.credit,
+          balance: result.bank.balance,
+          linkedTransferId: result.bank.linked_transfer_id ?? null,
+        }]);
+
+        setAdminBankTransferForm({ date: getAdminSriLankaDate(), chequeNo: "", amount: "" });
+        setAdminBankTransferModalOpen(false);
+        setAdminBankSuccessVisible(true);
+      } catch (err: any) {
+        console.warn('[Admin] bank transfer error', err);
+        Alert.alert('Error', err?.message || 'Failed to record transfer.');
+      } finally {
+        setAdminBankTransferSaving(false);
+      }
+    };
+
+    const columns = ["Date", "Cheque No", "Description", "Credit", "Debit", "Balance", "Actions"];
 
     return (
       <View style={styles.personalContainer}>
@@ -4993,21 +5280,34 @@ export default function AdminDashboard() {
             {/* Add button */}
             <Pressable
               style={{ backgroundColor: "#3b82f6", paddingVertical: 9, paddingHorizontal: 16, borderRadius: 24, alignItems: "center", justifyContent: "center" }}
-              onPress={() => { setAdminBankForm((p) => ({ ...p, date: getAdminSriLankaDate() })); setAdminBankAddModalOpen(true); }}
+              onPress={() => { setAdminBankEditingId(null); setAdminBankForm({ date: getAdminSriLankaDate(), chequeNo: "", description: "", amount: "", prevBalance: adminBankPrevMonthBalance.toFixed(2) }); setAdminBankAddModalOpen(true); }}
             >
               <Text style={{ color: "#fff", fontWeight: "700", fontSize: 13 }}>＋ Add</Text>
+            </Pressable>
+
+            {/* Transfer to Cash button */}
+            <Pressable
+              style={{ backgroundColor: "#8b5cf6", paddingVertical: 9, paddingHorizontal: 16, borderRadius: 24, alignItems: "center", justifyContent: "center" }}
+              onPress={() => { setAdminBankTransferForm({ date: getAdminSriLankaDate(), chequeNo: "", amount: "" }); setAdminBankTransferModalOpen(true); }}
+            >
+              <Text style={{ color: "#fff", fontWeight: "700", fontSize: 13 }}>⇄ Transfer to Cash</Text>
             </Pressable>
           </View>
 
           {/* Table */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={{ minWidth: 540 }}>
+            <View style={{ minWidth: 620 }}>
               <View style={[styles.tableRow, styles.tableHeaderRow]}>
                 {columns.map((col) => (
                   <Text key={col} style={[styles.tableCell, styles.tableHeaderCell, { width: 90, textAlign: "center" }]}>{col}</Text>
                 ))}
               </View>
-              <ScrollView style={{ maxHeight: 280 }} showsVerticalScrollIndicator={false} nestedScrollEnabled>
+              {/* A plain View, not its own nested ScrollView - see
+                  cash-in-hand.tsx's identical fix for why a vertical
+                  scroller boxed to maxHeight and nested inside this
+                  horizontal ScrollView (itself nested inside the page's own
+                  vertical scroll) broke touch gesture routing on mobile. */}
+              <View>
                 {filtered.length === 0 ? (
                   <View style={styles.emptyRow}><Text style={styles.emptyText}>No records found</Text></View>
                 ) : (
@@ -5015,14 +5315,24 @@ export default function AdminDashboard() {
                     <View key={entry.id} style={[styles.tableRow, { backgroundColor: idx % 2 === 0 ? (isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)") : "transparent" }]}>
                       <Text style={[styles.tableCell, { width: 90, textAlign: "center" }]} numberOfLines={1}>{entry.date}</Text>
                       <Text style={[styles.tableCell, { width: 90, textAlign: "center" }]} numberOfLines={1}>{entry.chequeNo || "-"}</Text>
-                      <Text style={[styles.tableCell, { width: 90, textAlign: "center" }]} numberOfLines={1}>{entry.description || "-"}</Text>
-                      <Text style={[styles.tableCell, { width: 90, textAlign: "center" }]} numberOfLines={1}>{entry.debit != null ? entry.debit.toFixed(2) : "-"}</Text>
+                      <Text style={[styles.tableCell, { width: 90, textAlign: "center" }]} numberOfLines={1}>
+                        {entry.linkedTransferId ? "🔗 " : ""}{entry.description || "-"}
+                      </Text>
                       <Text style={[styles.tableCell, { width: 90, textAlign: "center" }]} numberOfLines={1}>{entry.credit != null ? entry.credit.toFixed(2) : "-"}</Text>
+                      <Text style={[styles.tableCell, { width: 90, textAlign: "center" }]} numberOfLines={1}>{entry.debit != null ? entry.debit.toFixed(2) : "-"}</Text>
                       <Text style={[styles.tableCell, { width: 90, textAlign: "center" }]} numberOfLines={1}>{entry.balance.toFixed(2)}</Text>
+                      <View style={[styles.tableCell, { width: 90, flexDirection: "row", justifyContent: "center", gap: 8 }]}>
+                        <Pressable onPress={() => handleEdit(entry)} style={{ padding: 4, backgroundColor: "rgba(59, 130, 246, 0.1)", borderRadius: 6 }}>
+                          <Text style={{ fontSize: 14 }}>✏️</Text>
+                        </Pressable>
+                        <Pressable onPress={() => handleDelete(entry.id)} style={{ padding: 4, backgroundColor: "rgba(239, 68, 68, 0.1)", borderRadius: 6 }}>
+                          <Text style={{ fontSize: 14 }}>🗑️</Text>
+                        </Pressable>
+                      </View>
                     </View>
                   ))
                 )}
-              </ScrollView>
+              </View>
             </View>
           </ScrollView>
 
@@ -5048,8 +5358,8 @@ export default function AdminDashboard() {
           <View style={styles.modalOverlay}>
             <View style={[styles.modalCard, { backgroundColor: isDark ? "#1e1e1e" : "#fff" }]}>
               <View style={[styles.modalHeader, { paddingTop: 26 }]}>
-                <ThemedText type="title">Add Entry</ThemedText>
-                <Pressable style={styles.modalClose} onPress={() => setAdminBankAddModalOpen(false)}>
+                <ThemedText type="title">{adminBankEditingId ? "Edit Entry" : "Add Entry"}</ThemedText>
+                <Pressable style={styles.modalClose} onPress={() => { setAdminBankEditingId(null); setAdminBankAddModalOpen(false); }}>
                   <Text style={styles.modalCloseText}>✕</Text>
                 </Pressable>
               </View>
@@ -5136,7 +5446,67 @@ export default function AdminDashboard() {
               </ScrollView>
               <View style={styles.modalFooter}>
                 <Pressable style={[styles.addSiteButton, { backgroundColor: "#3b82f6" }]} onPress={handleAdd}>
-                  <Text style={styles.addSiteButtonText}>Save Entry</Text>
+                  <Text style={styles.addSiteButtonText}>{adminBankEditingId ? "Update Entry" : "Save Entry"}</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Transfer to Cash Modal */}
+        <Modal visible={adminBankTransferModalOpen} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalCard, { backgroundColor: isDark ? "#1e1e1e" : "#fff" }]}>
+              <View style={[styles.modalHeader, { paddingTop: 26 }]}>
+                <ThemedText type="title">Transfer to Cash</ThemedText>
+                <Pressable style={styles.modalClose} onPress={() => setAdminBankTransferModalOpen(false)}>
+                  <Text style={styles.modalCloseText}>✕</Text>
+                </Pressable>
+              </View>
+              <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+                <Text style={{ color: isDark ? "#ccc" : "#666", fontSize: 13, marginBottom: 12 }}>
+                  Records cash withdrawn from the bank: a Debit here (Bank) and a matching Credit
+                  in Cash in Hand, linked together.
+                </Text>
+                <View style={styles.formRow}>
+                  <Text style={styles.formLabel}>Date (YYYY-MM-DD)</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor="#aaa"
+                    value={adminBankTransferForm.date}
+                    onChangeText={(v) => setAdminBankTransferForm((p) => ({ ...p, date: v }))}
+                  />
+                </View>
+                <View style={styles.formRow}>
+                  <Text style={styles.formLabel}>Cheque No / Reference (optional)</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="e.g. CHQ-001"
+                    placeholderTextColor="#aaa"
+                    value={adminBankTransferForm.chequeNo}
+                    onChangeText={(v) => setAdminBankTransferForm((p) => ({ ...p, chequeNo: v }))}
+                  />
+                </View>
+                <View style={styles.formRow}>
+                  <Text style={styles.formLabel}>Amount</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="0.00"
+                    placeholderTextColor="#aaa"
+                    keyboardType="decimal-pad"
+                    value={adminBankTransferForm.amount}
+                    onChangeText={(v) => setAdminBankTransferForm((p) => ({ ...p, amount: v }))}
+                  />
+                </View>
+              </ScrollView>
+              <View style={styles.modalFooter}>
+                <Pressable
+                  style={[styles.addSiteButton, { backgroundColor: "#8b5cf6", opacity: adminBankTransferSaving ? 0.7 : 1 }]}
+                  onPress={handleTransfer}
+                  disabled={adminBankTransferSaving}
+                >
+                  <Text style={styles.addSiteButtonText}>{adminBankTransferSaving ? "Saving…" : "Save Transfer"}</Text>
                 </Pressable>
               </View>
             </View>
