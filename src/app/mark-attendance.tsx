@@ -175,9 +175,9 @@ export default function MarkAttendance() {
                 Early Out
               </ThemedText>
             )}
-            {useAlt && (
+            {canToggle && (
               <ThemedText type="subtitle" style={{ color: "#888", marginBottom: 10, textAlign: "center", fontWeight: "bold" }}>
-                {effectiveShift === "Morning" ? "Day Shift" : "Night Shift"} - Out
+                {effectiveShift === "Morning" ? "Day Shift" : "Night Shift"} - {effectiveState === "IN" ? "In" : "Out"}
               </ThemedText>
             )}
             <ThemedText type="subtitle" style={[styles.cardTitle, { backgroundColor: theme.background }]}>
