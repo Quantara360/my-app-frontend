@@ -120,8 +120,12 @@ export default function AddImageCapture() {
   const loadImages = async () => {
     if (!worksiteId || !token) return;
     try {
+      // mine=1 — this "Preview" grid (and the 10-image cap it's checked
+      // against in onCapture) is per supervisor: each supervisor should
+      // only see and manage their own captures here, not every supervisor's
+      // photos for this book/site. Office staff see everyone's via books.tsx.
       const response = await fetch(
-        `${API_BASE_URL}/sub-site-images?${isWorksite ? 'worksite_id' : 'sub_site_id'}=${worksiteId}${!isWorksite && parentWorksiteId ? `&worksite_id=${parentWorksiteId}` : ''}&book_id=${book}`,
+        `${API_BASE_URL}/sub-site-images?${isWorksite ? 'worksite_id' : 'sub_site_id'}=${worksiteId}${!isWorksite && parentWorksiteId ? `&worksite_id=${parentWorksiteId}` : ''}&book_id=${book}&mine=1`,
         {
           headers: {
             Accept: "application/json",

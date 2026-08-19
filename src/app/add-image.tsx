@@ -42,10 +42,12 @@ export default function AddImagePage() {
     const loadImages = async () => {
       if (!worksiteId || !token) return;
       try {
+        // mine=1 — this card thumbnail shows "my last capture" for this
+        // book, scoped to the current supervisor only (see add-image-capture.tsx).
         const scopeParam = isWorksite
           ? `worksite_id=${worksiteId}`
           : `sub_site_id=${worksiteId}${parentWorksiteId ? `&worksite_id=${parentWorksiteId}` : ''}`;
-        const response = await fetch(`${API_BASE_URL}/sub-site-images?${scopeParam}`, {
+        const response = await fetch(`${API_BASE_URL}/sub-site-images?${scopeParam}&mine=1`, {
           headers: {
             Accept: "application/json",
             Authorization: `Bearer ${token}`,
