@@ -15,17 +15,7 @@ export type LedgerEntry = {
 export async function exportLedgerToExcel(
   filename: string,
   entries: LedgerEntry[],
-  openingBalance: number,
-  // Bank still computes New Balance = Previous + Credit - Debit, the
-  // opposite of standard accounting for a cash/asset account (where Debit
-  // increases the balance) - so its stored debit/credit fields are
-  // effectively swapped relative to the real-world terms, and this export
-  // has always corrected that by swapping the column labels back. Cash in
-  // Hand's own formula was changed to New Balance = Previous + Debit -
-  // Credit (see cash-in-hand.tsx), which already matches standard
-  // accounting directly - swapping its labels here would now un-fix it.
-  // Defaults to true so Bank's existing call site needs no change.
-  swapDebitCreditLabels: boolean = true
+  openingBalance: number
 ) {
   // Loaded lazily - xlsx is a large library and every other screen was
   // paying its bundle-eval cost at startup for a feature only this export
@@ -69,22 +59,19 @@ export async function exportLedgerToExcel(
   let finalBalance = openingBalance;
 
   entries.forEach((entry) => {
-    // See swapDebitCreditLabels comment above the function signature.
-    const debitCol = swapDebitCreditLabels ? (entry.credit || 0) : (entry.debit || 0);
-    const creditCol = swapDebitCreditLabels ? (entry.debit || 0) : (entry.credit || 0);
-    totalDebit += debitCol;
-    totalCredit += creditCol;
+    // entry.credit in DB corresponds to the user's "Debit" concept
+    // entry.debit in DB corresponds to the user's "Credit" concept
+    totalDebit += entry.credit || 0;
+    totalCredit += entry.debit || 0;
     const currentBalance = entry.runningBalance !== undefined ? entry.runningBalance : entry.balance;
     finalBalance = currentBalance;
 
-    const debitVal = swapDebitCreditLabels ? entry.credit : entry.debit;
-    const creditVal = swapDebitCreditLabels ? entry.debit : entry.credit;
     data.push([
       entry.date || '',
       entry.chequeNo || '',
       entry.description || '',
-      debitVal !== null && debitVal !== undefined ? debitVal : '',
-      creditVal !== null && creditVal !== undefined ? creditVal : '',
+      entry.credit !== null && entry.credit !== undefined ? entry.credit : '',
+      entry.debit !== null && entry.debit !== undefined ? entry.debit : '',
       currentBalance
     ]);
   });

@@ -4564,8 +4564,29 @@ export default function AdminDashboard() {
   const renderAdminCashInHandView = () => {
     const totalDebit = adminCashEntries.reduce((s, e) => s + (e.debit ?? 0), 0);
     const totalCredit = adminCashEntries.reduce((s, e) => s + (e.credit ?? 0), 0);
-    // Cash in Hand: New Balance = Previous Balance + Debit - Credit
-    const currentBalance = totalDebit - totalCredit;
+
+    // Closing balance = balance field of the last entry in the previous
+    // calendar month (same lookup the export button used to duplicate
+    // inline - hoisted here so it's shared with the summary below too).
+    const adminCashPrevMonthBalance = (() => {
+      const now = new Date();
+      const offset = 330;
+      const local = new Date(now.getTime() + offset * 60 * 1000);
+      const year = local.getUTCFullYear();
+      const month = local.getUTCMonth();
+      const prevMonthStart = new Date(Date.UTC(month === 0 ? year - 1 : year, month === 0 ? 11 : month - 1, 1));
+      const prevMonthEnd = new Date(Date.UTC(year, month, 1));
+      const prevMonthEntries = adminCashEntries
+        .filter((e) => {
+          const d = new Date(e.date);
+          return d >= prevMonthStart && d < prevMonthEnd;
+        })
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      return prevMonthEntries.length > 0 ? prevMonthEntries[prevMonthEntries.length - 1].balance : 0;
+    })();
+
+    // Closing Balance = Opening Balance + Total Credit - Total Debit
+    const currentBalance = adminCashPrevMonthBalance + totalCredit - totalDebit;
 
     const filtered = adminCashEntries
       .filter(
@@ -4584,8 +4605,7 @@ export default function AdminDashboard() {
       const debit = adminCashTransactionType === "debit" && adminCashForm.amount ? parseFloat(adminCashForm.amount) : null;
       const credit = adminCashTransactionType === "credit" && adminCashForm.amount ? parseFloat(adminCashForm.amount) : null;
       const prev = parseFloat(adminCashForm.prevBalance || "0");
-      // Cash in Hand: New Balance = Previous Balance + Debit - Credit
-      const newBalance = prev + (debit ?? 0) - (credit ?? 0);
+      const newBalance = prev + (credit ?? 0) - (debit ?? 0);
       const entry: AdminCashEntry = {
         id: Date.now(),
         date: adminCashForm.date,
@@ -4664,23 +4684,7 @@ export default function AdminDashboard() {
             {/* Export button */}
             <Pressable
               style={{ backgroundColor: "#22c55e", paddingVertical: 9, paddingHorizontal: 16, borderRadius: 24, alignItems: "center", justifyContent: "center" }}
-              onPress={() => {
-                const now = new Date();
-                const offset = 330;
-                const local = new Date(now.getTime() + offset * 60 * 1000);
-                const year = local.getUTCFullYear();
-                const month = local.getUTCMonth();
-                const prevMonthStart = new Date(Date.UTC(month === 0 ? year - 1 : year, month === 0 ? 11 : month - 1, 1));
-                const prevMonthEnd = new Date(Date.UTC(year, month, 1));
-                const prevMonthEntries = adminCashEntries
-                  .filter((e) => {
-                    const d = new Date(e.date);
-                    return d >= prevMonthStart && d < prevMonthEnd;
-                  })
-                  .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-                const prevBalance = prevMonthEntries.length > 0 ? prevMonthEntries[prevMonthEntries.length - 1].balance : 0;
-                exportLedgerToExcel('Admin_Cash_In_Hand', filtered, prevBalance, false);
-              }}
+              onPress={() => exportLedgerToExcel('Admin_Cash_In_Hand', filtered, adminCashPrevMonthBalance)}
             >
               <Text style={{ color: "#fff", fontWeight: "700", fontSize: 13 }}>⬇ Export</Text>
             </Pressable>
@@ -4861,7 +4865,29 @@ export default function AdminDashboard() {
   const renderAdminBankView = () => {
     const totalDebit = adminBankEntries.reduce((s, e) => s + (e.debit ?? 0), 0);
     const totalCredit = adminBankEntries.reduce((s, e) => s + (e.credit ?? 0), 0);
-    const currentBalance = totalCredit - totalDebit;
+
+    // Closing balance = balance field of the last entry in the previous
+    // calendar month (same lookup the export button used to duplicate
+    // inline - hoisted here so it's shared with the summary below too).
+    const adminBankPrevMonthBalance = (() => {
+      const now = new Date();
+      const offset = 330;
+      const local = new Date(now.getTime() + offset * 60 * 1000);
+      const year = local.getUTCFullYear();
+      const month = local.getUTCMonth();
+      const prevMonthStart = new Date(Date.UTC(month === 0 ? year - 1 : year, month === 0 ? 11 : month - 1, 1));
+      const prevMonthEnd = new Date(Date.UTC(year, month, 1));
+      const prevMonthEntries = adminBankEntries
+        .filter((e) => {
+          const d = new Date(e.date);
+          return d >= prevMonthStart && d < prevMonthEnd;
+        })
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      return prevMonthEntries.length > 0 ? prevMonthEntries[prevMonthEntries.length - 1].balance : 0;
+    })();
+
+    // Closing Balance = Opening Balance + Total Credit - Total Debit
+    const currentBalance = adminBankPrevMonthBalance + totalCredit - totalDebit;
 
     const filtered = adminBankEntries
       .filter(
@@ -4959,23 +4985,7 @@ export default function AdminDashboard() {
             {/* Export button */}
             <Pressable
               style={{ backgroundColor: "#22c55e", paddingVertical: 9, paddingHorizontal: 16, borderRadius: 24, alignItems: "center", justifyContent: "center" }}
-              onPress={() => {
-                const now = new Date();
-                const offset = 330;
-                const local = new Date(now.getTime() + offset * 60 * 1000);
-                const year = local.getUTCFullYear();
-                const month = local.getUTCMonth();
-                const prevMonthStart = new Date(Date.UTC(month === 0 ? year - 1 : year, month === 0 ? 11 : month - 1, 1));
-                const prevMonthEnd = new Date(Date.UTC(year, month, 1));
-                const prevMonthEntries = adminBankEntries
-                  .filter((e) => {
-                    const d = new Date(e.date);
-                    return d >= prevMonthStart && d < prevMonthEnd;
-                  })
-                  .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-                const prevBalance = prevMonthEntries.length > 0 ? prevMonthEntries[prevMonthEntries.length - 1].balance : 0;
-                exportLedgerToExcel('Admin_Bank', filtered, prevBalance);
-              }}
+              onPress={() => exportLedgerToExcel('Admin_Bank', filtered, adminBankPrevMonthBalance)}
             >
               <Text style={{ color: "#fff", fontWeight: "700", fontSize: 13 }}>⬇ Export</Text>
             </Pressable>
