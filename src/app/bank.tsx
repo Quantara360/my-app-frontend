@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { BackgroundPattern } from '@/components/BackgroundPattern';
+import { ConfirmModal } from '@/components/confirm-modal';
 import { SuccessModal } from '@/components/success-modal';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -648,31 +649,17 @@ export default function BankPage() {
       </Modal>
 
       {/* Delete confirmation - a real Modal, not Alert.alert (a no-op on web) */}
-      <Modal visible={!!deleteConfirmEntry} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalCard, { backgroundColor: theme.backgroundElement, paddingVertical: 24 }]}>
-            <Text style={{ color: theme.text, fontSize: 15, marginBottom: 20, textAlign: 'center' }}>
-              {deleteConfirmEntry?.linkedTransferId
-                ? 'This entry is one leg of a Cash in Hand transfer - deleting it will also delete the matching entry in Cash in Hand. Continue?'
-                : 'Are you sure you want to delete this entry?'}
-            </Text>
-            <View style={{ flexDirection: 'row', gap: 12, justifyContent: 'center' }}>
-              <Pressable
-                style={[styles.saveBtn, { backgroundColor: theme.backgroundSelected, flex: 0, paddingHorizontal: 24 }]}
-                onPress={() => setDeleteConfirmEntry(null)}
-              >
-                <Text style={[styles.saveBtnText, { color: theme.text }]}>Cancel</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.saveBtn, { backgroundColor: '#ef4444', flex: 0, paddingHorizontal: 24 }]}
-                onPress={confirmDelete}
-              >
-                <Text style={styles.saveBtnText}>Delete</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      <ConfirmModal
+        visible={!!deleteConfirmEntry}
+        title="Delete Entry?"
+        message={
+          deleteConfirmEntry?.linkedTransferId
+            ? 'This entry is one leg of a Cash in Hand transfer - deleting it will also delete the matching entry in Cash in Hand. Continue?'
+            : 'Are you sure you want to delete this entry? This cannot be undone.'
+        }
+        onCancel={() => setDeleteConfirmEntry(null)}
+        onConfirm={confirmDelete}
+      />
 
       {/* Success confirmation popup */}
       <SuccessModal

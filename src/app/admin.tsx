@@ -2,6 +2,7 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { SafeView } from "@/components/safe-view";
 import { BackgroundPattern } from "@/components/BackgroundPattern";
+import { ConfirmModal } from "@/components/confirm-modal";
 import { SelectInput } from "@/components/ui/select-input";
 import { DateInput } from "@/components/ui/date-input";
 import { BottomTabInset, Spacing, rf, MaxContentWidth } from "@/constants/theme";
@@ -5034,31 +5035,17 @@ export default function AdminDashboard() {
         </Modal>
 
         {/* Delete confirmation - a real Modal, not Alert.alert (a no-op on web) */}
-        <Modal visible={!!adminCashDeleteConfirm} transparent animationType="fade">
-          <View style={styles.modalOverlay}>
-            <View style={[styles.modalCard, { backgroundColor: isDark ? "#1e1e1e" : "#fff", paddingVertical: 24 }]}>
-              <Text style={{ color: isDark ? "#fff" : "#111", fontSize: 15, marginBottom: 20, textAlign: "center" }}>
-                {adminCashDeleteConfirm?.linkedTransferId
-                  ? "This entry is one leg of a Bank transfer - deleting it will also delete the matching entry in Bank. Continue?"
-                  : "Are you sure you want to delete this entry?"}
-              </Text>
-              <View style={{ flexDirection: "row", gap: 12, justifyContent: "center" }}>
-                <Pressable
-                  style={[styles.addSiteButton, { backgroundColor: isDark ? "#333" : "#e5e7eb", flex: 0, paddingHorizontal: 24 }]}
-                  onPress={() => setAdminCashDeleteConfirm(null)}
-                >
-                  <Text style={[styles.addSiteButtonText, { color: isDark ? "#fff" : "#111" }]}>Cancel</Text>
-                </Pressable>
-                <Pressable
-                  style={[styles.addSiteButton, { backgroundColor: "#ef4444", flex: 0, paddingHorizontal: 24 }]}
-                  onPress={confirmDelete}
-                >
-                  <Text style={styles.addSiteButtonText}>Delete</Text>
-                </Pressable>
-              </View>
-            </View>
-          </View>
-        </Modal>
+        <ConfirmModal
+          visible={!!adminCashDeleteConfirm}
+          title="Delete Entry?"
+          message={
+            adminCashDeleteConfirm?.linkedTransferId
+              ? "This entry is one leg of a Bank transfer - deleting it will also delete the matching entry in Bank. Continue?"
+              : "Are you sure you want to delete this entry? This cannot be undone."
+          }
+          onCancel={() => setAdminCashDeleteConfirm(null)}
+          onConfirm={confirmDelete}
+        />
 
         {/* Success banner */}
         {adminCashSuccessVisible && (
@@ -5531,31 +5518,17 @@ export default function AdminDashboard() {
         </Modal>
 
         {/* Delete confirmation - a real Modal, not Alert.alert (a no-op on web) */}
-        <Modal visible={!!adminBankDeleteConfirm} transparent animationType="fade">
-          <View style={styles.modalOverlay}>
-            <View style={[styles.modalCard, { backgroundColor: isDark ? "#1e1e1e" : "#fff", paddingVertical: 24 }]}>
-              <Text style={{ color: isDark ? "#fff" : "#111", fontSize: 15, marginBottom: 20, textAlign: "center" }}>
-                {adminBankDeleteConfirm?.linkedTransferId
-                  ? "This entry is one leg of a Cash in Hand transfer - deleting it will also delete the matching entry in Cash in Hand. Continue?"
-                  : "Are you sure you want to delete this entry?"}
-              </Text>
-              <View style={{ flexDirection: "row", gap: 12, justifyContent: "center" }}>
-                <Pressable
-                  style={[styles.addSiteButton, { backgroundColor: isDark ? "#333" : "#e5e7eb", flex: 0, paddingHorizontal: 24 }]}
-                  onPress={() => setAdminBankDeleteConfirm(null)}
-                >
-                  <Text style={[styles.addSiteButtonText, { color: isDark ? "#fff" : "#111" }]}>Cancel</Text>
-                </Pressable>
-                <Pressable
-                  style={[styles.addSiteButton, { backgroundColor: "#ef4444", flex: 0, paddingHorizontal: 24 }]}
-                  onPress={confirmDelete}
-                >
-                  <Text style={styles.addSiteButtonText}>Delete</Text>
-                </Pressable>
-              </View>
-            </View>
-          </View>
-        </Modal>
+        <ConfirmModal
+          visible={!!adminBankDeleteConfirm}
+          title="Delete Entry?"
+          message={
+            adminBankDeleteConfirm?.linkedTransferId
+              ? "This entry is one leg of a Cash in Hand transfer - deleting it will also delete the matching entry in Cash in Hand. Continue?"
+              : "Are you sure you want to delete this entry? This cannot be undone."
+          }
+          onCancel={() => setAdminBankDeleteConfirm(null)}
+          onConfirm={confirmDelete}
+        />
 
         {/* Success banner */}
         {adminBankSuccessVisible && (
