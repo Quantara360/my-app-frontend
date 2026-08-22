@@ -4425,9 +4425,11 @@ export default function AdminDashboard() {
     );
 
     const summarize = (h: any, prefix: "day" | "night") => {
+      // Hospital has no cast on these TIME columns (see the model), so the
+      // general /hospitals list returns raw "HH:MM:SS" - trim to "HH:MM".
       const start = h[`${prefix}_shift_start`];
       const end = h[`${prefix}_shift_end`];
-      if (start && end) return `${start} - ${end}`;
+      if (start && end) return `${String(start).slice(0, 5)} - ${String(end).slice(0, 5)}`;
       return "Default";
     };
 
