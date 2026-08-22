@@ -6952,9 +6952,21 @@ const createStyles = (isDark: boolean) =>
     // still flex to fill remaining space (flex:1, still with a minWidth
     // floor); everything else now has a real fixed width so it lines up
     // in a straight column regardless of what's in the row next to it.
+    //
+    // flexShrink:0 here, NOT flex:0 - `flex:0` is CSS shorthand for
+    // flex-grow:0 flex-shrink:1 flex-basis:0%, and a non-auto flex-basis
+    // overrides `width` entirely for sizing. Combined with numberOfLines
+    // (which sets overflow:hidden, and overflow other than visible turns
+    // off the browser's normal "don't shrink below content size" floor),
+    // that collapsed every one of these cells down to just its padding -
+    // Site/Type/ID text was still there in the DOM, just squeezed into a
+    // ~0-content-width box, and the Actions buttons overflowed past their
+    // own collapsed container instead of sitting inside it ("off grid").
+    // Leaving flex-basis at its default (auto) lets `width` actually win.
     workerCellID: {
       width: 50,
-      flex: 0,
+      flexGrow: 0,
+      flexShrink: 0,
       paddingHorizontal: 10,
     },
     workerCellName: {
@@ -6964,17 +6976,20 @@ const createStyles = (isDark: boolean) =>
     },
     workerCellSite: {
       width: 110,
-      flex: 0,
+      flexGrow: 0,
+      flexShrink: 0,
       paddingHorizontal: 10,
     },
     workerCellType: {
       width: 120,
-      flex: 0,
+      flexGrow: 0,
+      flexShrink: 0,
       paddingHorizontal: 10,
     },
     workerCellActions: {
       width: 140,
-      flex: 0,
+      flexGrow: 0,
+      flexShrink: 0,
       paddingHorizontal: 10,
     },
     workerActionsContainer: {
@@ -6982,7 +6997,8 @@ const createStyles = (isDark: boolean) =>
       justifyContent: "center",
       alignItems: "center",
       width: 140,
-      flex: 0,
+      flexGrow: 0,
+      flexShrink: 0,
       paddingHorizontal: 10,
       gap: 8,
     },
