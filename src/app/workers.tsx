@@ -537,14 +537,20 @@ export default function WorkersPage() {
             </View>
           </View>
 
-          {/* width:'100%' on the ScrollView itself - a horizontal
-              ScrollView otherwise sizes to its own content width (the
-              table), not the space it's given, so widening the card above
-              left the table stuck at its old narrow width with a large
-              empty strip of card background next to it. Still scrolls
-              horizontally on narrow screens where the table doesn't fit. */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ width: '100%' }}>
-            <View style={{ minWidth: '100%' }}>
+          {/* A horizontal ScrollView's own content container defaults to
+              shrink-to-content (that's what lets it be wider than the
+              viewport and scroll) - so widening the card above didn't
+              widen the table with it, leaving a blank strip of card
+              background next to it. A plain wrapping View with
+              minWidth:'100%' doesn't fix it either: it's a flex item
+              *inside* that same shrink-to-content container, so the
+              percentage has nothing definite to resolve against and just
+              matches the content again. contentContainerStyle styles RN's
+              content container directly, and IT sizes against the
+              ScrollView's own (real, definite) width - so 100% here
+              actually means the full available width. Horizontal scroll
+              still kicks in on narrow screens where the table overflows. */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ width: '100%' }} contentContainerStyle={{ minWidth: '100%' }}>
               <View style={styles.tableHeader}>
             <Text style={[styles.columnHeader, { width: 60, minWidth: 60, flex: 0 }]}>ID</Text>
             <Text style={styles.columnHeader}>Name</Text>
@@ -580,7 +586,6 @@ export default function WorkersPage() {
               </View>
             ))}
           </ScrollView>
-            </View>
           </ScrollView>
         </View>
 
