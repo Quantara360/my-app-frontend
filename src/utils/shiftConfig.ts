@@ -114,3 +114,79 @@ export function deriveShiftWindow(now: Date, config: ShiftConfig): DerivedShiftW
   // including the wrap back around past midnight to dawnChangeoverStart.
   return { shift: 'Evening', state: 'OUT', isLate: false, isEarlyOut: true, canToggle: false };
 }
+
+/** Minutes since midnight (may be negative or >=1440 mid-calculation) -> "6:00AM" style clock string. */
+function fmtClock(totalMinutes: number): string {
+  const m = ((Math.round(totalMinutes) % 1440) + 1440) % 1440;
+  const h24 = Math.floor(m / 60);
+  const mm = m % 60;
+  const ampm = h24 < 12 ? 'AM' : 'PM';
+  const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+  return `${h12}:${String(mm).padStart(2, '0')}${ampm}`;
+}
+
+/** A single row's plain-English window + which shift/state tapping the toggle button in it picks. */
+export type ShiftWindowRow = { range: string; toggle: string };
+
+export type ShiftWindowSummary = {
+  shiftWindow: string;
+  shiftBegins: string;
+  onTimeIn: ShiftWindowRow;
+  lateIn: ShiftWindowRow;
+  shiftEnds: string;
+  onTimeOut: ShiftWindowRow;
+  earlyOut: ShiftWindowRow;
+};
+
+/**
+ * Same 6-window boundaries as deriveShiftWindow(), but as plain-English
+ * clock ranges for both Morning(Day) and Evening(Night) - lets an admin see
+ * exactly what a set of Start/End/Late-grace/Early-grace numbers actually
+ * mean in real clock time, instead of having to do the arithmetic in their
+ * head. "Shift begins"/"Shift ends" are the midpoint of the on-time-IN
+ * window and the last minute before on-time-OUT begins, respectively - the
+ * same descriptive anchors this shift model has always implied, not
+ * separate configurable values.
+ */
+export function computeShiftWindowSummaries(config: ShiftConfig): { day: ShiftWindowSummary; night: ShiftWindowSummary } {
+  const dayStart = timeToMinutes(config.day_shift_start);
+  const dayEnd = timeToMinutes(config.day_shift_end);
+  const dayOutStart = dayEnd - config.day_early_grace_minutes;
+  const dayMid = (dayStart + dayOutStart) / 2;
+
+  const nightStart = timeToMinutes(config.night_shift_start);
+  const nightEndRaw = timeToMinutes(config.night_shift_end);
+  const nightEnd = nightEndRaw <= nightStart ? nightEndRaw + 1440 : nightEndRaw;
+  const nightOutStart = nightEnd - config.night_early_grace_minutes;
+  const nightMid = (nightStart + nightOutStart) / 2;
+  const dawnChangeoverStart = ((nightOutStart % 1440) + 1440) % 1440;
+
+  const dayBegins = (dawnChangeoverStart + dayStart) / 2;
+  const nightBegins = (dayOutStart + nightStart) / 2;
+
+  const day: ShiftWindowSummary = {
+    shiftWindow: `${fmtClock(dayBegins)} - ${fmtClock(dayOutStart - 1)}`,
+    shiftBegins: fmtClock(dayBegins),
+    onTimeIn: { range: `${fmtClock(dawnChangeoverStart)} - ${fmtClock(dayStart - 1)}`, toggle: 'Day IN/Night OUT' },
+    lateIn: { range: `${fmtClock(dayStart)} - ${fmtClock(dayMid - 1)}`, toggle: 'Day IN' },
+    shiftEnds: fmtClock(dayOutStart - 1),
+    onTimeOut: { range: `${fmtClock(dayOutStart)} - ${fmtClock(nightStart - 1)}`, toggle: 'Night IN/Day OUT' },
+    earlyOut: { range: `${fmtClock(dayMid)} - ${fmtClock(dayOutStart - 1)}`, toggle: 'Day OUT' },
+  };
+
+  const night: ShiftWindowSummary = {
+    shiftWindow: `${fmtClock(nightBegins)} - ${fmtClock(nightOutStart - 1)}`,
+    shiftBegins: fmtClock(nightBegins),
+    // Night's on-time IN is the exact same dusk-changeover window as Day's
+    // on-time OUT (Day OUT and Night IN look identical in one photo, hence
+    // the toggle); Night's on-time OUT mirrors Day's on-time IN the same way
+    // at dawn.
+    onTimeIn: { range: `${fmtClock(dayOutStart)} - ${fmtClock(nightStart - 1)}`, toggle: 'Day IN/Night OUT' },
+    lateIn: { range: `${fmtClock(nightStart)} - ${fmtClock(nightMid - 1)}`, toggle: 'Night IN' },
+    shiftEnds: fmtClock(nightOutStart - 1),
+    onTimeOut: { range: `${fmtClock(dawnChangeoverStart)} - ${fmtClock(dayStart - 1)}`, toggle: 'Night IN/Day OUT' },
+    earlyOut: { range: `${fmtClock(nightMid)} - ${fmtClock(nightOutStart - 1)}`, toggle: 'Night OUT' },
+  };
+
+  return { day, night };
+}

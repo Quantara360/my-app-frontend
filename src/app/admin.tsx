@@ -4,7 +4,7 @@ import { SafeView } from "@/components/safe-view";
 import { BackgroundPattern } from "@/components/BackgroundPattern";
 import { ConfirmModal } from "@/components/confirm-modal";
 import { WorkerIdCardModal, IdCardWorker } from "@/components/WorkerIdCardModal";
-import { resolveShiftConfig, timeToMinutes } from "@/utils/shiftConfig";
+import { resolveShiftConfig, timeToMinutes, computeShiftWindowSummaries, DEFAULT_SHIFT_CONFIG, ShiftConfig } from "@/utils/shiftConfig";
 import { SelectInput } from "@/components/ui/select-input";
 import { DateInput } from "@/components/ui/date-input";
 import { TimeInput } from "@/components/ui/time-input";
@@ -4485,6 +4485,49 @@ export default function AdminDashboard() {
       return "Default";
     };
 
+    // Live preview of what the form's current values (falling back to this
+    // hospital's defaults for anything left blank) actually mean in plain
+    // clock time - the same numbers the backend will end up using once saved.
+    const previewConfig: ShiftConfig = {
+      day_shift_start: shiftForm.day_shift_start || String(shiftDefaults?.day_shift_start ?? DEFAULT_SHIFT_CONFIG.day_shift_start),
+      day_shift_end: shiftForm.day_shift_end || String(shiftDefaults?.day_shift_end ?? DEFAULT_SHIFT_CONFIG.day_shift_end),
+      day_late_grace_minutes: shiftForm.day_late_grace_minutes !== "" ? parseInt(shiftForm.day_late_grace_minutes, 10) : Number(shiftDefaults?.day_late_grace_minutes ?? DEFAULT_SHIFT_CONFIG.day_late_grace_minutes),
+      day_early_grace_minutes: shiftForm.day_early_grace_minutes !== "" ? parseInt(shiftForm.day_early_grace_minutes, 10) : Number(shiftDefaults?.day_early_grace_minutes ?? DEFAULT_SHIFT_CONFIG.day_early_grace_minutes),
+      night_shift_start: shiftForm.night_shift_start || String(shiftDefaults?.night_shift_start ?? DEFAULT_SHIFT_CONFIG.night_shift_start),
+      night_shift_end: shiftForm.night_shift_end || String(shiftDefaults?.night_shift_end ?? DEFAULT_SHIFT_CONFIG.night_shift_end),
+      night_late_grace_minutes: shiftForm.night_late_grace_minutes !== "" ? parseInt(shiftForm.night_late_grace_minutes, 10) : Number(shiftDefaults?.night_late_grace_minutes ?? DEFAULT_SHIFT_CONFIG.night_late_grace_minutes),
+      night_early_grace_minutes: shiftForm.night_early_grace_minutes !== "" ? parseInt(shiftForm.night_early_grace_minutes, 10) : Number(shiftDefaults?.night_early_grace_minutes ?? DEFAULT_SHIFT_CONFIG.night_early_grace_minutes),
+    };
+    const shiftWindowPreview = computeShiftWindowSummaries(previewConfig);
+
+    const renderShiftWindowTable = (title: string, s: ReturnType<typeof computeShiftWindowSummaries>["day"]) => (
+      <View style={{ marginBottom: 16 }}>
+        <ThemedText type="subtitle" style={{ fontSize: 14, marginBottom: 6 }}>{title}</ThemedText>
+        <View style={[styles.tableCard, { minWidth: undefined }]}>
+          <View style={[styles.tableRow, styles.tableHeaderRow]}>
+            <Text style={[styles.tableHeaderCell, { flex: 1.6 }]}></Text>
+            <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Time</Text>
+            <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Toggle button Action</Text>
+          </View>
+          {[
+            ["Shift window", s.shiftWindow, "-"],
+            ["Shift begins", s.shiftBegins, "-"],
+            ["On-time IN", s.onTimeIn.range, s.onTimeIn.toggle],
+            ["Late IN", s.lateIn.range, s.lateIn.toggle],
+            ["Shift ends", s.shiftEnds, "-"],
+            ["On-time OUT", s.onTimeOut.range, s.onTimeOut.toggle],
+            ["Early OUT", s.earlyOut.range, s.earlyOut.toggle],
+          ].map(([label, time, toggle], idx) => (
+            <View key={label} style={[styles.tableRow, idx !== 6 && { borderBottomWidth: 1, borderBottomColor: isDark ? "#333" : "#e5e7eb" }]}>
+              <Text style={[styles.tableCell, { flex: 1.6, fontWeight: "600" }]}>{label}</Text>
+              <Text style={[styles.tableCell, { flex: 2 }]}>{time}</Text>
+              <Text style={[styles.tableCell, { flex: 2 }]}>{toggle}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+    );
+
     return (
       <View style={styles.workersContainer}>
         <View style={styles.workersHeader}>
@@ -4675,6 +4718,16 @@ export default function AdminDashboard() {
                       />
                     </View>
                   </View>
+
+                  {/* Live preview: exactly what these numbers mean in real
+                      clock time, updating as the fields above change. */}
+                  <View style={{ height: 1, backgroundColor: isDark ? "#333" : "#e5e7eb", marginBottom: 16 }} />
+                  <ThemedText type="subtitle" style={{ fontSize: 15, marginBottom: 4 }}>What this means</ThemedText>
+                  <Text style={{ fontSize: 12, color: isDark ? "#aaa" : "#666", marginBottom: 12 }}>
+                    Live preview based on the values above (or their defaults, for anything left blank).
+                  </Text>
+                  {renderShiftWindowTable("Morning (Day)", shiftWindowPreview.day)}
+                  {renderShiftWindowTable("Evening (Night)", shiftWindowPreview.night)}
                 </ScrollView>
               )}
 
