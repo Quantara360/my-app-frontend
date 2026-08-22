@@ -4652,16 +4652,19 @@ export default function AdminDashboard() {
                       <Text style={{ fontSize: 12, color: "#6a5acd", fontWeight: "600" }}>Reset to Default</Text>
                     </Pressable>
                   </View>
-                  <View style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}>
+                  <View style={{ flexDirection: "row", gap: 12, marginBottom: 4 }}>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.formLabel}>Start (default {formatClock12h(String(shiftDefaults?.day_shift_start ?? "07:00"))})</Text>
+                      <Text style={styles.formLabel}>Late IN begins (default {formatClock12h(String(shiftDefaults?.day_shift_start ?? "07:00"))})</Text>
                       <TimeInput value={shiftForm.day_shift_start} onChange={(v) => setShiftForm((p) => ({ ...p, day_shift_start: v }))} />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.formLabel}>End (default {formatClock12h(String(shiftDefaults?.day_shift_end ?? "19:00"))})</Text>
+                      <Text style={styles.formLabel}>Shift closes at (default {formatClock12h(String(shiftDefaults?.day_shift_end ?? "19:00"))})</Text>
                       <TimeInput value={shiftForm.day_shift_end} onChange={(v) => setShiftForm((p) => ({ ...p, day_shift_end: v }))} />
                     </View>
                   </View>
+                  <Text style={{ fontSize: 11, color: isDark ? "#999" : "#888", marginBottom: 12 }}>
+                    On-time IN ends 1 minute before Late IN begins. On-time OUT begins at {shiftWindowPreview.day.onTimeOut.range.split(" - ")[0]} (Shift closes at, minus the Early grace below).
+                  </Text>
                   <View style={{ flexDirection: "row", gap: 12, marginBottom: 20 }}>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.formLabel}>Late grace, min (default {shiftDefaults?.day_late_grace_minutes ?? 30})</Text>
@@ -4694,16 +4697,19 @@ export default function AdminDashboard() {
                       <Text style={{ fontSize: 12, color: "#6a5acd", fontWeight: "600" }}>Reset to Default</Text>
                     </Pressable>
                   </View>
-                  <View style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}>
+                  <View style={{ flexDirection: "row", gap: 12, marginBottom: 4 }}>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.formLabel}>Start (default {formatClock12h(String(shiftDefaults?.night_shift_start ?? "19:00"))})</Text>
+                      <Text style={styles.formLabel}>Late IN begins (default {formatClock12h(String(shiftDefaults?.night_shift_start ?? "19:00"))})</Text>
                       <TimeInput value={shiftForm.night_shift_start} onChange={(v) => setShiftForm((p) => ({ ...p, night_shift_start: v }))} />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.formLabel}>End (default {formatClock12h(String(shiftDefaults?.night_shift_end ?? "07:00"))})</Text>
+                      <Text style={styles.formLabel}>Shift closes at (default {formatClock12h(String(shiftDefaults?.night_shift_end ?? "07:00"))})</Text>
                       <TimeInput value={shiftForm.night_shift_end} onChange={(v) => setShiftForm((p) => ({ ...p, night_shift_end: v }))} />
                     </View>
                   </View>
+                  <Text style={{ fontSize: 11, color: isDark ? "#999" : "#888", marginBottom: 12 }}>
+                    On-time IN ends 1 minute before Late IN begins. On-time OUT begins at {shiftWindowPreview.night.onTimeOut.range.split(" - ")[0]} (Shift closes at, minus the Early grace below).
+                  </Text>
                   <View style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.formLabel}>Late grace, min (default {shiftDefaults?.night_late_grace_minutes ?? 30})</Text>
