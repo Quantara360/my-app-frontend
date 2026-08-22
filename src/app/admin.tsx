@@ -1681,17 +1681,16 @@ export default function AdminDashboard() {
         overScrollMode="never"
       >
         <ScrollView horizontal showsHorizontalScrollIndicator={true}>
-          <View style={[styles.tableCard, { minWidth: 820 }]}>
+          <View style={[styles.tableCard, { minWidth: 960 }]}>
             <View style={[styles.tableRow, styles.tableHeaderRow]}>
               <Text style={[styles.tableHeaderCell, { flex: 1 }]}>ID</Text>
               <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Worker</Text>
               <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Hospital</Text>
               <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Date</Text>
-              <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Shift</Text>
-              <Text style={[styles.tableHeaderCell, { flex: 2 }]}>
-                {attendanceTab === "OUT" ? "Clocked Out" : "Marked At"}
-              </Text>
-              <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Status</Text>
+              <Text style={[styles.tableHeaderCell, { flex: 1.5 }]}>Shift</Text>
+              <Text style={[styles.tableHeaderCell, { flex: 1.5 }]}>In Time</Text>
+              <Text style={[styles.tableHeaderCell, { flex: 1.5 }]}>Out Time</Text>
+              <Text style={[styles.tableHeaderCell, { flex: 1.5 }]}>Status</Text>
               <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Actions</Text>
             </View>
 
@@ -1719,21 +1718,22 @@ export default function AdminDashboard() {
                   <Text style={[styles.tableCell, { flex: 2 }]}>
                     {item.date ? item.date.split("T")[0] : ""}
                   </Text>
-                  <Text style={[styles.tableCell, { flex: 2 }]}>
+                  <Text style={[styles.tableCell, { flex: 1.5 }]}>
                     {item.shift}
                   </Text>
-                  <Text style={[styles.tableCell, { flex: 2 }]}>
-                    {attendanceTab === "OUT"
-                      ? item.out_marked_at
-                        ? new Date(item.out_marked_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-                        : "—"
-                      : item.marked_at
-                        ? new Date(item.marked_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-                        : "—"}
+                  <Text style={[styles.tableCell, { flex: 1.5 }]}>
+                    {item.marked_at
+                      ? new Date(item.marked_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                      : "—"}
+                  </Text>
+                  <Text style={[styles.tableCell, { flex: 1.5 }]}>
+                    {item.out_marked_at
+                      ? new Date(item.out_marked_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                      : "—"}
                   </Text>
                   {(() => {
-                    // OUT tab only: show "Early" if worker left before shift end time
-                    if (attendanceTab === "OUT" && item.out_marked_at) {
+                    // Show "Early" if the worker left before their shift end time
+                    if (item.out_marked_at) {
                       const shiftName = (item.shift || "").toLowerCase();
                       const outTime = new Date(item.out_marked_at);
                       const outHour = outTime.getHours();
@@ -1743,7 +1743,7 @@ export default function AdminDashboard() {
                           : outHour < 6;  // Evening ends 06:00
                       if (isEarly) {
                         return (
-                          <Text style={[styles.tableCell, { flex: 2, color: "#fa8c16", fontWeight: "600" }]}>
+                          <Text style={[styles.tableCell, { flex: 1.5, color: "#fa8c16", fontWeight: "600" }]}>
                             Early
                           </Text>
                         );
@@ -1755,7 +1755,7 @@ export default function AdminDashboard() {
                       <Text
                         style={[
                           styles.tableCell,
-                          { flex: 2 },
+                          { flex: 1.5 },
                           s === "present"
                             ? { color: "#28a745" }
                             : s === "late"
@@ -1775,6 +1775,17 @@ export default function AdminDashboard() {
                       { flex: 2, flexDirection: "row", gap: 6 },
                     ]}
                   >
+                    <Pressable
+                      onPress={() => router.push({ pathname: "/template", params: { workerId: String(item.worker_id) } } as any)}
+                      style={{
+                        paddingHorizontal: 8,
+                        paddingVertical: 4,
+                        borderRadius: 8,
+                        backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
+                      }}
+                    >
+                      <Text style={styles.assetActionIcon}>🪪</Text>
+                    </Pressable>
                     <Pressable
                       onPress={() => openAttendanceEditModal(item)}
                       style={[
