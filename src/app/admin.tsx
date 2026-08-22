@@ -30,6 +30,7 @@ import { API_BASE_URL, getAuthHeaders } from "@/services/authService";
 import { useTheme } from "@/hooks/use-theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
+  ActivityIndicator,
   Alert,
   Animated,
   Image,
