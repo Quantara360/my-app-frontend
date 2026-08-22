@@ -539,12 +539,14 @@ export default function WorkersPage() {
           </View>
 
           <ScrollView style={styles.tableBody} showsVerticalScrollIndicator={false} bounces={false} overScrollMode="never">
-            {filteredWorkers.map((worker, index) => (
+            {filteredWorkers.map((worker) => (
               <View key={worker.id} style={styles.tableRow}>
-                {/* Display-only sequential number (1, 2, 3…) - the real
-                    database id (used by attendance, salaries, EPF history,
-                    and the face-recognition service) is left untouched. */}
-                <Text style={[styles.rowCell, { width: 60, minWidth: 60, flex: 0 }]} numberOfLines={1}>{index + 1}</Text>
+                {/* The real worker id - shown as-is (not a display-only
+                    sequential number) so it matches the same "Worker ID"
+                    used everywhere else (attendance table, ID cards, etc.) -
+                    a mismatched display number here was more confusing than
+                    the fact that real ids don't start at 1. */}
+                <Text style={[styles.rowCell, { width: 60, minWidth: 60, flex: 0 }]} numberOfLines={1}>{worker.id}</Text>
                 <Text style={styles.rowCell} numberOfLines={1}>{worker.name}</Text>
                 <Text style={[styles.rowCell, { width: 120, minWidth: 120, flex: 0 }]} numberOfLines={1}>{worker.worksite?.name ?? 'Unassigned'}</Text>
                 <Text style={[styles.rowCell, { width: 120, minWidth: 120, flex: 0 }]} numberOfLines={1}>{worker.role}</Text>
