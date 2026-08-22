@@ -557,7 +557,16 @@ export default function AdminDashboard() {
     ? workers.filter((w: any) => w.worksite_id === selectedSiteId)
     : workers;
 
-  const todayAttendancesCount = attendances.filter((a: any) => {
+  // Site-scoped attendance list, hoisted here (out of definition order
+  // below) so the dashboard's Attendance tile count can use the same
+  // site-filtered set as every other tile (Machineries/Assets/Chemicals/
+  // Approvals/Workers) instead of counting across every site regardless
+  // of which one is selected.
+  const filteredAttendances = selectedSiteId
+    ? attendances.filter((a: any) => a.worksite_id === selectedSiteId)
+    : attendances;
+
+  const todayAttendancesCount = filteredAttendances.filter((a: any) => {
     if (!a.date) return false;
     const today = new Date().toISOString().split("T")[0];
     return a.date.startsWith(today);
@@ -624,9 +633,6 @@ export default function AdminDashboard() {
     );
   });
 
-  const filteredAttendances = selectedSiteId
-    ? attendances.filter((a: any) => a.worksite_id === selectedSiteId)
-    : attendances;
   const filteredAttendanceData = filteredAttendances.filter((item) => {
     const searchMatch =
       attendanceSearch.trim() === "" ||
