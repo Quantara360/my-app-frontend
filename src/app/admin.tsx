@@ -2380,6 +2380,36 @@ export default function AdminDashboard() {
           })}
         </View>
 
+        <View style={styles.cardsRow}>
+          {adminCards.slice(8, 10).map((card) => {
+            const scaleValue = getCardScaleValue(card.id);
+            return (
+              <AnimatedPressable
+                key={card.id}
+                style={[
+                  styles.card,
+                  { backgroundColor: card.backgroundColor },
+                  { transform: [{ scale: scaleValue }] },
+                ]}
+                onPress={() => handleCardPress(card)}
+              >
+                <Text style={styles.cardIcon}>{card.icon}</Text>
+                <ThemedText
+                  type="smallBold"
+                  style={[styles.cardTitle, { color: card.textColor }]}
+                >
+                  {card.title}
+                </ThemedText>
+                {card.value !== undefined && card.value !== null && (
+                  <Text style={[styles.cardValue, { color: card.textColor }]}>
+                    {card.value}
+                  </Text>
+                )}
+              </AnimatedPressable>
+            );
+          })}
+        </View>
+
         {/* Accounts & Bonds - Side by Side Row */}
         <View style={styles.cardsRow}>
           {(() => {
