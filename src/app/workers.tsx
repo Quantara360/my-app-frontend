@@ -537,7 +537,13 @@ export default function WorkersPage() {
             </View>
           </View>
 
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          {/* width:'100%' on the ScrollView itself - a horizontal
+              ScrollView otherwise sizes to its own content width (the
+              table), not the space it's given, so widening the card above
+              left the table stuck at its old narrow width with a large
+              empty strip of card background next to it. Still scrolls
+              horizontally on narrow screens where the table doesn't fit. */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ width: '100%' }}>
             <View style={{ minWidth: '100%' }}>
               <View style={styles.tableHeader}>
             <Text style={[styles.columnHeader, { width: 60, minWidth: 60, flex: 0 }]}>ID</Text>
