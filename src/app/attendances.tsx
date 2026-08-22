@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "expo-router";
 import { Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { BackgroundPattern } from '@/components/BackgroundPattern';
 import { ThemedText } from "@/components/themed-text";
@@ -13,10 +12,10 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import * as AttendancesService from "@/services/adminAttendancesService";
 import { useGoBack } from "@/hooks/use-go-back";
 import { API_BASE_URL, getAuthHeaders } from "@/services/authService";
+import { WorkerIdCardModal, IdCardWorker } from "@/components/WorkerIdCardModal";
 
 export default function AttendancesPage() {
   const goBack = useGoBack();
-  const router = useRouter();
   const theme = useTheme();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
@@ -27,6 +26,8 @@ export default function AttendancesPage() {
 
   // ── Filters ─────────────────────────────────────────────────────────────────
   const [attendances, setAttendances] = useState<AttendancesService.AttendanceRecord[]>([]);
+  // Inline ID card viewer, opened from a row's "ID Card" button.
+  const [idCardWorker, setIdCardWorker] = useState<IdCardWorker | null>(null);
   const [attendanceSearch, setAttendanceSearch] = useState("");
   const [attendanceShiftFilter, setAttendanceShiftFilter] = useState("All");
   const [attendanceStatusFilter, setAttendanceStatusFilter] = useState("All");
@@ -222,6 +223,24 @@ export default function AttendancesPage() {
       // Evening/Night: shift ends next day at 06:00. Early if out before 06:00 same day
       return outHour < shiftEndHour;
     }
+  }
+
+  // Returns true if the worker marked IN but their shift has already ended
+  // without them marking OUT — i.e. they're overdue to clock out.
+  function isOverdueOut(item: any): boolean {
+    if (!item.marked_at || item.out_marked_at) return false;
+    if ((item.status || "").toLowerCase() === "absent") return false;
+    const recordDate = item.date ? String(item.date).split("T")[0] : null;
+    if (!recordDate) return false;
+    const [y, m, d] = recordDate.split("-").map(Number);
+    if (!y || !m || !d) return false;
+    const shiftName = (item.shift || "").toLowerCase();
+    // Morning ends same day at 18:00; Evening ends the next day at 06:00 —
+    // matches the shift-end hours isEarlyOut() already uses above.
+    const shiftEnd = shiftName === "morning"
+      ? new Date(y, m - 1, d, 18, 0, 0, 0)
+      : new Date(y, m - 1, d + 1, 6, 0, 0, 0);
+    return Date.now() >= shiftEnd.getTime();
   }
 
   const selectStyle: any = {
@@ -422,12 +441,13 @@ export default function AttendancesPage() {
 
               {filteredAttendanceData.map((item, index) => {
                 const isAbsent = (item.status || "").toLowerCase() === "absent";
+                const overdueOut = isOverdueOut(item);
                 return (
                   <View
                     key={String(item.id)}
                     style={[
                       styles.tableRow,
-                      isAbsent && styles.absentRow,
+                      (isAbsent || overdueOut) && styles.absentRow,
                       index !== filteredAttendanceData.length - 1 && {
                         borderBottomWidth: 1,
                         borderBottomColor: isDark ? "#2a2a2a" : "#e5e7eb",
@@ -456,6 +476,16 @@ export default function AttendancesPage() {
                         : "—"}
                     </Text>
                     {(() => {
+                      // Worker clocked in but their shift has already ended
+                      // with no clock-out — the row itself is also
+                      // highlighted yellow (see isOverdueOut above).
+                      if (overdueOut) {
+                        return (
+                          <Text style={[styles.tableCell, { flex: 1.5, color: "#faad14", fontWeight: "600" }]}>
+                            Not Clocked Out
+                          </Text>
+                        );
+                      }
                       // Override display status to "Early" if the worker left before shift end
                       if (isEarlyOut(item)) {
                         return (
@@ -472,7 +502,15 @@ export default function AttendancesPage() {
                     })()}
                     <View style={[styles.tableCell, { flex: 1 }]}>
                       <Pressable
-                        onPress={() => router.push({ pathname: "/template", params: { workerId: String(item.worker_id) } } as any)}
+                        onPress={() => setIdCardWorker({
+                          id: item.worker_id,
+                          name: item.worker?.name || `Worker #${item.worker_id}`,
+                          role: (item.worker as any)?.role,
+                          nic: (item.worker as any)?.nic,
+                          join_date: (item.worker as any)?.join_date,
+                          face_photo_path: (item.worker as any)?.face_photo_path,
+                          worksite: item.worksite,
+                        })}
                         style={{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)", alignSelf: "flex-start" }}
                       >
                         <Text style={{ fontSize: 16 }}>🪪</Text>
@@ -496,6 +534,12 @@ export default function AttendancesPage() {
           </ScrollView>
         </ScrollView>
       </SafeAreaView>
+
+      <WorkerIdCardModal
+        visible={!!idCardWorker}
+        worker={idCardWorker}
+        onClose={() => setIdCardWorker(null)}
+      />
     </ThemedView>
   );
 }
