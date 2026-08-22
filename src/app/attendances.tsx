@@ -433,7 +433,7 @@ export default function AttendancesPage() {
             <View style={[styles.tableCard, { minWidth: 900 }]}>
               {/* Header */}
               <View style={[styles.tableRow, styles.tableHeaderRow]}>
-                <Text style={[styles.tableHeaderCell, { flex: 1 }]}>ID</Text>
+                <Text style={[styles.tableHeaderCell, { flex: 1 }]}>Worker ID</Text>
                 <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Worker</Text>
                 <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Hospital</Text>
                 <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Date</Text>
@@ -459,7 +459,7 @@ export default function AttendancesPage() {
                       },
                     ]}
                   >
-                    <Text style={[styles.tableCell, { flex: 1 }]}>{item.id}</Text>
+                    <Text style={[styles.tableCell, { flex: 1 }]}>{item.worker_id}</Text>
                     <Text style={[styles.tableCell, { flex: 2 }]}>
                       {item.worker?.name || `Worker #${item.worker_id}`}
                     </Text>
