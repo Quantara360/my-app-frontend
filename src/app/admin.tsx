@@ -1286,47 +1286,59 @@ export default function AdminDashboard() {
   }, []);
 
   const loadAccountsData = async () => {
-    try {
-      const cashRows = await getCashInHandEntries();
-      setAdminCashEntries(
-        cashRows.map((r) => ({
-          id: r.id,
-          date: r.date,
-          chequeNo: r.cheque_no ?? '',
-          description: r.description ?? '',
-          debit: r.debit,
-          credit: r.credit,
-          balance: r.balance,
-          linkedTransferId: r.linked_transfer_id ?? null,
-        }))
-      );
-    } catch (err) {
-      console.warn('[Admin] loadAccountsData cash error', err);
-    }
-    try {
-      const bankRows = await getBankEntries();
-      setAdminBankEntries(
-        bankRows.map((r) => ({
-          id: r.id,
-          date: r.date,
-          chequeNo: r.cheque_no ?? '',
-          description: r.description ?? '',
-          debit: r.debit,
-          credit: r.credit,
-          balance: r.balance,
-          linkedTransferId: r.linked_transfer_id ?? null,
-        }))
-      );
-    } catch (err) {
-      console.warn('[Admin] loadAccountsData bank error', err);
-    }
+    // Run both requests in parallel instead of awaiting one before starting
+    // the next - they don't depend on each other, so serializing them just
+    // stacked up two round-trips' worth of latency for no reason.
+    await Promise.all([
+      (async () => {
+        try {
+          const cashRows = await getCashInHandEntries();
+          setAdminCashEntries(
+            cashRows.map((r) => ({
+              id: r.id,
+              date: r.date,
+              chequeNo: r.cheque_no ?? '',
+              description: r.description ?? '',
+              debit: r.debit,
+              credit: r.credit,
+              balance: r.balance,
+              linkedTransferId: r.linked_transfer_id ?? null,
+            }))
+          );
+        } catch (err) {
+          console.warn('[Admin] loadAccountsData cash error', err);
+        }
+      })(),
+      (async () => {
+        try {
+          const bankRows = await getBankEntries();
+          setAdminBankEntries(
+            bankRows.map((r) => ({
+              id: r.id,
+              date: r.date,
+              chequeNo: r.cheque_no ?? '',
+              description: r.description ?? '',
+              debit: r.debit,
+              credit: r.credit,
+              balance: r.balance,
+              linkedTransferId: r.linked_transfer_id ?? null,
+            }))
+          );
+        } catch (err) {
+          console.warn('[Admin] loadAccountsData bank error', err);
+        }
+      })(),
+    ]);
   };
 
   const loadPersonalDocumentsData = async () => {
     try {
-      const notesData = await PersonalDocumentsService.getNotes();
+      // Parallel, not sequential - notes and files don't depend on each other.
+      const [notesData, filesData] = await Promise.all([
+        PersonalDocumentsService.getNotes(),
+        PersonalDocumentsService.getFiles(),
+      ]);
       setNotes(notesData);
-      const filesData = await PersonalDocumentsService.getFiles();
       setFiles(filesData);
     } catch (error) {
       console.error("Failed to load personal documents:", error);
@@ -1513,11 +1525,14 @@ export default function AdminDashboard() {
 
   const loadPersonalAssetsData = async () => {
     try {
-      const vehiclesData = await PersonalAssetsService.getVehicles();
+      // Parallel, not sequential - none of these three depend on each other.
+      const [vehiclesData, jewelleriesData, propertiesData] = await Promise.all([
+        PersonalAssetsService.getVehicles(),
+        PersonalAssetsService.getJewelleries(),
+        PersonalAssetsService.getProperties(),
+      ]);
       setVehicles(vehiclesData);
-      const jewelleriesData = await PersonalAssetsService.getJewelleries();
       setJewelleries(jewelleriesData);
-      const propertiesData = await PersonalAssetsService.getProperties();
       setProperties(propertiesData);
     } catch (error) {
       console.error("Failed to load personal assets:", error);
