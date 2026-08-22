@@ -5,6 +5,7 @@ import { BackgroundPattern } from "@/components/BackgroundPattern";
 import { ConfirmModal } from "@/components/confirm-modal";
 import { WorkerIdCardModal, IdCardWorker } from "@/components/WorkerIdCardModal";
 import { resolveShiftConfig, timeToMinutes, computeShiftWindowSummaries, formatClock12h, DEFAULT_SHIFT_CONFIG, ShiftConfig } from "@/utils/shiftConfig";
+import { buildWorkerDisplayIdMap, getWorkerDisplayId } from "@/utils/workerDisplayId";
 import { SelectInput } from "@/components/ui/select-input";
 import { DateInput } from "@/components/ui/date-input";
 import { TimeInput } from "@/components/ui/time-input";
@@ -14,7 +15,7 @@ import { BottomTabInset, Spacing, rf, MaxContentWidth } from "@/constants/theme"
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import * as AssetsService from "@/services/adminAssetsService";
 import * as ChemicalsService from "@/services/adminChemicalsService";
 import * as MachineriesService from "@/services/adminMachineriesService";
@@ -571,6 +572,12 @@ export default function AdminDashboard() {
     const today = new Date().toISOString().split("T")[0];
     return a.date.startsWith(today);
   }).length;
+
+  // Built from the full (unfiltered) roster so a worker's "No." never
+  // shifts depending on the active site filter/search, and is the SAME
+  // map (and therefore the same numbers) used by both this Workers view
+  // and the Attendance view below - they share this one `workers` state.
+  const workerDisplayIdMap = useMemo(() => buildWorkerDisplayIdMap(workers), [workers]);
 
   // Search-filtered data
   const filteredWorkerData = filteredWorkers.filter((item) => {
@@ -1858,7 +1865,10 @@ export default function AdminDashboard() {
                     },
                   ]}
                 >
-                  <Text style={[styles.tableCell, { flex: 1 }]}>{item.worker_id}</Text>
+                  {/* Stable "Worker No." - same ranking as the Workers grid
+                      and ID Templates list for this same worker (see
+                      workerDisplayId.ts), not the real database id. */}
+                  <Text style={[styles.tableCell, { flex: 1 }]}>{getWorkerDisplayId(workerDisplayIdMap, item.worker_id)}</Text>
                   <Text style={[styles.tableCell, { flex: 2 }]}>
                     {item.worker?.name || `Worker #${item.worker_id}`}
                   </Text>
@@ -4942,10 +4952,11 @@ export default function AdminDashboard() {
 
             {filteredWorkerData.map((item) => (
               <View key={item.id} style={styles.tableRow}>
-                {/* The real worker id - matches the "Worker ID" shown
-                    everywhere else (attendance table, ID cards, etc.). */}
+                {/* Stable "Worker No." - same ranking as the Attendance
+                    table and ID Templates list for this same worker (see
+                    workerDisplayId.ts), not the real database id. */}
                 <Text style={[styles.tableCell, styles.workerCellID]}>
-                  {item.id}
+                  {getWorkerDisplayId(workerDisplayIdMap, item.id)}
                 </Text>
                 <Text style={[styles.tableCell, styles.workerCellName]}>
                   {item.name}

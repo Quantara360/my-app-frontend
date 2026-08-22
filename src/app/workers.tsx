@@ -13,6 +13,7 @@ import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { API_BASE_URL } from '@/services/authService';
 import { useAuth } from '@/contexts/AuthContext';
+import { buildWorkerDisplayIdMap, getWorkerDisplayId } from '@/utils/workerDisplayId';
 import { useGoBack } from "@/hooks/use-go-back";
 
 type Worksite = {
@@ -123,7 +124,10 @@ export default function WorkersPage() {
       const worksiteData = await worksiteResponse.json();
       setWorksites(Array.isArray(worksiteData) ? worksiteData : worksiteData.data || []);
 
-      const workerResponse = await fetch(`${API_BASE_URL}/workers`, {
+      // all=1 - the full roster is needed both so no worker past the 50th
+      // is hidden, and so the consistent "Worker No." (see workerDisplayId.ts)
+      // ranks correctly against every worker, not just one page of them.
+      const workerResponse = await fetch(`${API_BASE_URL}/workers?all=1`, {
         headers: { Accept: 'application/json', ...authHeader },
       });
       const workerData = await workerResponse.json();
@@ -140,6 +144,11 @@ export default function WorkersPage() {
       return matchesSearch && matchesSite;
     });
   }, [workers, search, siteFilter]);
+
+  // Built from the full (unfiltered) roster so a worker's "No." never
+  // shifts depending on the active search/site filter, and matches the
+  // same ranking shown in the Attendance table and ID Templates list.
+  const workerDisplayIdMap = useMemo(() => buildWorkerDisplayIdMap(workers), [workers]);
 
   const openAddWorker = () => {
     setSelectedWorker(null);
@@ -541,12 +550,13 @@ export default function WorkersPage() {
           <ScrollView style={styles.tableBody} showsVerticalScrollIndicator={false} bounces={false} overScrollMode="never">
             {filteredWorkers.map((worker) => (
               <View key={worker.id} style={styles.tableRow}>
-                {/* The real worker id - shown as-is (not a display-only
-                    sequential number) so it matches the same "Worker ID"
-                    used everywhere else (attendance table, ID cards, etc.) -
-                    a mismatched display number here was more confusing than
-                    the fact that real ids don't start at 1. */}
-                <Text style={[styles.rowCell, { width: 60, minWidth: 60, flex: 0 }]} numberOfLines={1}>{worker.id}</Text>
+                {/* A stable "Worker No." (1, 2, 3…) ranked by the real id
+                    across the full roster - NOT the real database id
+                    (which starts at 36), and NOT a raw filtered-array
+                    index either (that would shift with search/site
+                    filters). Same number as shown in the Attendance table
+                    and ID Templates list for this same worker. */}
+                <Text style={[styles.rowCell, { width: 60, minWidth: 60, flex: 0 }]} numberOfLines={1}>{getWorkerDisplayId(workerDisplayIdMap, worker.id)}</Text>
                 <Text style={styles.rowCell} numberOfLines={1}>{worker.name}</Text>
                 <Text style={[styles.rowCell, { width: 120, minWidth: 120, flex: 0 }]} numberOfLines={1}>{worker.worksite?.name ?? 'Unassigned'}</Text>
                 <Text style={[styles.rowCell, { width: 120, minWidth: 120, flex: 0 }]} numberOfLines={1}>{worker.role}</Text>

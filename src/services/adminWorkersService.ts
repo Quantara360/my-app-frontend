@@ -97,7 +97,10 @@ async function deleteJson<T>(path: string): Promise<T> {
 }
 
 export async function getWorkers(): Promise<Worker[]> {
-  const result = await getJson<{ data: Worker[] }>('workers');
+  // all=1 - without it the backend paginates at 50/page, which would
+  // silently hide any worker past the 50th AND wrongly rank the
+  // consistent "Worker No." (see workerDisplayId.ts) for anyone beyond it.
+  const result = await getJson<{ data: Worker[] }>('workers?all=1');
   return extractArray(result);
 }
 
