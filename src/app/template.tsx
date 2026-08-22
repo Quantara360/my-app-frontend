@@ -1,10 +1,7 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import * as Print from 'expo-print';
-import * as Sharing from 'expo-sharing';
 import {
   ActivityIndicator,
-  Modal,
   Platform,
   Pressable,
   SafeAreaView,
@@ -13,7 +10,6 @@ import {
   Text,
   TextInput,
   View,
-  Image,
 } from "react-native";
 import { BackgroundPattern } from '@/components/BackgroundPattern';
 import { ThemedText } from "@/components/themed-text";
@@ -23,33 +19,14 @@ import { useTheme } from "@/hooks/use-theme";
 import { API_BASE_URL } from "@/services/authService";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGoBack } from "@/hooks/use-go-back";
+import { WorkerIdCardModal, printCard, downloadPdfCard } from "@/components/WorkerIdCardModal";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
-// Base dimensions of the PSD template
-const BASE_W = 975;
-const BASE_H = 643;
-
-// Base pixel positions from the PSD (at 975×643)
-const RAW_PHOTO_X = 53;
-const RAW_PHOTO_Y = 156;
-const RAW_PHOTO_W = 240;
-const RAW_PHOTO_H = 348;
-
-const RAW_DATE_X = 52;
-const RAW_DATE_Y = 535;
-
-// Right-side info fields layout
-const RAW_LABEL_X = 340;
-const RAW_COLON_X = 550;
-const RAW_INFO_X = 580;
-
-// Restored original 3-row spacing
-const RAW_ROW1_Y = 210;
-const RAW_ROW2_Y = 287;
-const RAW_ROW3_Y = 363;
-
-// Site header in top left (left-aligned to stay clear of the logo)
-const RAW_HEADER_SITE_X = 245;
-const RAW_HEADER_SITE_Y = 24;
+// Detect mobile browser (web running on a phone/tablet)
+const isMobileBrowser =
+  Platform.OS === 'web' &&
+  typeof navigator !== 'undefined' &&
+  /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
 
 type Worksite = { id: number; name: string };
 type Worker = {
@@ -65,202 +42,6 @@ type Worker = {
   face_photo_path?: string;
 };
 
-function formatDate(dateStr?: string): string {
-  if (!dateStr) return "—";
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return dateStr;
-  return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
-}
-
-function getPhotoUrl(worker: Worker): string | null {
-  if (!worker.face_photo_path) return null;
-  // API_BASE_URL is "<host>/api" - strip the "/api" suffix to get the host
-  // that also serves /storage, instead of hardcoding a fixed domain.
-  const apiOrigin = API_BASE_URL.replace(/\/api\/?$/, '');
-  return `${apiOrigin}/storage/${worker.face_photo_path}`;
-}
-
-import { Asset } from 'expo-asset';
-
-function printCard(worker: Worker) {
-  if (Platform.OS !== "web") return;
-  const photoUrl = getPhotoUrl(worker);
-  const dateStr = formatDate(worker.join_date);
-  
-  const templateAsset = Asset.fromModule(require("../../assets/images/id_card_template_clean.png"));
-  const templateUri = templateAsset.uri;
-
-  // Photo box pixel positions on the 975×643 canvas
-  const html = `<!DOCTYPE html>
-<html>
-<head>
-  <title>ID Card – ${worker.name}</title>
-  <style>
-    @page { size: 975px 643px; margin: 0; }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { width: 975px; height: 643px; overflow: hidden; }
-    .card { position: relative; width: 975px; height: 643px; }
-    .bg { position: absolute; inset: 0; width: 100%; height: 100%; }
-    .photo {
-      position: absolute;
-      left: 53px; top: 156px;
-      width: 240px; height: 348px;
-      object-fit: cover;
-      border: 2px solid #111;
-    }
-    .photo-placeholder {
-      position: absolute;
-      left: 53px; top: 156px;
-      width: 240px; height: 348px;
-      background: #ccc;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 60px;
-    }
-    .date {
-      position: absolute;
-      left: 52px; top: 535px;
-      font-size: 20px; font-weight: 700; color: #111;
-      font-family: Arial, sans-serif;
-    }
-    .label { font-size: 26px; font-weight: 700; color: #111; font-family: 'Arial Black', Arial, sans-serif; position: absolute; left: 340px; }
-    .colon { font-size: 26px; font-weight: 700; color: #111; font-family: 'Arial Black', Arial, sans-serif; position: absolute; left: 550px; }
-    .val { font-size: 26px; font-weight: 700; color: #111; font-family: Arial, sans-serif; position: absolute; left: 580px; }
-    
-    .header-site {
-      position: absolute; left: 245px; top: 24px; right: 20px;
-      font-size: 50px; font-weight: 900;
-      font-family: 'Arial Black', Arial, sans-serif;
-      text-transform: uppercase;
-      white-space: nowrap;
-      overflow: hidden;
-    }
-
-    .row1 { top: 210px; }
-    .row2 { top: 287px; }
-    .row3 { top: 363px; }
-    @media print { * { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <img class="bg" src="${templateUri}" />
-    ${photoUrl
-      ? `<img class="photo" src="${photoUrl}" />`
-      : `<div class="photo-placeholder">👤</div>`}
-    <div class="header-site">
-      <span style="color: #fff;">${worker.worksite?.name || "AMIL"} </span>
-      <span style="color: #FFD700;">JANITOR SERVICES</span>
-    </div>
-    <div class="date">Date: ${dateStr}</div>
-    <div class="label row1">NAME</div><div class="colon row1">:</div><div class="val row1">${worker.name}</div>
-    <div class="label row2">DESIGNATION</div><div class="colon row2">:</div><div class="val row2">${worker.role || "—"}</div>
-    <div class="label row3">NIC NO.</div><div class="colon row3">:</div><div class="val row3">${worker.nic || "—"}</div>
-  </div>
-  <script>
-    Promise.all(Array.from(document.images).map(img => {
-      if (img.complete) return Promise.resolve();
-      return new Promise(resolve => { img.onload = resolve; img.onerror = resolve; });
-    })).then(() => {
-      setTimeout(() => {
-        window.print();
-        window.close();
-      }, 300);
-    });
-  <\/script>
-</body>
-</html>`;
-  const win = window.open("", "_blank");
-  if (win) { win.document.write(html); win.document.close(); }
-}
-
-async function downloadPdfCard(worker: Worker) {
-  const photoUrl = getPhotoUrl(worker);
-  const dateStr = formatDate(worker.join_date);
-  const templateAsset = Asset.fromModule(require("../../assets/images/id_card_template_clean.png"));
-  await templateAsset.downloadAsync();
-  const templateUri = templateAsset.localUri || templateAsset.uri;
-
-  const html = `<!DOCTYPE html>
-<html>
-<head>
-  <title>ID Card \u2013 ${worker.name}</title>
-  <style>
-    @page { size: 975px 643px; margin: 0; }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { width: 975px; height: 643px; overflow: hidden; }
-    .card { position: relative; width: 975px; height: 643px; }
-    .bg { position: absolute; inset: 0; width: 100%; height: 100%; }
-    .photo { position: absolute; left: 53px; top: 156px; width: 240px; height: 348px; object-fit: cover; border: 2px solid #111; }
-    .photo-placeholder { position: absolute; left: 53px; top: 156px; width: 240px; height: 348px; background: #ccc; display: flex; align-items: center; justify-content: center; font-size: 60px; }
-    .date { position: absolute; left: 52px; top: 535px; font-size: 20px; font-weight: 700; color: #111; font-family: Arial, sans-serif; }
-    .label { font-size: 26px; font-weight: 700; color: #111; font-family: 'Arial Black', Arial, sans-serif; position: absolute; left: 340px; }
-    .colon { font-size: 26px; font-weight: 700; color: #111; font-family: 'Arial Black', Arial, sans-serif; position: absolute; left: 550px; }
-    .val { font-size: 26px; font-weight: 700; color: #111; font-family: Arial, sans-serif; position: absolute; left: 580px; }
-    .header-site { position: absolute; left: 245px; top: 24px; right: 20px; font-size: 50px; font-weight: 900; font-family: 'Arial Black', Arial, sans-serif; text-transform: uppercase; white-space: nowrap; overflow: hidden; }
-    .row1 { top: 210px; } .row2 { top: 287px; } .row3 { top: 363px; }
-    @media print { * { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <img class="bg" src="${templateUri}" />
-    ${photoUrl ? `<img class="photo" src="${photoUrl}" />` : `<div class="photo-placeholder">\ud83d\udc64</div>`}
-    <div class="header-site">
-      <span style="color: #fff;">${worker.worksite?.name || "AMIL"} </span>
-      <span style="color: #FFD700;">JANITOR SERVICES</span>
-    </div>
-    <div class="date">Date: ${dateStr}</div>
-    <div class="label row1">NAME</div><div class="colon row1">:</div><div class="val row1">${worker.name}</div>
-    <div class="label row2">DESIGNATION</div><div class="colon row2">:</div><div class="val row2">${worker.role || "\u2014"}</div>
-    <div class="label row3">NIC NO.</div><div class="colon row3">:</div><div class="val row3">${worker.nic || "\u2014"}</div>
-  </div>
-  <script>
-    Promise.all(Array.from(document.images).map(img => {
-      if (img.complete) return Promise.resolve();
-      return new Promise(resolve => { img.onload = resolve; img.onerror = resolve; });
-    })).then(() => {
-      setTimeout(() => { window.print(); }, 400);
-    });
-  <\/script>
-</body>
-</html>`;
-
-  if (Platform.OS === 'web') {
-    // On web mobile: open in new tab — browser's share sheet lets user save as PDF
-    const win = window.open('', '_blank');
-    if (win) { win.document.write(html); win.document.close(); }
-    return;
-  }
-
-  // Native mobile: use expo-print + expo-sharing
-  let templateBase64 = '';
-  try {
-    const FileSystemModule = await import('expo-file-system');
-    templateBase64 = await FileSystemModule.readAsStringAsync(templateUri, { encoding: 'base64' as any });
-
-  } catch (e) {
-    console.warn('Could not read template as base64', e);
-  }
-  const templateSrc = templateBase64
-    ? `data:image/png;base64,${templateBase64}`
-    : templateUri;
-
-  const nativeHtml = html.replace(templateUri, templateSrc);
-  const { uri } = await Print.printToFileAsync({ html: nativeHtml, width: 975, height: 643 });
-  await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: `ID Card \u2013 ${worker.name}`, UTI: 'com.adobe.pdf' });
-}
-
-
-// -------------------------------------------------------------------------
-import { useWindowDimensions } from "react-native";
-import { useColorScheme } from "@/hooks/use-color-scheme";
-
-// Detect mobile browser (web running on a phone/tablet)
-const isMobileBrowser =
-  Platform.OS === 'web' &&
-  typeof navigator !== 'undefined' &&
-  /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
-
 export default function TemplatePage() {
   const goBack = useGoBack();
   const theme = useTheme();
@@ -272,31 +53,6 @@ export default function TemplatePage() {
   // "ID Card" button) - pre-opens the matching worker's card once the
   // worker list has loaded, instead of requiring a manual search here.
   const { workerId } = useLocalSearchParams<{ workerId?: string }>();
-  
-  const { width: screenWidth } = useWindowDimensions();
-  // Max width 650, or responsive width with 40px padding
-  const CARD_W = Math.min(650, screenWidth - 40);
-  const CARD_H = Math.round(BASE_H * (CARD_W / BASE_W));
-  const SCALE = CARD_W / BASE_W;
-
-  const PHOTO_X = Math.round(RAW_PHOTO_X * SCALE);
-  const PHOTO_Y = Math.round(RAW_PHOTO_Y * SCALE);
-  const PHOTO_W = Math.round(RAW_PHOTO_W * SCALE);
-  const PHOTO_H = Math.round(RAW_PHOTO_H * SCALE);
-
-  const DATE_X = Math.round(RAW_DATE_X * SCALE);
-  const DATE_Y = Math.round(RAW_DATE_Y * SCALE);
-
-  const LABEL_X = Math.round(RAW_LABEL_X * SCALE);
-  const COLON_X = Math.round(RAW_COLON_X * SCALE);
-  const INFO_X = Math.round(RAW_INFO_X * SCALE);
-
-  const ROW1_Y = Math.round(RAW_ROW1_Y * SCALE);
-  const ROW2_Y = Math.round(RAW_ROW2_Y * SCALE);
-  const ROW3_Y = Math.round(RAW_ROW3_Y * SCALE);
-
-  const HEADER_SITE_X = Math.round(RAW_HEADER_SITE_X * SCALE);
-  const HEADER_SITE_Y = Math.round(RAW_HEADER_SITE_Y * SCALE);
 
   const [workers, setWorkers] = useState<Worker[]>([]);
   const [loading, setLoading] = useState(true);
@@ -406,127 +162,11 @@ export default function TemplatePage() {
           </ScrollView>
         )}
 
-        {/* === ID Card Modal === */}
-        {selectedWorker && (
-          <Modal visible={showCard} transparent animationType="fade" onRequestClose={() => setShowCard(false)}>
-            <View style={styles.overlay}>
-              <View style={styles.modalBox}>
-                {/* Modal toolbar */}
-                <View style={styles.modalBar}>
-                  <ThemedText type="subtitle" style={{ fontSize: 15, fontWeight: "700" }}>
-                    ID Card – {selectedWorker.name}
-                  </ThemedText>
-                  <View style={{ flexDirection: "row", gap: 8 }}>
-                    {Platform.OS === "web" && !isMobileBrowser ? (
-                      <Pressable
-                        onPress={() => { setShowCard(false); printCard(selectedWorker); }}
-                        style={styles.printBtn}
-                      >
-                        <Text style={styles.printBtnTxt}>🖨 Print</Text>
-                      </Pressable>
-                    ) : (
-                      <Pressable
-                        onPress={() => { setShowCard(false); downloadPdfCard(selectedWorker); }}
-                        style={styles.printBtn}
-                      >
-                        <Text style={styles.printBtnTxt}>⬇ Download PDF</Text>
-                      </Pressable>
-                    )}
-                    <Pressable onPress={() => setShowCard(false)} style={styles.closeBtn}>
-                      <Text style={styles.closeBtnTxt}>✕ Close</Text>
-                    </Pressable>
-                  </View>
-                </View>
-
-                {/* Card with real template as background */}
-                <View style={{ width: CARD_W, height: CARD_H, position: "relative" }}>
-                  {/* Background template image */}
-                  <Image
-                    source={require("../../assets/images/id_card_template_clean.png")}
-                    style={{ position: "absolute", width: CARD_W, height: CARD_H }}
-                    resizeMode="stretch"
-                  />
-
-                  {/* Worker Photo */}
-                  {getPhotoUrl(selectedWorker) ? (
-                    <Image
-                      source={{ uri: getPhotoUrl(selectedWorker)! }}
-                      style={{
-                        position: "absolute",
-                        left: PHOTO_X, top: PHOTO_Y,
-                        width: PHOTO_W, height: PHOTO_H,
-                        borderWidth: 2, borderColor: "#111",
-                      }}
-                      resizeMode="cover"
-                    />
-                  ) : (
-                    <View
-                      style={{
-                        position: "absolute",
-                        left: PHOTO_X, top: PHOTO_Y,
-                        width: PHOTO_W, height: PHOTO_H,
-                        backgroundColor: "rgba(200,200,200,0.5)",
-                        alignItems: "center", justifyContent: "center",
-                      }}
-                    >
-                      <Text style={{ fontSize: 36 }}>👤</Text>
-                    </View>
-                  )}
-
-                  {/* Date */}
-                  <Text
-                    style={{
-                      position: "absolute",
-                      left: DATE_X, top: DATE_Y,
-                      fontSize: Math.round(20 * SCALE),
-                      fontWeight: "700",
-                      color: "#111",
-                    }}
-                  >
-                    Date: {formatDate(selectedWorker.join_date)}
-                  </Text>
-
-                  {/* Header Site Name + JANITOR SERVICES */}
-                  <Text
-                    style={{
-                      position: "absolute",
-                      left: HEADER_SITE_X, top: HEADER_SITE_Y,
-                      width: CARD_W - HEADER_SITE_X - Math.round(20 * SCALE),
-                    }}
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                  >
-                    <Text style={{ fontSize: Math.round(50 * SCALE), fontWeight: "900", color: "#fff", textTransform: "uppercase" }}>
-                      {selectedWorker.worksite?.name || "AMIL"}{" "}
-                    </Text>
-                    <Text style={{ fontSize: Math.round(50 * SCALE), fontWeight: "900", color: "#FFD700", textTransform: "uppercase" }}>
-                      JANITOR SERVICES
-                    </Text>
-                  </Text>
-
-                  {/* Labels, Colons and Values */}
-                  {[
-                    { y: ROW1_Y, label: "NAME", value: selectedWorker.name },
-                    { y: ROW2_Y, label: "DESIGNATION", value: selectedWorker.role || "—" },
-                    { y: ROW3_Y, label: "NIC NO.", value: selectedWorker.nic || "—" },
-                  ].map((row, idx) => (
-                    <View key={idx}>
-                      <Text style={{ position: "absolute", left: LABEL_X, top: row.y, fontSize: Math.round(26 * SCALE), fontWeight: "900", color: "#111" }}>
-                        {row.label}
-                      </Text>
-                      <Text style={{ position: "absolute", left: COLON_X, top: row.y, fontSize: Math.round(26 * SCALE), fontWeight: "900", color: "#111" }}>
-                        :
-                      </Text>
-                      <Text style={{ position: "absolute", left: INFO_X, top: row.y, fontSize: Math.round(26 * SCALE), fontWeight: "700", color: "#111" }}>
-                        {row.value}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            </View>
-          </Modal>
-        )}
+        <WorkerIdCardModal
+          visible={showCard}
+          worker={selectedWorker}
+          onClose={() => setShowCard(false)}
+        />
       </SafeAreaView>
     </ThemedView>
   );
@@ -582,17 +222,4 @@ const createStyles = (isDark: boolean) =>
     printBtnTxt: { color: "#fff", fontSize: 12, fontWeight: "600" },
     closeBtn: { backgroundColor: isDark ? "#444" : "#e5e5ea", borderRadius: 8, paddingHorizontal: 12, paddingVertical: 5 },
     closeBtnTxt: { color: isDark ? "#fff" : "#333", fontSize: 13, fontWeight: "600" },
-
-    overlay: {
-      flex: 1, backgroundColor: "rgba(0,0,0,0.75)",
-      justifyContent: "center", alignItems: "center", padding: 12,
-    },
-    modalBox: {
-      backgroundColor: isDark ? "#1e1e1e" : "#fff",
-      borderRadius: 16, padding: 16,
-    },
-    modalBar: {
-      flexDirection: "row", justifyContent: "space-between",
-      alignItems: "center", marginBottom: 12,
-    },
   });

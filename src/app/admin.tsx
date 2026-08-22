@@ -3,6 +3,7 @@ import { ThemedView } from "@/components/themed-view";
 import { SafeView } from "@/components/safe-view";
 import { BackgroundPattern } from "@/components/BackgroundPattern";
 import { ConfirmModal } from "@/components/confirm-modal";
+import { WorkerIdCardModal, IdCardWorker } from "@/components/WorkerIdCardModal";
 import { SelectInput } from "@/components/ui/select-input";
 import { DateInput } from "@/components/ui/date-input";
 import { BottomTabInset, Spacing, rf, MaxContentWidth } from "@/constants/theme";
@@ -243,6 +244,8 @@ export default function AdminDashboard() {
   const [attendances, setAttendances] = useState<
     AttendancesService.AttendanceRecord[]
   >([]);
+  // Inline ID card viewer, opened from the attendance table's "ID Card" button.
+  const [adminIdCardWorker, setAdminIdCardWorker] = useState<IdCardWorker | null>(null);
   const [worksites, setWorksites] = useState<Worksite[]>([]);
   const [mainSites, setMainSites] = useState<any[]>([]);
   const [hospitals, setHospitals] = useState<any[]>([]);
@@ -818,6 +821,23 @@ export default function AdminDashboard() {
       console.error("Failed to delete machinery:", error);
       Alert.alert("Error", "Failed to delete machinery");
     }
+  };
+
+  // Returns true if the worker marked IN but their shift has already ended
+  // without them marking OUT — i.e. they're overdue to clock out.
+  const isOverdueOut = (item: any): boolean => {
+    if (!item.marked_at || item.out_marked_at) return false;
+    if ((item.status || "").toLowerCase() === "absent") return false;
+    const recordDate = item.date ? String(item.date).split("T")[0] : null;
+    if (!recordDate) return false;
+    const [y, m, d] = recordDate.split("-").map(Number);
+    if (!y || !m || !d) return false;
+    const shiftName = (item.shift || "").toLowerCase();
+    // Morning ends same day at 18:00; Evening ends the next day at 06:00.
+    const shiftEnd = shiftName === "morning"
+      ? new Date(y, m - 1, d, 18, 0, 0, 0)
+      : new Date(y, m - 1, d + 1, 6, 0, 0, 0);
+    return Date.now() >= shiftEnd.getTime();
   };
 
   const handleDeleteAttendance = async (
@@ -1696,12 +1716,13 @@ export default function AdminDashboard() {
 
             {filteredAttendanceData.map((item, index) => {
               const isAbsent = (item.status || "").toLowerCase() === "absent";
+              const overdueOut = isOverdueOut(item);
               return (
                 <View
                   key={String(item.id)}
                   style={[
                     styles.tableRow,
-                    isAbsent && { backgroundColor: isDark ? "#2a2000" : "#fffbe6" },
+                    (isAbsent || overdueOut) && { backgroundColor: isDark ? "#2a2000" : "#fffbe6" },
                     index !== filteredAttendanceData.length - 1 && {
                       borderBottomWidth: 1,
                       borderBottomColor: "#e5e7eb",
@@ -1732,6 +1753,16 @@ export default function AdminDashboard() {
                       : "—"}
                   </Text>
                   {(() => {
+                    // Worker clocked in but their shift has already ended
+                    // with no clock-out — the row itself is also
+                    // highlighted yellow (see isOverdueOut above).
+                    if (overdueOut) {
+                      return (
+                        <Text style={[styles.tableCell, { flex: 1.5, color: "#faad14", fontWeight: "600" }]}>
+                          Not Clocked Out
+                        </Text>
+                      );
+                    }
                     // Show "Early" if the worker left before their shift end time
                     if (item.out_marked_at) {
                       const shiftName = (item.shift || "").toLowerCase();
@@ -1776,7 +1807,15 @@ export default function AdminDashboard() {
                     ]}
                   >
                     <Pressable
-                      onPress={() => router.push({ pathname: "/template", params: { workerId: String(item.worker_id) } } as any)}
+                      onPress={() => setAdminIdCardWorker({
+                        id: item.worker_id,
+                        name: item.worker?.name || `Worker #${item.worker_id}`,
+                        role: (item.worker as any)?.role,
+                        nic: (item.worker as any)?.nic,
+                        join_date: (item.worker as any)?.join_date,
+                        face_photo_path: (item.worker as any)?.face_photo_path,
+                        worksite: item.worksite,
+                      })}
                       style={{
                         paddingHorizontal: 8,
                         paddingVertical: 4,
@@ -5624,6 +5663,11 @@ export default function AdminDashboard() {
       {renderTerminateSuccessModal()}
       {renderWorkerDeleteSuccessModal()}
       {renderAttendanceEditModal()}
+      <WorkerIdCardModal
+        visible={!!adminIdCardWorker}
+        worker={adminIdCardWorker}
+        onClose={() => setAdminIdCardWorker(null)}
+      />
     </ThemedView>
   );
 }
