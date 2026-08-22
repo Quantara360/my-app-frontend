@@ -4,7 +4,7 @@ import { SafeView } from "@/components/safe-view";
 import { BackgroundPattern } from "@/components/BackgroundPattern";
 import { ConfirmModal } from "@/components/confirm-modal";
 import { WorkerIdCardModal, IdCardWorker } from "@/components/WorkerIdCardModal";
-import { resolveShiftConfig, timeToMinutes, computeShiftWindowSummaries, DEFAULT_SHIFT_CONFIG, ShiftConfig } from "@/utils/shiftConfig";
+import { resolveShiftConfig, timeToMinutes, computeShiftWindowSummaries, formatClock12h, DEFAULT_SHIFT_CONFIG, ShiftConfig } from "@/utils/shiftConfig";
 import { SelectInput } from "@/components/ui/select-input";
 import { DateInput } from "@/components/ui/date-input";
 import { TimeInput } from "@/components/ui/time-input";
@@ -4478,10 +4478,12 @@ export default function AdminDashboard() {
 
     const summarize = (h: any, prefix: "day" | "night") => {
       // Hospital has no cast on these TIME columns (see the model), so the
-      // general /hospitals list returns raw "HH:MM:SS" - trim to "HH:MM".
+      // general /hospitals list returns raw "HH:MM:SS" - trim to "HH:MM",
+      // then to 12-hour AM/PM so it reads the same way as the edit modal's
+      // "What this means" preview, instead of a mismatched 24-hour value.
       const start = h[`${prefix}_shift_start`];
       const end = h[`${prefix}_shift_end`];
-      if (start && end) return `${String(start).slice(0, 5)} - ${String(end).slice(0, 5)}`;
+      if (start && end) return `${formatClock12h(String(start).slice(0, 5))} - ${formatClock12h(String(end).slice(0, 5))}`;
       return "Default";
     };
 
@@ -4652,11 +4654,11 @@ export default function AdminDashboard() {
                   </View>
                   <View style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.formLabel}>Start (default {shiftDefaults?.day_shift_start ?? "07:00"})</Text>
+                      <Text style={styles.formLabel}>Start (default {formatClock12h(String(shiftDefaults?.day_shift_start ?? "07:00"))})</Text>
                       <TimeInput value={shiftForm.day_shift_start} onChange={(v) => setShiftForm((p) => ({ ...p, day_shift_start: v }))} />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.formLabel}>End (default {shiftDefaults?.day_shift_end ?? "19:00"})</Text>
+                      <Text style={styles.formLabel}>End (default {formatClock12h(String(shiftDefaults?.day_shift_end ?? "19:00"))})</Text>
                       <TimeInput value={shiftForm.day_shift_end} onChange={(v) => setShiftForm((p) => ({ ...p, day_shift_end: v }))} />
                     </View>
                   </View>
@@ -4694,11 +4696,11 @@ export default function AdminDashboard() {
                   </View>
                   <View style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.formLabel}>Start (default {shiftDefaults?.night_shift_start ?? "19:00"})</Text>
+                      <Text style={styles.formLabel}>Start (default {formatClock12h(String(shiftDefaults?.night_shift_start ?? "19:00"))})</Text>
                       <TimeInput value={shiftForm.night_shift_start} onChange={(v) => setShiftForm((p) => ({ ...p, night_shift_start: v }))} />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.formLabel}>End (default {shiftDefaults?.night_shift_end ?? "07:00"})</Text>
+                      <Text style={styles.formLabel}>End (default {formatClock12h(String(shiftDefaults?.night_shift_end ?? "07:00"))})</Text>
                       <TimeInput value={shiftForm.night_shift_end} onChange={(v) => setShiftForm((p) => ({ ...p, night_shift_end: v }))} />
                     </View>
                   </View>

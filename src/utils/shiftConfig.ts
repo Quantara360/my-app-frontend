@@ -125,6 +125,16 @@ function fmtClock(totalMinutes: number): string {
   return `${h12}:${String(mm).padStart(2, '0')}${ampm}`;
 }
 
+/**
+ * "HH:mm" (24-hour, what the TimeInput fields and the DB store) -> "6:00AM"
+ * style 12-hour string - use this anywhere a default/current time value is
+ * shown as a label or hint, so it reads in the same format as the shift
+ * window preview table instead of a jarring "07:00" next to "7:00AM".
+ */
+export function formatClock12h(hhmm: string): string {
+  return fmtClock(timeToMinutes(hhmm));
+}
+
 /** A single row's plain-English window + which shift/state tapping the toggle button in it picks. */
 export type ShiftWindowRow = { range: string; toggle: string };
 
