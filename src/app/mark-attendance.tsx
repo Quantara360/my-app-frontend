@@ -12,7 +12,7 @@ import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/contexts/AuthContext";
 import { API_BASE_URL } from "@/services/authService";
 import { useGoBack } from "@/hooks/use-go-back";
-import {  } from "react-native";
+import { DEFAULT_SHIFT_CONFIG, ShiftConfig, deriveShiftWindow } from "@/utils/shiftConfig";
 
 export default function MarkAttendance() {
   const router = useRouter();
@@ -26,59 +26,47 @@ export default function MarkAttendance() {
   const [date, setDate] = useState(new Date());
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
+  // This hospital's own Day/Night shift times - falls back to the app-wide
+  // defaults until it loads (or if this worksite has no hospital at all),
+  // so there's no flash of a wrong window while the fetch is in flight.
+  const [shiftConfig, setShiftConfig] = useState<ShiftConfig>(DEFAULT_SHIFT_CONFIG);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  const hour = currentTime.getHours();
-  const minute = currentTime.getMinutes();
+  useEffect(() => {
+    if (!token || !hospitalId) return;
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/hospitals/${hospitalId}/shifts`, {
+          headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.effective) setShiftConfig(data.effective);
+        }
+      } catch (e) {
+        console.error("[mark-attendance] failed to load hospital shift config", e);
+      }
+    })();
+  }, [token, hospitalId]);
 
-  // The day is 6 back-to-back windows. The two "changeover" windows (dawn
-  // and dusk) are where the outgoing shift's on-time OUT and the incoming
-  // shift's on-time IN overlap in the same clock hours, so which one
-  // actually applies is genuinely ambiguous and the toggle picks between
-  // them. The other four windows are unambiguous (Late Attendance / Early
-  // Out for whichever shift is currently running), so there's nothing to
-  // toggle there.
-  let derivedShift: "Morning" | "Evening";
-  let derivedState: "IN" | "OUT";
-  let isLate = false;
-  let isEarlyOut = false;
-  let canToggle = false;
-
-  if (hour >= 5 && hour < 7) {
-    // 5:00-6:59AM: Day on-time IN <-> Night on-time OUT
-    derivedShift = "Morning";
-    derivedState = "IN";
-    canToggle = true;
-  } else if (hour >= 7 && hour < 12) {
-    // 7:00-11:59AM: Day shift, late attendance
-    derivedShift = "Morning";
-    derivedState = "IN";
-    isLate = true;
-  } else if (hour >= 12 && hour < 17) {
-    // 12:00-4:59PM: Day shift, early out
-    derivedShift = "Morning";
-    derivedState = "OUT";
-    isEarlyOut = true;
-  } else if (hour >= 17 && hour < 19) {
-    // 5:00-6:59PM: Night on-time IN <-> Day on-time OUT
-    derivedShift = "Evening";
-    derivedState = "IN";
-    canToggle = true;
-  } else if (hour >= 19) {
-    // 7:00-11:59PM: Night shift, late attendance
-    derivedShift = "Evening";
-    derivedState = "IN";
-    isLate = true;
-  } else {
-    // 12:00-4:59AM: Night shift, early out
-    derivedShift = "Evening";
-    derivedState = "OUT";
-    isEarlyOut = true;
-  }
+  // The day is 6 back-to-back windows, derived from this hospital's Day/Night
+  // shift times (or the defaults, until/unless a hospital has its own). The
+  // two "changeover" windows (dawn and dusk) are where the outgoing shift's
+  // on-time OUT and the incoming shift's on-time IN overlap in the same
+  // clock hours, so which one actually applies is genuinely ambiguous and
+  // the toggle picks between them. The other four windows are unambiguous
+  // (Late Attendance / Early Out for whichever shift is currently running),
+  // so there's nothing to toggle there. See deriveShiftWindow().
+  const derivedWindow = deriveShiftWindow(currentTime, shiftConfig);
+  const derivedShift: "Morning" | "Evening" = derivedWindow.shift;
+  const derivedState: "IN" | "OUT" = derivedWindow.state;
+  const isLate = derivedWindow.isLate;
+  const isEarlyOut = derivedWindow.isEarlyOut;
+  const canToggle = derivedWindow.canToggle;
 
   // manualCombo: null = use the clock-derived default; "alt" = the other
   // half of a changeover window (Day IN <-> Night OUT, or Night IN <-> Day

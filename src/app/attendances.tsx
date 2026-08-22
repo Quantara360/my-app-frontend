@@ -13,6 +13,7 @@ import * as AttendancesService from "@/services/adminAttendancesService";
 import { useGoBack } from "@/hooks/use-go-back";
 import { API_BASE_URL, getAuthHeaders } from "@/services/authService";
 import { WorkerIdCardModal, IdCardWorker } from "@/components/WorkerIdCardModal";
+import { resolveShiftConfig, timeToMinutes } from "@/utils/shiftConfig";
 
 export default function AttendancesPage() {
   const goBack = useGoBack();
@@ -208,25 +209,26 @@ export default function AttendancesPage() {
     return status;
   }
 
-  // Returns true if the worker clocked out BEFORE their shift end time
+  // Returns true if the worker clocked out more than that shift's own
+  // early-departure grace period before it was due to end - using this
+  // record's hospital's own configured shift times when set, falling back
+  // to the app-wide defaults otherwise (see resolveShiftConfig()).
   function isEarlyOut(item: any): boolean {
     if (!item.out_marked_at) return false;
+    const config = resolveShiftConfig(item.hospital);
     const shiftName = (item.shift || "").toLowerCase();
     const outTime = new Date(item.out_marked_at);
-    const shiftEndHour = shiftName === "morning" ? 18 : 6; // Morning ends 18:00, Evening ends 06:00
-    const outHour = outTime.getHours();
-    const outMinutes = outTime.getMinutes();
-    if (shiftName === "morning") {
-      // Early if out before 18:00
-      return outHour < shiftEndHour || (outHour === shiftEndHour && outMinutes === 0);
-    } else {
-      // Evening/Night: shift ends next day at 06:00. Early if out before 06:00 same day
-      return outHour < shiftEndHour;
-    }
+    const outMinutes = outTime.getHours() * 60 + outTime.getMinutes();
+    const threshold = shiftName === "morning"
+      ? timeToMinutes(config.day_shift_end) - config.day_early_grace_minutes
+      : timeToMinutes(config.night_shift_end) - config.night_early_grace_minutes;
+    return outMinutes < threshold;
   }
 
   // Returns true if the worker marked IN but their shift has already ended
-  // without them marking OUT — i.e. they're overdue to clock out.
+  // without them marking OUT — i.e. they're overdue to clock out. Uses this
+  // record's hospital's own configured shift end time when set, falling
+  // back to the app-wide default otherwise.
   function isOverdueOut(item: any): boolean {
     if (!item.marked_at || item.out_marked_at) return false;
     if ((item.status || "").toLowerCase() === "absent") return false;
@@ -234,12 +236,15 @@ export default function AttendancesPage() {
     if (!recordDate) return false;
     const [y, m, d] = recordDate.split("-").map(Number);
     if (!y || !m || !d) return false;
+    const config = resolveShiftConfig(item.hospital);
     const shiftName = (item.shift || "").toLowerCase();
-    // Morning ends same day at 18:00; Evening ends the next day at 06:00 —
-    // matches the shift-end hours isEarlyOut() already uses above.
+    // Morning ends the same day; Evening ends the next day — matches the
+    // shift-end times isEarlyOut() already uses above.
+    const [endH, endM] = (shiftName === "morning" ? config.day_shift_end : config.night_shift_end)
+      .split(":").map((n) => parseInt(n, 10));
     const shiftEnd = shiftName === "morning"
-      ? new Date(y, m - 1, d, 18, 0, 0, 0)
-      : new Date(y, m - 1, d + 1, 6, 0, 0, 0);
+      ? new Date(y, m - 1, d, endH, endM, 0, 0)
+      : new Date(y, m - 1, d + 1, endH, endM, 0, 0);
     return Date.now() >= shiftEnd.getTime();
   }
 
