@@ -537,20 +537,30 @@ export default function WorkersPage() {
             </View>
           </View>
 
-          {/* A horizontal ScrollView's own content container defaults to
-              shrink-to-content (that's what lets it be wider than the
-              viewport and scroll) - so widening the card above didn't
-              widen the table with it, leaving a blank strip of card
-              background next to it. A plain wrapping View with
-              minWidth:'100%' doesn't fix it either: it's a flex item
-              *inside* that same shrink-to-content container, so the
-              percentage has nothing definite to resolve against and just
-              matches the content again. contentContainerStyle styles RN's
-              content container directly, and IT sizes against the
-              ScrollView's own (real, definite) width - so 100% here
-              actually means the full available width. Horizontal scroll
-              still kicks in on narrow screens where the table overflows. */}
+          {/* A horizontal ScrollView's content container defaults to
+              flexDirection:'row' AND shrink-to-content width (both needed
+              so content can be wider than the viewport and scroll
+              sideways). That's two problems for a normal top-to-bottom
+              table: (1) without a wrapping View, the header row and the
+              row list below it become side-by-side flex siblings instead
+              of stacked - tried removing the wrapper to fix the width and
+              got exactly that regression; (2) the shrink-to-content width
+              means widening the card above didn't widen the table with
+              it. The fix needs both pieces: contentContainerStyle to make
+              RN's own content container actually stretch to the
+              ScrollView's real width (a plain wrapper View's
+              minWidth:'100%' can't - it's a flex item *inside* that same
+              shrink-to-content container, so the percentage has nothing
+              definite to resolve against), AND the wrapping View kept
+              in place - as content container's ONLY child - so
+              header+rows stay stacked in a column regardless of the
+              content container's own row direction; that View's own
+              minWidth:'100%' now resolves correctly since its parent (the
+              content container) has a real, non-auto width to resolve
+              against. Horizontal scroll still kicks in on narrow screens
+              where the table overflows. */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ width: '100%' }} contentContainerStyle={{ minWidth: '100%' }}>
+            <View style={{ minWidth: '100%' }}>
               <View style={styles.tableHeader}>
             <Text style={[styles.columnHeader, { width: 60, minWidth: 60, flex: 0 }]}>ID</Text>
             <Text style={styles.columnHeader}>Name</Text>
@@ -586,6 +596,7 @@ export default function WorkersPage() {
               </View>
             ))}
           </ScrollView>
+            </View>
           </ScrollView>
         </View>
 
