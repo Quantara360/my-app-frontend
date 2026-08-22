@@ -4550,80 +4550,101 @@ export default function AdminDashboard() {
           <View style={{ width: 44 }} />
         </View>
 
-        <View style={{ paddingHorizontal: Spacing.four, marginBottom: 12 }}>
-          <Text style={{ fontSize: 12, color: isDark ? "#aaa" : "#666", marginBottom: 6 }}>
-            Filter by worksite
-          </Text>
-          <SelectInput
-            value={shiftsWorksiteFilter}
-            onChange={setShiftsWorksiteFilter}
-            options={worksiteOptions}
-            webStyle={{
-              backgroundColor: isDark ? "#1e1e1e" : "#fff",
-              color: isDark ? "#fff" : "#000",
-              border: `1px solid ${isDark ? "#333" : "#ddd"}`,
-              borderRadius: 8,
-              padding: "8px 12px",
-              width: "100%",
-            }}
-          />
-        </View>
-
         <ScrollView
-          style={styles.tableScrollContainer}
-          showsVerticalScrollIndicator={true}
-          nestedScrollEnabled={true}
+          style={{ flex: 1 }}
+          showsVerticalScrollIndicator={false}
           bounces={false}
           overScrollMode="never"
         >
-          <ScrollView horizontal showsHorizontalScrollIndicator={true} style={styles.horizontalTableScroll} nestedScrollEnabled={true}>
-            <View style={[styles.tableCard, { minWidth: 720 }]}>
-              <View style={[styles.tableRow, styles.tableHeaderRow]}>
-                <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Hospital</Text>
-                <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Worksite</Text>
-                <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Day Shift</Text>
-                <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Night Shift</Text>
-                <Text style={[styles.tableHeaderCell, { flex: 1.5 }]}>Actions</Text>
-              </View>
+          {/* Plain-language explanation - no jargon, just what the numbers mean. */}
+          <View
+            style={{
+              marginHorizontal: Spacing.four,
+              marginBottom: 16,
+              backgroundColor: isDark ? "#1c2a1c" : "#eef7ee",
+              borderRadius: 12,
+              padding: 14,
+              borderLeftWidth: 4,
+              borderLeftColor: "#4caf50",
+            }}
+          >
+            <Text style={{ fontWeight: "700", fontSize: 13, marginBottom: 6, color: isDark ? "#fff" : "#1f1d21" }}>
+              💡 How shifts work
+            </Text>
+            <Text style={{ fontSize: 12, lineHeight: 19, color: isDark ? "#cde5cd" : "#3a4a3a" }}>
+              Every hospital has a Day shift and a Night shift. Each one just needs 4 things: when it starts, when it
+              closes, and two grace periods:{"\n\n"}
+              • <Text style={{ fontWeight: "700" }}>Late grace</Text> — extra minutes after the start time before someone counts as Late.{"\n"}
+              • <Text style={{ fontWeight: "700" }}>Early grace</Text> — minutes before closing time that still count as leaving on time.{"\n\n"}
+              Leave any field blank to use the standard hospital times - shown right on the field as its default.
+            </Text>
+          </View>
 
-              {filteredHospitalsForShifts.map((h: any, index: number) => (
-                <View
-                  key={h.id}
-                  style={[
-                    styles.tableRow,
-                    index !== filteredHospitalsForShifts.length - 1 && { borderBottomWidth: 1, borderBottomColor: "#e5e7eb" },
-                  ]}
+          <View style={{ paddingHorizontal: Spacing.four, marginBottom: 16 }}>
+            <Text style={{ fontSize: 12, color: isDark ? "#aaa" : "#666", marginBottom: 6 }}>
+              Filter by worksite
+            </Text>
+            <SelectInput
+              value={shiftsWorksiteFilter}
+              onChange={setShiftsWorksiteFilter}
+              options={worksiteOptions}
+              webStyle={{
+                backgroundColor: isDark ? "#1e1e1e" : "#fff",
+                color: isDark ? "#fff" : "#000",
+                border: `1px solid ${isDark ? "#333" : "#ddd"}`,
+                borderRadius: 8,
+                padding: "8px 12px",
+                width: "100%",
+              }}
+            />
+          </View>
+
+          {/* Each hospital as its own card - stacks naturally on any screen
+              width instead of a table that needs horizontal scrolling. */}
+          <View style={{ paddingHorizontal: Spacing.four, gap: 12, paddingBottom: Spacing.four }}>
+            {filteredHospitalsForShifts.map((h: any) => (
+              <View
+                key={h.id}
+                style={{
+                  backgroundColor: isDark ? "#1e1e1e" : "#fff",
+                  borderRadius: 14,
+                  padding: 16,
+                  shadowColor: "#000",
+                  shadowOpacity: 0.06,
+                  shadowRadius: 8,
+                  shadowOffset: { width: 0, height: 3 },
+                  elevation: 3,
+                }}
+              >
+                <Text style={{ fontSize: 15, fontWeight: "700", color: isDark ? "#fff" : "#1f1d21" }}>{h.name}</Text>
+                <Text style={{ fontSize: 12, color: isDark ? "#999" : "#888", marginBottom: 12 }}>
+                  {worksites.find((w: any) => w.id === h.worksite_id)?.name || "—"}
+                </Text>
+
+                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                  <Text style={{ fontSize: 13, color: isDark ? "#ddd" : "#444" }}>☀️ Day Shift</Text>
+                  <Text style={{ fontSize: 13, fontWeight: "600", color: isDark ? "#fff" : "#1f1d21" }}>{summarize(h, "day")}</Text>
+                </View>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                  <Text style={{ fontSize: 13, color: isDark ? "#ddd" : "#444" }}>🌙 Night Shift</Text>
+                  <Text style={{ fontSize: 13, fontWeight: "600", color: isDark ? "#fff" : "#1f1d21" }}>{summarize(h, "night")}</Text>
+                </View>
+
+                <Pressable
+                  onPress={() => openEditShifts(h)}
+                  style={{ backgroundColor: "#6a5acd", borderRadius: 10, paddingVertical: 11, alignItems: "center" }}
                 >
-                  <Text style={[styles.tableCell, { flex: 2 }]}>{h.name}</Text>
-                  <Text style={[styles.tableCell, { flex: 2 }]}>
-                    {worksites.find((w: any) => w.id === h.worksite_id)?.name || "—"}
-                  </Text>
-                  <Text style={[styles.tableCell, { flex: 2 }]}>{summarize(h, "day")}</Text>
-                  <Text style={[styles.tableCell, { flex: 2 }]}>{summarize(h, "night")}</Text>
-                  <View style={[styles.tableCell, { flex: 1.5 }]}>
-                    <Pressable
-                      onPress={() => openEditShifts(h)}
-                      style={{
-                        paddingHorizontal: 10,
-                        paddingVertical: 6,
-                        borderRadius: 8,
-                        backgroundColor: "#6a5acd",
-                        alignSelf: "flex-start",
-                      }}
-                    >
-                      <Text style={{ color: "#fff", fontSize: 12, fontWeight: "600" }}>Edit Shifts</Text>
-                    </Pressable>
-                  </View>
-                </View>
-              ))}
+                  <Text style={{ color: "#fff", fontWeight: "700", fontSize: 13 }}>Edit Shifts</Text>
+                </Pressable>
+              </View>
+            ))}
 
-              {filteredHospitalsForShifts.length === 0 && (
-                <View style={styles.emptyRow}>
-                  <Text style={styles.emptyText}>No hospitals found.</Text>
-                </View>
-              )}
-            </View>
-          </ScrollView>
+            {filteredHospitalsForShifts.length === 0 && (
+              <View style={styles.emptyRow}>
+                <Text style={styles.emptyText}>No hospitals found.</Text>
+              </View>
+            )}
+          </View>
         </ScrollView>
 
         {/* Edit Shifts Modal */}
@@ -4641,9 +4662,22 @@ export default function AdminDashboard() {
                 <ActivityIndicator style={{ marginVertical: 40 }} color={isDark ? "#fff" : "#000"} />
               ) : (
                 <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-                  <Text style={{ fontSize: 12, color: isDark ? "#aaa" : "#666", marginBottom: 16 }}>
-                    Leave a field blank to use the app-wide default shown as its placeholder.
-                  </Text>
+                  <View
+                    style={{
+                      backgroundColor: isDark ? "#1c2a1c" : "#eef7ee",
+                      borderRadius: 10,
+                      padding: 12,
+                      marginBottom: 16,
+                      borderLeftWidth: 4,
+                      borderLeftColor: "#4caf50",
+                    }}
+                  >
+                    <Text style={{ fontSize: 12, lineHeight: 18, color: isDark ? "#cde5cd" : "#3a4a3a" }}>
+                      💡 <Text style={{ fontWeight: "700" }}>Late grace</Text> = extra minutes after start before
+                      someone counts as Late. <Text style={{ fontWeight: "700" }}>Early grace</Text> = minutes before
+                      closing that still count as on-time. Leave any field blank to use the default shown next to it.
+                    </Text>
+                  </View>
 
                   {/* Day Shift */}
                   <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
