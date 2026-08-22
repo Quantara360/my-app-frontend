@@ -539,9 +539,12 @@ export default function WorkersPage() {
           </View>
 
           <ScrollView style={styles.tableBody} showsVerticalScrollIndicator={false} bounces={false} overScrollMode="never">
-            {filteredWorkers.map((worker) => (
+            {filteredWorkers.map((worker, index) => (
               <View key={worker.id} style={styles.tableRow}>
-                <Text style={[styles.rowCell, { width: 60, minWidth: 60, flex: 0 }]} numberOfLines={1}>{worker.id}</Text>
+                {/* Display-only sequential number (1, 2, 3…) - the real
+                    database id (used by attendance, salaries, EPF history,
+                    and the face-recognition service) is left untouched. */}
+                <Text style={[styles.rowCell, { width: 60, minWidth: 60, flex: 0 }]} numberOfLines={1}>{index + 1}</Text>
                 <Text style={styles.rowCell} numberOfLines={1}>{worker.name}</Text>
                 <Text style={[styles.rowCell, { width: 120, minWidth: 120, flex: 0 }]} numberOfLines={1}>{worker.worksite?.name ?? 'Unassigned'}</Text>
                 <Text style={[styles.rowCell, { width: 120, minWidth: 120, flex: 0 }]} numberOfLines={1}>{worker.role}</Text>

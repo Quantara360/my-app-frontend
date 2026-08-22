@@ -135,7 +135,10 @@ export default function TemplatePage() {
                 ) : (
                   filtered.map((w, i) => (
                     <View key={w.id} style={[styles.row, i !== filtered.length - 1 && styles.divider]}>
-                      <Text style={[styles.cell, { flex: 0.5 }]}>{w.id}</Text>
+                      {/* Display-only sequential number - the real database
+                          id (used by attendance, salaries, EPF history, and
+                          the face-recognition service) is left untouched. */}
+                      <Text style={[styles.cell, { flex: 0.5 }]}>{i + 1}</Text>
                       <Text style={[styles.cell, { flex: 2 }]}>{w.name}</Text>
                       <Text style={[styles.cell, { flex: 2 }]}>{w.role || "—"}</Text>
                       <Text style={[styles.cell, { flex: 2 }]}>{w.worksite?.name || "—"}</Text>

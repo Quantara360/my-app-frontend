@@ -4432,10 +4432,13 @@ export default function AdminDashboard() {
               </Text>
             </View>
 
-            {filteredWorkerData.map((item) => (
+            {filteredWorkerData.map((item, index) => (
               <View key={item.id} style={styles.tableRow}>
+                {/* Display-only sequential number (1, 2, 3…) - the real
+                    database id (used by attendance, salaries, EPF history,
+                    and the face-recognition service) is left untouched. */}
                 <Text style={[styles.tableCell, styles.workerCellID]}>
-                  {item.id}
+                  {index + 1}
                 </Text>
                 <Text style={[styles.tableCell, styles.workerCellName]}>
                   {item.name}
