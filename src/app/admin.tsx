@@ -2561,23 +2561,19 @@ export default function AdminDashboard() {
           <ThemedText type="subtitle" style={styles.manageSiteTitle}>
             {screenTitle}
           </ThemedText>
-          <SafeView style={{ width: 44 }} />
+          <Pressable style={{ width: 44, alignItems: 'center' }} onPress={loadWorksitesData} disabled={worksitesRefreshing}>
+            <Text style={{ fontSize: 18, opacity: worksitesRefreshing ? 0.4 : 1 }}>🔄</Text>
+          </Pressable>
         </SafeView>
 
-        <ScrollView
-          style={[styles.manageSiteList, { overscrollBehavior: 'none' } as any]}
-          contentContainerStyle={{ paddingBottom: 40 }}
-          bounces={false}
-          overScrollMode="never"
-          refreshControl={
-            <RefreshControl
-              refreshing={worksitesRefreshing}
-              onRefresh={loadWorksitesData}
-              colors={['#16a34a']}
-              tintColor={isDark ? '#16a34a' : '#16a34a'}
-            />
-          }
-        >
+        {/* A plain View, not a nested ScrollView - this whole panel already
+            renders inside the dashboard's own outer ScrollView, and an
+            unbounded flex:1 ScrollView nested in there never gets a real
+            height to scroll within, so it just freezes instead of
+            scrolling. The outer page scroll handles this content instead
+            (pull-to-refresh moved to the 🔄 button above, since that gesture
+            needs an actual ScrollView to attach to). */}
+        <SafeView style={[styles.manageSiteList, { overscrollBehavior: 'none' } as any]}>
           <SafeView style={styles.manageSiteCardsContainer}>
             {displayedSites.map((site) => (
               <Pressable
@@ -2632,7 +2628,7 @@ export default function AdminDashboard() {
               <Text style={{ marginTop: 8, color: '#16a34a', fontWeight: 'bold' }}>{addLabel}</Text>
             </Pressable>
           </SafeView>
-        </ScrollView>
+        </SafeView>
       </SafeView>
     );
   };
@@ -4550,12 +4546,12 @@ export default function AdminDashboard() {
           <View style={{ width: 44 }} />
         </View>
 
-        <ScrollView
-          style={{ flex: 1 }}
-          showsVerticalScrollIndicator={false}
-          bounces={false}
-          overScrollMode="never"
-        >
+        {/* A plain View, not a nested ScrollView - this whole panel is already
+            rendered inside the dashboard's own outer ScrollView, and an
+            unbounded flex:1 ScrollView nested in there doesn't get a real
+            height to scroll within, so it just freezes instead of scrolling.
+            The outer page scroll handles this content instead. */}
+        <View>
           {/* Plain-language explanation - no jargon, just what the numbers mean. */}
           <View
             style={{
@@ -4645,7 +4641,7 @@ export default function AdminDashboard() {
               </View>
             )}
           </View>
-        </ScrollView>
+        </View>
 
         {/* Edit Shifts Modal */}
         <Modal visible={!!shiftEditHospital} transparent animationType="fade" onRequestClose={() => setShiftEditHospital(null)}>
