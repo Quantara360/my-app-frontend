@@ -14,6 +14,7 @@ import { useGoBack } from "@/hooks/use-go-back";
 import { API_BASE_URL, getAuthHeaders } from "@/services/authService";
 import { WorkerIdCardModal, IdCardWorker } from "@/components/WorkerIdCardModal";
 import { resolveShiftConfig, timeToMinutes } from "@/utils/shiftConfig";
+import { buildWorkerDisplayIdMap, getWorkerDisplayId } from "@/utils/workerDisplayId";
 
 export default function AttendancesPage() {
   const goBack = useGoBack();
@@ -96,6 +97,25 @@ export default function AttendancesPage() {
       }
     })();
   }, []);
+
+  // Load the full worker roster once, purely to compute the stable
+  // "Worker No." shown in the table below (see workerDisplayId.ts) - this
+  // page only otherwise has each attendance's eager-loaded `worker` (id +
+  // name), which isn't enough to rank against the whole roster. all=1 is
+  // required so the ranking isn't silently wrong/incomplete past 50 workers.
+  const [allWorkers, setAllWorkers] = useState<{ id: number }[]>([]);
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/workers?all=1`, { headers: await getAuthHeaders() });
+        const body = await res.json();
+        setAllWorkers(Array.isArray(body) ? body : body.data ?? []);
+      } catch (e) {
+        console.error("Failed to load workers:", e);
+      }
+    })();
+  }, []);
+  const workerDisplayIdMap = useMemo(() => buildWorkerDisplayIdMap(allWorkers), [allWorkers]);
 
   // Reset child selections when parent changes
   const handleMainSiteChange = (value: string) => {
@@ -459,7 +479,10 @@ export default function AttendancesPage() {
                       },
                     ]}
                   >
-                    <Text style={[styles.tableCell, { flex: 1 }]}>{item.worker_id}</Text>
+                    {/* Stable "Worker No." - same ranking as the Workers
+                        grid and ID Templates list for this same worker (see
+                        workerDisplayId.ts), not the real database id. */}
+                    <Text style={[styles.tableCell, { flex: 1 }]}>{getWorkerDisplayId(workerDisplayIdMap, item.worker_id)}</Text>
                     <Text style={[styles.tableCell, { flex: 2 }]}>
                       {item.worker?.name || `Worker #${item.worker_id}`}
                     </Text>

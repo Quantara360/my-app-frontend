@@ -20,6 +20,7 @@ import { API_BASE_URL } from "@/services/authService";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGoBack } from "@/hooks/use-go-back";
 import { WorkerIdCardModal, printCard, downloadPdfCard } from "@/components/WorkerIdCardModal";
+import { buildWorkerDisplayIdMap, getWorkerDisplayId } from "@/utils/workerDisplayId";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
 // Detect mobile browser (web running on a phone/tablet)
@@ -64,7 +65,9 @@ export default function TemplatePage() {
     if (!token) return;
     (async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/workers`, {
+        // all=1 - needed so the consistent "Worker No." (see
+        // workerDisplayId.ts) ranks against the full roster, not one page.
+        const res = await fetch(`${API_BASE_URL}/workers?all=1`, {
           headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
@@ -82,6 +85,11 @@ export default function TemplatePage() {
       w.name.toLowerCase().includes(search.toLowerCase()) ||
       String(w.id).includes(search)
   );
+
+  // Built from the full (unfiltered) roster so a worker's "No." never
+  // shifts depending on the active search, and matches the same ranking
+  // shown in the Workers grid and Attendance table.
+  const workerDisplayIdMap = useMemo(() => buildWorkerDisplayIdMap(workers), [workers]);
 
   const openCard = (w: Worker) => { setSelectedWorker(w); setShowCard(true); };
 
@@ -135,9 +143,10 @@ export default function TemplatePage() {
                 ) : (
                   filtered.map((w, i) => (
                     <View key={w.id} style={[styles.row, i !== filtered.length - 1 && styles.divider]}>
-                      {/* The real worker id - matches the "Worker ID" shown
-                          everywhere else (attendance table, etc.). */}
-                      <Text style={[styles.cell, { flex: 0.5 }]}>{w.id}</Text>
+                      {/* Stable "Worker No." - same ranking as the Workers
+                          grid and Attendance table for this same worker,
+                          not the real database id or a raw list index. */}
+                      <Text style={[styles.cell, { flex: 0.5 }]}>{getWorkerDisplayId(workerDisplayIdMap, w.id)}</Text>
                       <Text style={[styles.cell, { flex: 2 }]}>{w.name}</Text>
                       <Text style={[styles.cell, { flex: 2 }]}>{w.role || "—"}</Text>
                       <Text style={[styles.cell, { flex: 2 }]}>{w.worksite?.name || "—"}</Text>
