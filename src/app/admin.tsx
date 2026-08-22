@@ -4,8 +4,10 @@ import { SafeView } from "@/components/safe-view";
 import { BackgroundPattern } from "@/components/BackgroundPattern";
 import { ConfirmModal } from "@/components/confirm-modal";
 import { WorkerIdCardModal, IdCardWorker } from "@/components/WorkerIdCardModal";
+import { resolveShiftConfig, timeToMinutes } from "@/utils/shiftConfig";
 import { SelectInput } from "@/components/ui/select-input";
 import { DateInput } from "@/components/ui/date-input";
+import { TimeInput } from "@/components/ui/time-input";
 import { BottomTabInset, Spacing, rf, MaxContentWidth } from "@/constants/theme";
 
 
@@ -251,6 +253,24 @@ export default function AdminDashboard() {
   const [hospitals, setHospitals] = useState<any[]>([]);
   const [subSites, setSubSites] = useState<any[]>([]);
   const [worksitesRefreshing, setWorksitesRefreshing] = useState(false);
+
+  // ── Hospital Shifts panel ──────────────────────────────────────────────
+  const [shiftsWorksiteFilter, setShiftsWorksiteFilter] = useState<string>("All");
+  const [shiftEditHospital, setShiftEditHospital] = useState<any | null>(null);
+  const [shiftDefaults, setShiftDefaults] = useState<Record<string, string | number> | null>(null);
+  const [shiftForm, setShiftForm] = useState({
+    day_shift_start: "",
+    day_shift_end: "",
+    day_late_grace_minutes: "",
+    day_early_grace_minutes: "",
+    night_shift_start: "",
+    night_shift_end: "",
+    night_late_grace_minutes: "",
+    night_early_grace_minutes: "",
+  });
+  const [shiftLoading, setShiftLoading] = useState(false);
+  const [shiftSaving, setShiftSaving] = useState(false);
+  const [shiftSuccessVisible, setShiftSuccessVisible] = useState(false);
 
   // Search state
   const [machinerySearch, setMachinerySearch] = useState("");
@@ -824,7 +844,9 @@ export default function AdminDashboard() {
   };
 
   // Returns true if the worker marked IN but their shift has already ended
-  // without them marking OUT — i.e. they're overdue to clock out.
+  // without them marking OUT — i.e. they're overdue to clock out. Uses this
+  // record's hospital's own configured shift end time when set, falling
+  // back to the app-wide default otherwise.
   const isOverdueOut = (item: any): boolean => {
     if (!item.marked_at || item.out_marked_at) return false;
     if ((item.status || "").toLowerCase() === "absent") return false;
@@ -832,11 +854,13 @@ export default function AdminDashboard() {
     if (!recordDate) return false;
     const [y, m, d] = recordDate.split("-").map(Number);
     if (!y || !m || !d) return false;
+    const config = resolveShiftConfig(item.hospital);
     const shiftName = (item.shift || "").toLowerCase();
-    // Morning ends same day at 18:00; Evening ends the next day at 06:00.
+    const [endH, endM] = (shiftName === "morning" ? config.day_shift_end : config.night_shift_end)
+      .split(":").map((n) => parseInt(n, 10));
     const shiftEnd = shiftName === "morning"
-      ? new Date(y, m - 1, d, 18, 0, 0, 0)
-      : new Date(y, m - 1, d + 1, 6, 0, 0, 0);
+      ? new Date(y, m - 1, d, endH, endM, 0, 0)
+      : new Date(y, m - 1, d + 1, endH, endM, 0, 0);
     return Date.now() >= shiftEnd.getTime();
   };
 
@@ -1207,6 +1231,14 @@ export default function AdminDashboard() {
       backgroundColor: "#f5d7b3",
       textColor: "#1f1d21",
     },
+    {
+      id: "9",
+      title: "Hospital Shifts",
+      value: hospitals.length,
+      icon: "\u{1F550}",
+      backgroundColor: "#d3c8f0",
+      textColor: "#1f1d21",
+    },
   ];
 
   const getCardScaleValue = (cardId: string) => {
@@ -1347,6 +1379,79 @@ export default function AdminDashboard() {
     }
   };
 
+  const openEditShifts = async (hospital: any) => {
+    setShiftEditHospital(hospital);
+    setShiftLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/hospitals/${hospital.id}/shifts`, {
+        headers: await getAuthHeaders(),
+      });
+      const data = await res.json();
+      setShiftDefaults(data.defaults ?? null);
+      const o = data.overrides ?? {};
+      setShiftForm({
+        day_shift_start: o.day_shift_start ?? "",
+        day_shift_end: o.day_shift_end ?? "",
+        day_late_grace_minutes: o.day_late_grace_minutes != null ? String(o.day_late_grace_minutes) : "",
+        day_early_grace_minutes: o.day_early_grace_minutes != null ? String(o.day_early_grace_minutes) : "",
+        night_shift_start: o.night_shift_start ?? "",
+        night_shift_end: o.night_shift_end ?? "",
+        night_late_grace_minutes: o.night_late_grace_minutes != null ? String(o.night_late_grace_minutes) : "",
+        night_early_grace_minutes: o.night_early_grace_minutes != null ? String(o.night_early_grace_minutes) : "",
+      });
+    } catch (error) {
+      console.error("Failed to load hospital shifts:", error);
+      Alert.alert("Error", "Could not load this hospital's shift settings.");
+      setShiftEditHospital(null);
+    } finally {
+      setShiftLoading(false);
+    }
+  };
+
+  const resetShiftFormFields = (fields: string[]) => {
+    setShiftForm((prev) => {
+      const next = { ...prev };
+      fields.forEach((f) => { (next as any)[f] = ""; });
+      return next;
+    });
+  };
+
+  const handleSaveShifts = async () => {
+    if (!shiftEditHospital) return;
+    setShiftSaving(true);
+    try {
+      const toIntOrNull = (v: string) => (v.trim() === "" ? null : parseInt(v, 10));
+      const toTimeOrNull = (v: string) => (v.trim() === "" ? null : v);
+      const body = {
+        day_shift_start: toTimeOrNull(shiftForm.day_shift_start),
+        day_shift_end: toTimeOrNull(shiftForm.day_shift_end),
+        day_late_grace_minutes: toIntOrNull(shiftForm.day_late_grace_minutes),
+        day_early_grace_minutes: toIntOrNull(shiftForm.day_early_grace_minutes),
+        night_shift_start: toTimeOrNull(shiftForm.night_shift_start),
+        night_shift_end: toTimeOrNull(shiftForm.night_shift_end),
+        night_late_grace_minutes: toIntOrNull(shiftForm.night_late_grace_minutes),
+        night_early_grace_minutes: toIntOrNull(shiftForm.night_early_grace_minutes),
+      };
+      const res = await fetch(`${API_BASE_URL}/hospitals/${shiftEditHospital.id}/shifts`, {
+        method: "PUT",
+        headers: { ...(await getAuthHeaders()), "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || "Failed to save");
+      }
+      await loadWorksitesData();
+      setShiftEditHospital(null);
+      setShiftSuccessVisible(true);
+    } catch (error) {
+      console.error("Failed to save hospital shifts:", error);
+      Alert.alert("Error", "Could not save this hospital's shift settings.");
+    } finally {
+      setShiftSaving(false);
+    }
+  };
+
   const loadAssetsData = async () => {
     try {
       const data = await AssetsService.getAssets();
@@ -1448,6 +1553,8 @@ export default function AdminDashboard() {
       setCurrentMainSiteId(null);
       setCurrentHospitalId(null);
       setSelectedView("manageSite");
+    } else if (card.title === "Hospital Shifts") {
+      setSelectedView("hospitalShifts");
     } else if (card.title === "Bonds") {
       router.push("/bonds");
     } else {
@@ -1763,15 +1870,19 @@ export default function AdminDashboard() {
                         </Text>
                       );
                     }
-                    // Show "Early" if the worker left before their shift end time
+                    // Show "Early" if the worker left more than that shift's
+                    // own early-departure grace period before it was due to
+                    // end - using this hospital's own configured shift
+                    // times when set, falling back to the app-wide defaults.
                     if (item.out_marked_at) {
+                      const shiftConfigForRow = resolveShiftConfig(item.hospital);
                       const shiftName = (item.shift || "").toLowerCase();
                       const outTime = new Date(item.out_marked_at);
-                      const outHour = outTime.getHours();
-                      const isEarly =
-                        shiftName === "morning"
-                          ? outHour < 18  // Morning ends 18:00
-                          : outHour < 6;  // Evening ends 06:00
+                      const outMinutes = outTime.getHours() * 60 + outTime.getMinutes();
+                      const threshold = shiftName === "morning"
+                        ? timeToMinutes(shiftConfigForRow.day_shift_end) - shiftConfigForRow.day_early_grace_minutes
+                        : timeToMinutes(shiftConfigForRow.night_shift_end) - shiftConfigForRow.night_early_grace_minutes;
+                      const isEarly = outMinutes < threshold;
                       if (isEarly) {
                         return (
                           <Text style={[styles.tableCell, { flex: 1.5, color: "#fa8c16", fontWeight: "600" }]}>
@@ -4303,6 +4414,250 @@ export default function AdminDashboard() {
     </View>
   );
 
+  // ── renderHospitalShiftsView ─────────────────────────────────────────────
+  const renderHospitalShiftsView = () => {
+    const worksiteOptions = [
+      { label: "All Worksites", value: "All" },
+      ...worksites.map((w: any) => ({ label: w.name, value: String(w.id) })),
+    ];
+    const filteredHospitalsForShifts = hospitals.filter((h: any) =>
+      shiftsWorksiteFilter === "All" || String(h.worksite_id) === shiftsWorksiteFilter
+    );
+
+    const summarize = (h: any, prefix: "day" | "night") => {
+      const start = h[`${prefix}_shift_start`];
+      const end = h[`${prefix}_shift_end`];
+      if (start && end) return `${start} - ${end}`;
+      return "Default";
+    };
+
+    return (
+      <View style={styles.workersContainer}>
+        <View style={styles.workersHeader}>
+          <Pressable onPress={() => setSelectedView("dashboard")} style={styles.backButton}>
+            <Text style={styles.backButtonIcon}>‹</Text>
+          </Pressable>
+          <ThemedText type="subtitle" style={styles.workersTitle}>
+            Hospital Shifts
+          </ThemedText>
+          <View style={{ width: 44 }} />
+        </View>
+
+        <View style={{ paddingHorizontal: Spacing.four, marginBottom: 12 }}>
+          <Text style={{ fontSize: 12, color: isDark ? "#aaa" : "#666", marginBottom: 6 }}>
+            Filter by worksite
+          </Text>
+          <SelectInput
+            value={shiftsWorksiteFilter}
+            onChange={setShiftsWorksiteFilter}
+            options={worksiteOptions}
+            webStyle={{
+              backgroundColor: isDark ? "#1e1e1e" : "#fff",
+              color: isDark ? "#fff" : "#000",
+              border: `1px solid ${isDark ? "#333" : "#ddd"}`,
+              borderRadius: 8,
+              padding: "8px 12px",
+              width: "100%",
+            }}
+          />
+        </View>
+
+        <ScrollView
+          style={styles.tableScrollContainer}
+          showsVerticalScrollIndicator={true}
+          nestedScrollEnabled={true}
+          bounces={false}
+          overScrollMode="never"
+        >
+          <ScrollView horizontal showsHorizontalScrollIndicator={true} style={styles.horizontalTableScroll} nestedScrollEnabled={true}>
+            <View style={[styles.tableCard, { minWidth: 720 }]}>
+              <View style={[styles.tableRow, styles.tableHeaderRow]}>
+                <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Hospital</Text>
+                <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Worksite</Text>
+                <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Day Shift</Text>
+                <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Night Shift</Text>
+                <Text style={[styles.tableHeaderCell, { flex: 1.5 }]}>Actions</Text>
+              </View>
+
+              {filteredHospitalsForShifts.map((h: any, index: number) => (
+                <View
+                  key={h.id}
+                  style={[
+                    styles.tableRow,
+                    index !== filteredHospitalsForShifts.length - 1 && { borderBottomWidth: 1, borderBottomColor: "#e5e7eb" },
+                  ]}
+                >
+                  <Text style={[styles.tableCell, { flex: 2 }]}>{h.name}</Text>
+                  <Text style={[styles.tableCell, { flex: 2 }]}>
+                    {worksites.find((w: any) => w.id === h.worksite_id)?.name || "—"}
+                  </Text>
+                  <Text style={[styles.tableCell, { flex: 2 }]}>{summarize(h, "day")}</Text>
+                  <Text style={[styles.tableCell, { flex: 2 }]}>{summarize(h, "night")}</Text>
+                  <View style={[styles.tableCell, { flex: 1.5 }]}>
+                    <Pressable
+                      onPress={() => openEditShifts(h)}
+                      style={{
+                        paddingHorizontal: 10,
+                        paddingVertical: 6,
+                        borderRadius: 8,
+                        backgroundColor: "#6a5acd",
+                        alignSelf: "flex-start",
+                      }}
+                    >
+                      <Text style={{ color: "#fff", fontSize: 12, fontWeight: "600" }}>Edit Shifts</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              ))}
+
+              {filteredHospitalsForShifts.length === 0 && (
+                <View style={styles.emptyRow}>
+                  <Text style={styles.emptyText}>No hospitals found.</Text>
+                </View>
+              )}
+            </View>
+          </ScrollView>
+        </ScrollView>
+
+        {/* Edit Shifts Modal */}
+        <Modal visible={!!shiftEditHospital} transparent animationType="fade" onRequestClose={() => setShiftEditHospital(null)}>
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalCard, { backgroundColor: isDark ? "#1e1e1e" : "#fff", maxHeight: "85%" }]}>
+              <View style={styles.modalHeader}>
+                <ThemedText type="title">{shiftEditHospital?.name} — Shifts</ThemedText>
+                <Pressable style={styles.modalClose} onPress={() => setShiftEditHospital(null)}>
+                  <Text style={styles.modalCloseText}>✕</Text>
+                </Pressable>
+              </View>
+
+              {shiftLoading ? (
+                <ActivityIndicator style={{ marginVertical: 40 }} color={isDark ? "#fff" : "#000"} />
+              ) : (
+                <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+                  <Text style={{ fontSize: 12, color: isDark ? "#aaa" : "#666", marginBottom: 16 }}>
+                    Leave a field blank to use the app-wide default shown as its placeholder.
+                  </Text>
+
+                  {/* Day Shift */}
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                    <ThemedText type="subtitle" style={{ fontSize: 15 }}>☀️ Day Shift</ThemedText>
+                    <Pressable onPress={() => resetShiftFormFields(["day_shift_start", "day_shift_end", "day_late_grace_minutes", "day_early_grace_minutes"])}>
+                      <Text style={{ fontSize: 12, color: "#6a5acd", fontWeight: "600" }}>Reset to Default</Text>
+                    </Pressable>
+                  </View>
+                  <View style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.formLabel}>Start (default {shiftDefaults?.day_shift_start ?? "07:00"})</Text>
+                      <TimeInput value={shiftForm.day_shift_start} onChange={(v) => setShiftForm((p) => ({ ...p, day_shift_start: v }))} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.formLabel}>End (default {shiftDefaults?.day_shift_end ?? "19:00"})</Text>
+                      <TimeInput value={shiftForm.day_shift_end} onChange={(v) => setShiftForm((p) => ({ ...p, day_shift_end: v }))} />
+                    </View>
+                  </View>
+                  <View style={{ flexDirection: "row", gap: 12, marginBottom: 20 }}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.formLabel}>Late grace, min (default {shiftDefaults?.day_late_grace_minutes ?? 30})</Text>
+                      <TextInput
+                        style={styles.formInput}
+                        keyboardType="number-pad"
+                        placeholder={String(shiftDefaults?.day_late_grace_minutes ?? 30)}
+                        placeholderTextColor="#aaa"
+                        value={shiftForm.day_late_grace_minutes}
+                        onChangeText={(v) => setShiftForm((p) => ({ ...p, day_late_grace_minutes: v.replace(/[^0-9]/g, "") }))}
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.formLabel}>Early grace, min (default {shiftDefaults?.day_early_grace_minutes ?? 120})</Text>
+                      <TextInput
+                        style={styles.formInput}
+                        keyboardType="number-pad"
+                        placeholder={String(shiftDefaults?.day_early_grace_minutes ?? 120)}
+                        placeholderTextColor="#aaa"
+                        value={shiftForm.day_early_grace_minutes}
+                        onChangeText={(v) => setShiftForm((p) => ({ ...p, day_early_grace_minutes: v.replace(/[^0-9]/g, "") }))}
+                      />
+                    </View>
+                  </View>
+
+                  {/* Night Shift */}
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                    <ThemedText type="subtitle" style={{ fontSize: 15 }}>🌙 Night Shift</ThemedText>
+                    <Pressable onPress={() => resetShiftFormFields(["night_shift_start", "night_shift_end", "night_late_grace_minutes", "night_early_grace_minutes"])}>
+                      <Text style={{ fontSize: 12, color: "#6a5acd", fontWeight: "600" }}>Reset to Default</Text>
+                    </Pressable>
+                  </View>
+                  <View style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.formLabel}>Start (default {shiftDefaults?.night_shift_start ?? "19:00"})</Text>
+                      <TimeInput value={shiftForm.night_shift_start} onChange={(v) => setShiftForm((p) => ({ ...p, night_shift_start: v }))} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.formLabel}>End (default {shiftDefaults?.night_shift_end ?? "07:00"})</Text>
+                      <TimeInput value={shiftForm.night_shift_end} onChange={(v) => setShiftForm((p) => ({ ...p, night_shift_end: v }))} />
+                    </View>
+                  </View>
+                  <View style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.formLabel}>Late grace, min (default {shiftDefaults?.night_late_grace_minutes ?? 30})</Text>
+                      <TextInput
+                        style={styles.formInput}
+                        keyboardType="number-pad"
+                        placeholder={String(shiftDefaults?.night_late_grace_minutes ?? 30)}
+                        placeholderTextColor="#aaa"
+                        value={shiftForm.night_late_grace_minutes}
+                        onChangeText={(v) => setShiftForm((p) => ({ ...p, night_late_grace_minutes: v.replace(/[^0-9]/g, "") }))}
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.formLabel}>Early grace, min (default {shiftDefaults?.night_early_grace_minutes ?? 120})</Text>
+                      <TextInput
+                        style={styles.formInput}
+                        keyboardType="number-pad"
+                        placeholder={String(shiftDefaults?.night_early_grace_minutes ?? 120)}
+                        placeholderTextColor="#aaa"
+                        value={shiftForm.night_early_grace_minutes}
+                        onChangeText={(v) => setShiftForm((p) => ({ ...p, night_early_grace_minutes: v.replace(/[^0-9]/g, "") }))}
+                      />
+                    </View>
+                  </View>
+                </ScrollView>
+              )}
+
+              <View style={styles.modalFooter}>
+                <Pressable
+                  style={[styles.addSiteButton, { backgroundColor: "#6a5acd", opacity: shiftSaving ? 0.7 : 1 }]}
+                  onPress={handleSaveShifts}
+                  disabled={shiftSaving || shiftLoading}
+                >
+                  <Text style={styles.addSiteButtonText}>{shiftSaving ? "Saving…" : "Save Shifts"}</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Success banner */}
+        {shiftSuccessVisible && (
+          <Modal visible transparent animationType="fade">
+            <View style={styles.modalOverlay}>
+              <View style={[styles.modalCard, { backgroundColor: isDark ? "#1e1e1e" : "#fff", padding: 28, alignItems: "center" }]}>
+                <Text style={{ fontSize: 32, marginBottom: 8 }}>✅</Text>
+                <ThemedText type="title" style={{ marginBottom: 6 }}>Shifts Updated!</ThemedText>
+                <Text style={{ color: isDark ? "#ccc" : "#666", marginBottom: 20, textAlign: "center" }}>
+                  This hospital's shift settings have been saved.
+                </Text>
+                <Pressable style={[styles.addSiteButton, { backgroundColor: "#3b82f6" }]} onPress={() => setShiftSuccessVisible(false)}>
+                  <Text style={styles.addSiteButtonText}>OK</Text>
+                </Pressable>
+              </View>
+            </View>
+          </Modal>
+        )}
+      </View>
+    );
+  };
+
   const renderWorkersView = () => (
     <View style={styles.workersContainer}>
       <View
@@ -5649,7 +6004,9 @@ export default function AdminDashboard() {
                                   ? renderAdminCashInHandView()
                                   : selectedView === "adminBank"
                                     ? renderAdminBankView()
-                                    : null}
+                                    : selectedView === "hospitalShifts"
+                                      ? renderHospitalShiftsView()
+                                      : null}
         </ScrollView>
       )}
       {renderUpdateModal()}
