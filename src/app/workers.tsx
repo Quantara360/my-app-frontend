@@ -9,7 +9,7 @@ import { BackgroundPattern } from '@/components/BackgroundPattern';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { SuccessModal } from '@/components/success-modal';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { API_BASE_URL } from '@/services/authService';
 import { useAuth } from '@/contexts/AuthContext';
@@ -1034,7 +1034,13 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     flex: 1,
     gap: Spacing.three,
   width: '100%',
-  maxWidth: MaxContentWidth,
+  // Wider than the app-wide MaxContentWidth (800, tuned for narrow forms) -
+  // this page is a data grid, and on a normal desktop window that cap left
+  // a large dead margin on the right with nothing in it but the page's own
+  // scrollbar, floating disconnected from the visibly narrower table card.
+  // 1200 lets the grid actually use the width it's given; still centers
+  // and caps out on ultra-wide monitors.
+  maxWidth: 1200,
   alignSelf: 'center',
   },
   headerRow: {
