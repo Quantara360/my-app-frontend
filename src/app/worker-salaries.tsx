@@ -244,6 +244,11 @@ export default function WorkerSalariesPage() {
     const processRecords = (records: any[]) => {
       records.forEach((rec: any) => {
         if (rec.status === 'absent') return;
+        // Only count a shift as attended once BOTH the in-time and out-time
+        // have been marked - a worker who clocked in but never clocked out
+        // (still mid-shift, or forgot to mark OUT) should not show as a 1
+        // in the sheet yet.
+        if (!rec.marked_at || !rec.out_marked_at) return;
         const wid = rec.worker_id;
         const wname = rec.worker?.name ?? `Worker #${wid}`;
         const dateStr = typeof rec.date === 'string' ? rec.date.substring(0, 10) : '';
@@ -310,6 +315,11 @@ export default function WorkerSalariesPage() {
     const processRecords = (records: any[]) => {
       records.forEach((rec: any) => {
         if (rec.status === 'absent') return;
+        // Only count a shift as attended once BOTH the in-time and out-time
+        // have been marked - a worker who clocked in but never clocked out
+        // (still mid-shift, or forgot to mark OUT) should not show as a 1
+        // in the sheet yet.
+        if (!rec.marked_at || !rec.out_marked_at) return;
         const wid = rec.worker_id;
         const wname = rec.worker?.name ?? `Worker #${wid}`;
         const dateStr = typeof rec.date === 'string' ? rec.date.substring(0, 10) : '';
