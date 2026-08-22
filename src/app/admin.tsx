@@ -4500,30 +4500,38 @@ export default function AdminDashboard() {
     };
     const shiftWindowPreview = computeShiftWindowSummaries(previewConfig);
 
+    // A fixed 3-column grid (Label | Time | Toggle) doesn't fit a phone-width
+    // modal without either truncating "Night IN/Day OUT" or forcing an
+    // extra horizontal scroll inside an already-scrolling modal - both read
+    // as broken/confusing. This stacks each row's label, time range, and
+    // (where relevant) note/toggle as separate wrapping lines instead, so
+    // it stays readable at any width without needing to shrink or scroll.
+    const ShiftPreviewRow = ({ label, time, note, toggle, isLast }: { label: string; time: string; note?: string; toggle?: string; isLast?: boolean }) => (
+      <View style={{ paddingVertical: 10, borderBottomWidth: isLast ? 0 : 1, borderBottomColor: isDark ? "#333" : "#e5e7eb" }}>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center" }}>
+          <Text style={{ fontSize: 13, fontWeight: "700", color: isDark ? "#fff" : "#1f1d21" }}>{label}</Text>
+          <Text style={{ fontSize: 13, color: isDark ? "#e0e0e0" : "#333" }}>{time}</Text>
+        </View>
+        {note && (
+          <Text style={{ fontSize: 12, fontStyle: "italic", color: "#e6a23c", marginTop: 3 }}>"{note}"</Text>
+        )}
+        {toggle && (
+          <Text style={{ fontSize: 12, color: "#6a5acd", marginTop: 3 }}>Toggle button Action: {toggle}</Text>
+        )}
+      </View>
+    );
+
     const renderShiftWindowTable = (title: string, s: ReturnType<typeof computeShiftWindowSummaries>["day"]) => (
-      <View style={{ marginBottom: 16 }}>
-        <ThemedText type="subtitle" style={{ fontSize: 14, marginBottom: 6 }}>{title}</ThemedText>
-        <View style={[styles.tableCard, { minWidth: undefined }]}>
-          <View style={[styles.tableRow, styles.tableHeaderRow]}>
-            <Text style={[styles.tableHeaderCell, { flex: 1.6 }]}></Text>
-            <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Time</Text>
-            <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Toggle button Action</Text>
-          </View>
-          {[
-            ["Shift window", s.shiftWindow, "-"],
-            ["Shift begins", s.shiftBegins, "-"],
-            ["On-time IN", s.onTimeIn.range, s.onTimeIn.toggle],
-            ["Late IN", s.lateIn.range, s.lateIn.toggle],
-            ["Shift ends", s.shiftEnds, "-"],
-            ["On-time OUT", s.onTimeOut.range, s.onTimeOut.toggle],
-            ["Early OUT", s.earlyOut.range, s.earlyOut.toggle],
-          ].map(([label, time, toggle], idx) => (
-            <View key={label} style={[styles.tableRow, idx !== 6 && { borderBottomWidth: 1, borderBottomColor: isDark ? "#333" : "#e5e7eb" }]}>
-              <Text style={[styles.tableCell, { flex: 1.6, fontWeight: "600" }]}>{label}</Text>
-              <Text style={[styles.tableCell, { flex: 2 }]}>{time}</Text>
-              <Text style={[styles.tableCell, { flex: 2 }]}>{toggle}</Text>
-            </View>
-          ))}
+      <View style={{ marginBottom: 20 }}>
+        <ThemedText type="subtitle" style={{ fontSize: 14, marginBottom: 8, fontWeight: "700" }}>{title}</ThemedText>
+        <View style={{ backgroundColor: isDark ? "#252525" : "#f7f7fb", borderRadius: 12, paddingHorizontal: 14 }}>
+          <ShiftPreviewRow label="Shift window" time={s.shiftWindow} />
+          <ShiftPreviewRow label="Shift begins" time={s.shiftBegins} />
+          <ShiftPreviewRow label="On-time IN" time={s.onTimeIn.range} toggle={s.onTimeIn.toggle} />
+          <ShiftPreviewRow label="Late IN" time={s.lateIn.range} note="Late attendance" toggle={s.lateIn.toggle} />
+          <ShiftPreviewRow label="Shift ends" time={s.shiftEnds} />
+          <ShiftPreviewRow label="On-time OUT" time={s.onTimeOut.range} toggle={s.onTimeOut.toggle} />
+          <ShiftPreviewRow label="Early OUT" time={s.earlyOut.range} note="Early out" toggle={s.earlyOut.toggle} isLast />
         </View>
       </View>
     );
