@@ -4955,16 +4955,16 @@ export default function AdminDashboard() {
                 {/* Stable "Worker No." - same ranking as the Attendance
                     table and ID Templates list for this same worker (see
                     workerDisplayId.ts), not the real database id. */}
-                <Text style={[styles.tableCell, styles.workerCellID]}>
+                <Text style={[styles.tableCell, styles.workerCellID]} numberOfLines={1}>
                   {getWorkerDisplayId(workerDisplayIdMap, item.id)}
                 </Text>
-                <Text style={[styles.tableCell, styles.workerCellName]}>
+                <Text style={[styles.tableCell, styles.workerCellName]} numberOfLines={1}>
                   {item.name}
                 </Text>
-                <Text style={[styles.tableCell, styles.workerCellSite]}>
+                <Text style={[styles.tableCell, styles.workerCellSite]} numberOfLines={1}>
                   {item.worksite?.name || item.site || "Unassigned"}
                 </Text>
-                <Text style={[styles.tableCell, styles.workerCellType]}>
+                <Text style={[styles.tableCell, styles.workerCellType]} numberOfLines={1}>
                   {item.role || item.type || "N/A"}
                 </Text>
                 <View style={styles.workerActionsContainer}>
@@ -6927,31 +6927,46 @@ const createStyles = (isDark: boolean) =>
       minWidth: 130,
       paddingHorizontal: 10,
     },
+    // These used to be minWidth-only (a floor, not a cap), so each cell
+    // sized itself to its OWN text content - a longer worker name pushed
+    // every column after it (Site/Type/Actions) further right than on
+    // rows with a shorter name, since nothing here was actually fixed.
+    // That's what made the Actions column's warning/delete buttons drift
+    // left and right from row to row. Name is the one column that should
+    // still flex to fill remaining space (flex:1, still with a minWidth
+    // floor); everything else now has a real fixed width so it lines up
+    // in a straight column regardless of what's in the row next to it.
     workerCellID: {
-      minWidth: 50,
+      width: 50,
+      flex: 0,
       paddingHorizontal: 10,
     },
     workerCellName: {
+      flex: 1,
       minWidth: 120,
       paddingHorizontal: 10,
     },
     workerCellSite: {
-      minWidth: 110,
+      width: 110,
+      flex: 0,
       paddingHorizontal: 10,
     },
     workerCellType: {
-      minWidth: 120,
+      width: 120,
+      flex: 0,
       paddingHorizontal: 10,
     },
     workerCellActions: {
-      minWidth: 140,
+      width: 140,
+      flex: 0,
       paddingHorizontal: 10,
     },
     workerActionsContainer: {
       flexDirection: "row",
       justifyContent: "center",
       alignItems: "center",
-      minWidth: 140,
+      width: 140,
+      flex: 0,
       paddingHorizontal: 10,
       gap: 8,
     },
