@@ -4894,13 +4894,23 @@ export default function AdminDashboard() {
         bounces={false}
         overScrollMode="never"
       >
+        {/* A horizontal ScrollView's content container shrinks to its
+            content by default (needed so it CAN be wider than the
+            viewport and scroll) - so widening the page above didn't
+            widen this table with it. contentContainerStyle styles that
+            content container directly so it stretches to the
+            ScrollView's own real width instead; tableCard (its one
+            child) then needs its own minWidth:'100%' to actually fill
+            that now-real width, since a single flex item doesn't grow
+            to fill its row-direction parent's main axis on its own. */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={true}
-          style={styles.horizontalTableScroll}
+          style={[styles.horizontalTableScroll, { width: '100%' }]}
+          contentContainerStyle={{ minWidth: '100%' }}
           nestedScrollEnabled={true}
         >
-          <View style={styles.tableCard}>
+          <View style={[styles.tableCard, { minWidth: '100%' }]}>
             <View style={[styles.tableRow, styles.tableHeaderRow]}>
               <Text
                 style={[
@@ -6139,7 +6149,13 @@ export default function AdminDashboard() {
           showsVerticalScrollIndicator={false}
           bounces={false}
           overScrollMode="never"
-          style={{ maxWidth: MaxContentWidth, alignSelf: 'center', width: '100%', overscrollBehavior: 'none' } as any}
+          // Workers gets a wider cap here - it's a data grid, and the
+          // app-wide MaxContentWidth (800, tuned for the card/form-based
+          // views this wrapper also serves - attendance, machineries,
+          // manage site, etc.) left a large empty margin next to the
+          // table with nothing in it but a floating scrollbar (same
+          // issue already fixed this way on the standalone Workers page).
+          style={{ maxWidth: selectedView === 'workers' ? 1200 : MaxContentWidth, alignSelf: 'center', width: '100%', overscrollBehavior: 'none' } as any}
         >
           {selectedView === "attendance"
             ? renderAttendancesView()
