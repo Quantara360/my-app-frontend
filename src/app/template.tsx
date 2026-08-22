@@ -1,4 +1,4 @@
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
@@ -268,6 +268,10 @@ export default function TemplatePage() {
   const isDark = colorScheme === "dark";
   const styles = useMemo(() => createStyles(isDark), [isDark]);
   const { token } = useAuth();
+  // Optional deep-link from other screens (e.g. the attendance table's
+  // "ID Card" button) - pre-opens the matching worker's card once the
+  // worker list has loaded, instead of requiring a manual search here.
+  const { workerId } = useLocalSearchParams<{ workerId?: string }>();
   
   const { width: screenWidth } = useWindowDimensions();
   // Max width 650, or responsive width with 40px padding
@@ -324,6 +328,13 @@ export default function TemplatePage() {
   );
 
   const openCard = (w: Worker) => { setSelectedWorker(w); setShowCard(true); };
+
+  // Auto-open the card for ?workerId=... once the worker list has loaded.
+  useEffect(() => {
+    if (!workerId || workers.length === 0) return;
+    const match = workers.find((w) => String(w.id) === String(workerId));
+    if (match) openCard(match);
+  }, [workerId, workers]);
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: isDark ? "#121212" : "#F1E7DF" }]}>

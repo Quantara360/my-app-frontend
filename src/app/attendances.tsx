@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "expo-router";
 import { Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { BackgroundPattern } from '@/components/BackgroundPattern';
 import { ThemedText } from "@/components/themed-text";
@@ -15,6 +16,7 @@ import { API_BASE_URL, getAuthHeaders } from "@/services/authService";
 
 export default function AttendancesPage() {
   const goBack = useGoBack();
+  const router = useRouter();
   const theme = useTheme();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
@@ -404,18 +406,18 @@ export default function AttendancesPage() {
         {/* Table */}
         <ScrollView style={styles.tableScrollContainer} showsVerticalScrollIndicator nestedScrollEnabled bounces={false} overScrollMode="never">
           <ScrollView horizontal showsHorizontalScrollIndicator>
-            <View style={[styles.tableCard, { minWidth: 740 }]}>
+            <View style={[styles.tableCard, { minWidth: 900 }]}>
               {/* Header */}
               <View style={[styles.tableRow, styles.tableHeaderRow]}>
                 <Text style={[styles.tableHeaderCell, { flex: 1 }]}>ID</Text>
                 <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Worker</Text>
                 <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Hospital</Text>
                 <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Date</Text>
-                <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Shift</Text>
-                <Text style={[styles.tableHeaderCell, { flex: 2 }]}>
-                  {activeTab === "OUT" ? "Clocked Out" : "Marked At"}
-                </Text>
-                <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Status</Text>
+                <Text style={[styles.tableHeaderCell, { flex: 1.5 }]}>Shift</Text>
+                <Text style={[styles.tableHeaderCell, { flex: 1.5 }]}>In Time</Text>
+                <Text style={[styles.tableHeaderCell, { flex: 1.5 }]}>Out Time</Text>
+                <Text style={[styles.tableHeaderCell, { flex: 1.5 }]}>Status</Text>
+                <Text style={[styles.tableHeaderCell, { flex: 1 }]}>ID Card</Text>
               </View>
 
               {filteredAttendanceData.map((item, index) => {
@@ -442,31 +444,40 @@ export default function AttendancesPage() {
                     <Text style={[styles.tableCell, { flex: 2 }]}>
                       {item.date ? item.date.split("T")[0] : "—"}
                     </Text>
-                    <Text style={[styles.tableCell, { flex: 2 }]}>{item.shift}</Text>
-                    <Text style={[styles.tableCell, { flex: 2 }]}>
-                      {activeTab === "OUT"
-                        ? item.out_marked_at
-                          ? new Date(item.out_marked_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-                          : "—"
-                        : item.marked_at
-                          ? new Date(item.marked_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-                          : "—"}
+                    <Text style={[styles.tableCell, { flex: 1.5 }]}>{item.shift}</Text>
+                    <Text style={[styles.tableCell, { flex: 1.5 }]}>
+                      {item.marked_at
+                        ? new Date(item.marked_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                        : "—"}
+                    </Text>
+                    <Text style={[styles.tableCell, { flex: 1.5 }]}>
+                      {item.out_marked_at
+                        ? new Date(item.out_marked_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                        : "—"}
                     </Text>
                     {(() => {
-                      // OUT tab: override display status to "Early" if worker left before shift end
-                      if (activeTab === "OUT" && isEarlyOut(item)) {
+                      // Override display status to "Early" if the worker left before shift end
+                      if (isEarlyOut(item)) {
                         return (
-                          <Text style={[styles.tableCell, { flex: 2, color: "#fa8c16", fontWeight: "600" }]}>
+                          <Text style={[styles.tableCell, { flex: 1.5, color: "#fa8c16", fontWeight: "600" }]}>
                             Early
                           </Text>
                         );
                       }
                       return (
-                        <Text style={[styles.tableCell, { flex: 2, color: statusColor(item.status || ""), fontWeight: "600" }]}>
+                        <Text style={[styles.tableCell, { flex: 1.5, color: statusColor(item.status || ""), fontWeight: "600" }]}>
                           {statusLabel(item.status || "")}
                         </Text>
                       );
                     })()}
+                    <View style={[styles.tableCell, { flex: 1 }]}>
+                      <Pressable
+                        onPress={() => router.push({ pathname: "/template", params: { workerId: String(item.worker_id) } } as any)}
+                        style={{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)", alignSelf: "flex-start" }}
+                      >
+                        <Text style={{ fontSize: 16 }}>🪪</Text>
+                      </Pressable>
+                    </View>
                   </View>
                 );
               })}
