@@ -5156,32 +5156,32 @@ export default function AdminDashboard() {
         <View style={{ width: 44 }} />
       </View>
 
-      {/* Tile buttons */}
-      <View style={[styles.tableCard, { padding: 24, gap: 16 }]}>
+      {/* Tile buttons - same big rounded-tile look as the Personal
+          selection screen (styles.personalTile/Inner/Text), not the
+          old slim colored bars inside a padded white card. */}
+      <View style={styles.personalSelectionContent}>
         <Pressable
-          style={[
-            styles.addSiteButton,
-            { backgroundColor: "#c0392b", paddingVertical: 22, borderRadius: 16 },
-          ]}
           onPress={() => {
             setAdminCashForm((p) => ({ ...p, date: getAdminSriLankaDate(), prevBalance: "0.00" }));
             setSelectedView("adminCashInHand");
           }}
+          style={styles.personalTile}
         >
-          <Text style={[styles.addSiteButtonText, { fontSize: 16 }]}>💵  Cash in Hand</Text>
+          <View style={[styles.personalTileInner, { backgroundColor: "#e74c3c" }]}>
+            <ThemedText style={styles.personalTileText}>💵  Cash in Hand</ThemedText>
+          </View>
         </Pressable>
 
         <Pressable
-          style={[
-            styles.addSiteButton,
-            { backgroundColor: "#a89080", paddingVertical: 22, borderRadius: 16 },
-          ]}
           onPress={() => {
             setAdminBankForm((p) => ({ ...p, date: getAdminSriLankaDate(), prevBalance: "0.00" }));
             setSelectedView("adminBank");
           }}
+          style={styles.personalTile}
         >
-          <Text style={[styles.addSiteButtonText, { fontSize: 16 }]}>{"🏦  Bank"}</Text>
+          <View style={[styles.personalTileInner, { backgroundColor: "#9b8b7e" }]}>
+            <ThemedText style={styles.personalTileText}>{"🏦  Bank"}</ThemedText>
+          </View>
         </Pressable>
       </View>
     </View>
