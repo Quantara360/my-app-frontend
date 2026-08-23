@@ -5168,7 +5168,7 @@ export default function AdminDashboard() {
           style={styles.personalTile}
         >
           <View style={[styles.personalTileInner, { backgroundColor: "#e74c3c" }]}>
-            <ThemedText style={styles.personalTileText}>💵  Cash in Hand</ThemedText>
+            <ThemedText style={styles.personalTileText}>Cash in Hand</ThemedText>
           </View>
         </Pressable>
 
@@ -5180,7 +5180,7 @@ export default function AdminDashboard() {
           style={styles.personalTile}
         >
           <View style={[styles.personalTileInner, { backgroundColor: "#9b8b7e" }]}>
-            <ThemedText style={styles.personalTileText}>{"🏦  Bank"}</ThemedText>
+            <ThemedText style={styles.personalTileText}>Bank</ThemedText>
           </View>
         </Pressable>
       </View>
