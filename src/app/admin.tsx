@@ -4587,7 +4587,7 @@ export default function AdminDashboard() {
           </View>
 
           <View style={{ paddingHorizontal: Spacing.four, marginBottom: 16 }}>
-            <Text style={{ fontSize: 12, color: isDark ? "#aaa" : "#666", marginBottom: 6 }}>
+            <Text style={{ fontSize: 15, fontWeight: "700", color: isDark ? "#fff" : "#1f1d21", marginBottom: 8 }}>
               Filter by worksite
             </Text>
             <SelectInput
@@ -4598,8 +4598,10 @@ export default function AdminDashboard() {
                 backgroundColor: isDark ? "#1e1e1e" : "#fff",
                 color: isDark ? "#fff" : "#000",
                 border: `1px solid ${isDark ? "#333" : "#ddd"}`,
-                borderRadius: 8,
-                padding: "8px 12px",
+                borderRadius: 10,
+                padding: "14px 16px",
+                fontSize: "17px",
+                fontWeight: 600,
                 width: "100%",
               }}
             />
