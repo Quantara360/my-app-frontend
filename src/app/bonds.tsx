@@ -67,7 +67,12 @@ const createStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   pageTitle: { flex: 1, textAlign: 'center', color: theme.text },
   card: { width: '100%', borderRadius: 0, padding: Spacing.four, backgroundColor: '#ffffff', shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 18, shadowOffset: { width: 0, height: 12 }, elevation: 10 },
   tileGrid: { width: '100%', flexDirection: 'column', gap: Spacing.three },
-  tile: { width: '100%', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', paddingVertical: Spacing.four, paddingHorizontal: Spacing.three, backgroundColor: 'transparent', borderRadius: 0, borderWidth: 0.8, borderColor: 'rgba(0, 0, 0, 0.1)', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 6 }, elevation: 3, minHeight: 130 },
+  // No border/shadow here on purpose - those made each tile read as its
+  // own separate white box sitting on top of the shared white `card`
+  // background (a border + drop shadow are enough to imply a distinct
+  // panel even with backgroundColor:'transparent' underneath). Just the
+  // icon + label now, separated by tileGrid's gap.
+  tile: { width: '100%', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', paddingVertical: Spacing.four, paddingHorizontal: Spacing.three, backgroundColor: 'transparent', minHeight: 130 },
   imagePlaceholder: { width: 90, height: 90, borderRadius: 0, marginBottom: Spacing.two, alignSelf: 'center' },
   tileText: { alignItems: 'center', width: '100%' },
   tileTitle: { fontSize: 15, fontWeight: '700', color: theme.text, textAlign: 'center', flexWrap: 'wrap' },
