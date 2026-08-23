@@ -2155,7 +2155,7 @@ export default function AdminDashboard() {
         ]}
       >
         <ThemedText type="subtitle" style={styles.greeting}>
-          Hii {user?.name || "Malith"}, Welcome!
+          Admin
         </ThemedText>
         <Pressable
           onPress={async () => {
