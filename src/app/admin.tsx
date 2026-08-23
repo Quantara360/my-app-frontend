@@ -1661,43 +1661,6 @@ export default function AdminDashboard() {
 
   const renderAttendancesView = () => (
     <View style={styles.machineriesContainer}>
-      <View
-        style={[
-          styles.headerSection,
-          styles.greetingContainer,
-          {
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-          },
-        ]}
-      >
-        <ThemedText type="subtitle" style={styles.greeting}>
-          Hii {user?.name || "Malith"}, Welcome!
-        </ThemedText>
-        <Pressable
-          onPress={async () => {
-            await signOut();
-            router.replace("/");
-          }}
-          style={{
-            paddingHorizontal: 12,
-            paddingVertical: 6,
-            backgroundColor: isDark ? "#333" : "#e0e0e0",
-            borderRadius: 8,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 13,
-              fontWeight: "600",
-              color: isDark ? "#fff" : "#000",
-            }}
-          >
-            Sign Out
-          </Text>
-        </Pressable>
-      </View>
       <View style={styles.machineriesHeader}>
         <Pressable
           onPress={() => {
@@ -2071,43 +2034,6 @@ export default function AdminDashboard() {
 
   const renderMachineriesView = () => (
     <View style={styles.machineriesContainer}>
-      <View
-        style={[
-          styles.headerSection,
-          styles.greetingContainer,
-          {
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-          },
-        ]}
-      >
-        <ThemedText type="subtitle" style={styles.greeting}>
-          Hii {user?.name || "Malith"}, Welcome!
-        </ThemedText>
-        <Pressable
-          onPress={async () => {
-            await signOut();
-            router.replace("/");
-          }}
-          style={{
-            paddingHorizontal: 12,
-            paddingVertical: 6,
-            backgroundColor: isDark ? "#333" : "#e0e0e0",
-            borderRadius: 8,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 13,
-              fontWeight: "600",
-              color: isDark ? "#fff" : "#000",
-            }}
-          >
-            Sign Out
-          </Text>
-        </Pressable>
-      </View>
       <View style={styles.machineriesHeader}>
         <Pressable
           onPress={() => {
@@ -2552,18 +2478,6 @@ export default function AdminDashboard() {
 
     return (
       <SafeView style={styles.manageSiteContainer}>
-        <SafeView style={[styles.headerSection, styles.greetingContainer, { flexDirection: "row", justifyContent: "space-between", alignItems: "center" }]}>
-          <ThemedText type="subtitle" style={styles.greeting}>
-            Hii {user?.name || "Malith"}, Welcome!
-          </ThemedText>
-          <Pressable
-            onPress={async () => { await signOut(); router.replace("/"); }}
-            style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: isDark ? "#333" : "#e0e0e0", borderRadius: 8 }}
-          >
-            <Text style={{ fontSize: 13, fontWeight: "600", color: isDark ? "#fff" : "#000" }}>Sign Out</Text>
-          </Pressable>
-        </SafeView>
-
         <SafeView style={styles.manageSiteHeader}>
           <Pressable style={styles.backButton} onPress={handleBack}>
             <Text style={styles.backButtonIcon}>‹</Text>
@@ -2811,43 +2725,6 @@ export default function AdminDashboard() {
 
   const renderAssetsView = () => (
     <View style={styles.assetsContainer}>
-      <View
-        style={[
-          styles.headerSection,
-          styles.greetingContainer,
-          {
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-          },
-        ]}
-      >
-        <ThemedText type="subtitle" style={styles.greeting}>
-          Hii {user?.name || "Malith"}, Welcome!
-        </ThemedText>
-        <Pressable
-          onPress={async () => {
-            await signOut();
-            router.replace("/");
-          }}
-          style={{
-            paddingHorizontal: 12,
-            paddingVertical: 6,
-            backgroundColor: isDark ? "#333" : "#e0e0e0",
-            borderRadius: 8,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 13,
-              fontWeight: "600",
-              color: isDark ? "#fff" : "#000",
-            }}
-          >
-            Sign Out
-          </Text>
-        </Pressable>
-      </View>
       <View style={styles.assetsHeader}>
         <Pressable
           onPress={() => {
@@ -2986,44 +2863,6 @@ export default function AdminDashboard() {
   const renderPersonalSelectionView = () => {
     return (
       <View style={styles.personalSelectionContainer}>
-        <View
-          style={[
-            styles.headerSection,
-            styles.greetingContainer,
-            {
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-            },
-          ]}
-        >
-          <ThemedText type="subtitle" style={styles.greeting}>
-            Hii {user?.name || "Malith"}, Welcome!
-          </ThemedText>
-          <Pressable
-            onPress={async () => {
-              await signOut();
-              router.replace("/");
-            }}
-            style={{
-              paddingHorizontal: 12,
-              paddingVertical: 6,
-              backgroundColor: isDark ? "#333" : "#e0e0e0",
-              borderRadius: 8,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 13,
-                fontWeight: "600",
-                color: isDark ? "#fff" : "#000",
-              }}
-            >
-              Sign Out
-            </Text>
-          </Pressable>
-        </View>
-
         <View style={[styles.personalSelectionHeader, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
           <Pressable
             onPress={() => {
@@ -3073,44 +2912,6 @@ export default function AdminDashboard() {
   const renderPersonalDocumentsView = () => {
     return (
       <View style={styles.personalDocumentsContainer}>
-        <View
-          style={[
-            styles.headerSection,
-            styles.greetingContainer,
-            {
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-            },
-          ]}
-        >
-          <ThemedText type="subtitle" style={styles.greeting}>
-            Hii {user?.name || "Malith"}, Welcome!
-          </ThemedText>
-          <Pressable
-            onPress={async () => {
-              await signOut();
-              router.replace("/");
-            }}
-            style={{
-              paddingHorizontal: 12,
-              paddingVertical: 6,
-              backgroundColor: isDark ? "#333" : "#e0e0e0",
-              borderRadius: 8,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 13,
-                fontWeight: "600",
-                color: isDark ? "#fff" : "#000",
-              }}
-            >
-              Sign Out
-            </Text>
-          </Pressable>
-        </View>
-
         <View style={styles.personalDocumentsHeader}>
           <Pressable
             onPress={() => setSelectedView("personalSelection")}
@@ -3271,44 +3072,6 @@ export default function AdminDashboard() {
   const renderPersonalAssetsView = () => {
     return (
       <View style={styles.personalContainer}>
-        <View
-          style={[
-            styles.headerSection,
-            styles.greetingContainer,
-            {
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-            },
-          ]}
-        >
-          <ThemedText type="subtitle" style={styles.greeting}>
-            Hii {user?.name || "Malith"}, Welcome!
-          </ThemedText>
-          <Pressable
-            onPress={async () => {
-              await signOut();
-              router.replace("/");
-            }}
-            style={{
-              paddingHorizontal: 12,
-              paddingVertical: 6,
-              backgroundColor: isDark ? "#333" : "#e0e0e0",
-              borderRadius: 8,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 13,
-                fontWeight: "600",
-                color: isDark ? "#fff" : "#000",
-              }}
-            >
-              Sign Out
-            </Text>
-          </Pressable>
-        </View>
-
         <View style={styles.personalHeader}>
           <Pressable
             onPress={() => {
@@ -3994,43 +3757,6 @@ export default function AdminDashboard() {
 
   const renderChemicalsView = () => (
     <View style={styles.chemicalsContainer}>
-      <View
-        style={[
-          styles.headerSection,
-          styles.greetingContainer,
-          {
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-          },
-        ]}
-      >
-        <ThemedText type="subtitle" style={styles.greeting}>
-          Hii {user?.name || "Malith"}, Welcome!
-        </ThemedText>
-        <Pressable
-          onPress={async () => {
-            await signOut();
-            router.replace("/");
-          }}
-          style={{
-            paddingHorizontal: 12,
-            paddingVertical: 6,
-            backgroundColor: isDark ? "#333" : "#e0e0e0",
-            borderRadius: 8,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 13,
-              fontWeight: "600",
-              color: isDark ? "#fff" : "#000",
-            }}
-          >
-            Sign Out
-          </Text>
-        </Pressable>
-      </View>
       <View style={styles.chemicalsHeader}>
         <Pressable
           onPress={() => {
@@ -4122,43 +3848,6 @@ export default function AdminDashboard() {
 
   const renderApprovalsView = () => (
     <View style={styles.approvalsContainer}>
-      <View
-        style={[
-          styles.headerSection,
-          styles.greetingContainer,
-          {
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-          },
-        ]}
-      >
-        <ThemedText type="subtitle" style={styles.greeting}>
-          Hii {user?.name || "Malith"}, Welcome!
-        </ThemedText>
-        <Pressable
-          onPress={async () => {
-            await signOut();
-            router.replace("/");
-          }}
-          style={{
-            paddingHorizontal: 12,
-            paddingVertical: 6,
-            backgroundColor: isDark ? "#333" : "#e0e0e0",
-            borderRadius: 8,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 13,
-              fontWeight: "600",
-              color: isDark ? "#fff" : "#000",
-            }}
-          >
-            Sign Out
-          </Text>
-        </Pressable>
-      </View>
       <View style={styles.approvalsHeader}>
         <Pressable
           onPress={() => {
@@ -4846,43 +4535,6 @@ export default function AdminDashboard() {
 
   const renderWorkersView = () => (
     <View style={styles.workersContainer}>
-      <View
-        style={[
-          styles.headerSection,
-          styles.greetingContainer,
-          {
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-          },
-        ]}
-      >
-        <ThemedText type="subtitle" style={styles.greeting}>
-          Hii {user?.name || "Malith"}, Welcome!
-        </ThemedText>
-        <Pressable
-          onPress={async () => {
-            await signOut();
-            router.replace("/");
-          }}
-          style={{
-            paddingHorizontal: 12,
-            paddingVertical: 6,
-            backgroundColor: isDark ? "#333" : "#e0e0e0",
-            borderRadius: 8,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 13,
-              fontWeight: "600",
-              color: isDark ? "#fff" : "#000",
-            }}
-          >
-            Sign Out
-          </Text>
-        </Pressable>
-      </View>
       <View style={styles.workersHeader}>
         <Pressable
           onPress={() => {
@@ -5134,19 +4786,6 @@ export default function AdminDashboard() {
   // ── renderAdminAccountsView ─────────────────────────────────────────────
   const renderAdminAccountsView = () => (
     <View style={styles.personalContainer}>
-      {/* Greeting + Sign Out */}
-      <View style={[styles.headerSection, styles.greetingContainer, { flexDirection: "row", justifyContent: "space-between", alignItems: "center" }]}>
-        <ThemedText type="subtitle" style={styles.greeting}>
-          Hii {user?.name || "Admin"}, Welcome!
-        </ThemedText>
-        <Pressable
-          onPress={async () => { await signOut(); router.replace("/"); }}
-          style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: isDark ? "#333" : "#e0e0e0", borderRadius: 8 }}
-        >
-          <Text style={{ fontSize: 13, fontWeight: "600", color: isDark ? "#fff" : "#000" }}>Sign Out</Text>
-        </Pressable>
-      </View>
-
       {/* Header row with Back */}
       <View style={styles.personalHeader}>
         <Pressable style={styles.backButton} onPress={() => setSelectedView("dashboard")}>
@@ -5348,19 +4987,6 @@ export default function AdminDashboard() {
 
     return (
       <View style={styles.personalContainer}>
-        {/* Greeting */}
-        <View style={[styles.headerSection, styles.greetingContainer, { flexDirection: "row", justifyContent: "space-between", alignItems: "center" }]}>
-          <ThemedText type="subtitle" style={styles.greeting}>
-            Hii {user?.name || "Admin"}, Welcome!
-          </ThemedText>
-          <Pressable
-            onPress={async () => { await signOut(); router.replace("/"); }}
-            style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: isDark ? "#333" : "#e0e0e0", borderRadius: 8 }}
-          >
-            <Text style={{ fontSize: 13, fontWeight: "600", color: isDark ? "#fff" : "#000" }}>Sign Out</Text>
-          </Pressable>
-        </View>
-
         {/* Header */}
         <View style={styles.personalHeader}>
           <Pressable style={styles.backButton} onPress={() => setSelectedView("adminAccounts")}>
@@ -5831,19 +5457,6 @@ export default function AdminDashboard() {
 
     return (
       <View style={styles.personalContainer}>
-        {/* Greeting */}
-        <View style={[styles.headerSection, styles.greetingContainer, { flexDirection: "row", justifyContent: "space-between", alignItems: "center" }]}>
-          <ThemedText type="subtitle" style={styles.greeting}>
-            Hii {user?.name || "Admin"}, Welcome!
-          </ThemedText>
-          <Pressable
-            onPress={async () => { await signOut(); router.replace("/"); }}
-            style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: isDark ? "#333" : "#e0e0e0", borderRadius: 8 }}
-          >
-            <Text style={{ fontSize: 13, fontWeight: "600", color: isDark ? "#fff" : "#000" }}>Sign Out</Text>
-          </Pressable>
-        </View>
-
         {/* Header */}
         <View style={styles.personalHeader}>
           <Pressable style={styles.backButton} onPress={() => setSelectedView("adminAccounts")}>
