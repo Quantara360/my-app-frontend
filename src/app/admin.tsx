@@ -4658,7 +4658,21 @@ export default function AdminDashboard() {
           <View style={styles.modalOverlay}>
             <View style={[styles.modalCard, { backgroundColor: isDark ? "#1e1e1e" : "#fff", maxHeight: "85%" }]}>
               <View style={styles.modalHeader}>
-                <ThemedText type="title">{shiftEditHospital?.name} — Shifts</ThemedText>
+                {/* Was ThemedText type="title" (48px, still 32px even at
+                    its own "mobile" size) - way too big once a real
+                    hospital name is in front of it instead of a short
+                    placeholder; wrapped to 4 lines and swallowed the
+                    modal. Matches every other modal's title styling now
+                    (styles.modalTitle, 20px) instead of standing out as
+                    an outlier. numberOfLines caps it at 2 lines and
+                    paddingHorizontal keeps it clear of the ✕ button,
+                    which is absolutely positioned over this row. */}
+                <Text
+                  style={[styles.modalTitle, { textAlign: 'center', paddingHorizontal: 36 }]}
+                  numberOfLines={2}
+                >
+                  {shiftEditHospital?.name} — Shifts
+                </Text>
                 <Pressable style={styles.modalClose} onPress={() => setShiftEditHospital(null)}>
                   <Text style={styles.modalCloseText}>✕</Text>
                 </Pressable>
