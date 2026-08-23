@@ -4664,11 +4664,18 @@ export default function AdminDashboard() {
                     placeholder; wrapped to 4 lines and swallowed the
                     modal. Matches every other modal's title styling now
                     (styles.modalTitle, 20px) instead of standing out as
-                    an outlier. numberOfLines caps it at 2 lines and
-                    paddingHorizontal keeps it clear of the ✕ button,
-                    which is absolutely positioned over this row. */}
+                    an outlier.
+                    maxWidth (not paddingHorizontal) is what actually
+                    keeps this centered: padding just adds to the box on
+                    both sides evenly, but the box's rendered width still
+                    tracks the wrapped text - a long line could still
+                    reach out toward the ✕ on one side while leaving more
+                    room on the other, reading as off-center even though
+                    the box itself is centered. Capping the width forces
+                    equal breathing room on both sides regardless of how
+                    the name happens to wrap. */}
                 <Text
-                  style={[styles.modalTitle, { textAlign: 'center', paddingHorizontal: 36 }]}
+                  style={[styles.modalTitle, { textAlign: 'center', maxWidth: '75%' }]}
                   numberOfLines={2}
                 >
                   {shiftEditHospital?.name} — Shifts
