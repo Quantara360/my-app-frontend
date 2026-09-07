@@ -69,8 +69,12 @@ export function getPhotoUrl(worker: IdCardWorker): string | null {
   return `${apiOrigin}/storage/${worker.face_photo_path}`;
 }
 
-function cardHtml(worker: IdCardWorker, templateUri: string): string {
-  const photoUrl = getPhotoUrl(worker);
+// photoUriOverride lets a caller hand in an already-resolved src (e.g. a
+// data: URI - see toDataUri() below) instead of the worker's real,
+// cross-origin storage URL. undefined means "derive it the normal way"
+// (getPhotoUrl); null explicitly means "no photo, show the placeholder".
+function cardHtml(worker: IdCardWorker, templateUri: string, photoUriOverride?: string | null): string {
+  const photoUrl = photoUriOverride !== undefined ? photoUriOverride : getPhotoUrl(worker);
   const dateStr = formatDate(worker.join_date);
   return `<!DOCTYPE html>
 <html>
@@ -139,6 +143,28 @@ export function printCard(worker: IdCardWorker) {
   if (win) { win.document.write(html); win.document.close(); }
 }
 
+// Fetches a same- or cross-origin image and inlines it as a data: URI, so
+// whatever renders it afterward (an <img> inside an offscreen iframe, in
+// this case) never needs to make its OWN cross-origin request for the
+// pixels. See the long comment in downloadPdfCard's web branch for why
+// this turned out to matter even with a correct CORS header in place.
+async function toDataUri(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(blob);
+    });
+  } catch (e) {
+    console.warn('Could not inline image as data URI', url, e);
+    return null;
+  }
+}
+
 export async function downloadPdfCard(worker: IdCardWorker) {
   const templateAsset = Asset.fromModule(require("../../assets/images/id_card_template_clean.png"));
   await templateAsset.downloadAsync();
@@ -156,6 +182,24 @@ export async function downloadPdfCard(worker: IdCardWorker) {
     // blocked it, which is why nothing downloaded on iPhone at all), and
     // unlike the print-triggering HTML, it never opens the OS print
     // dialog (the Android "goes to printer" symptom).
+    //
+    // The face photo (cross-origin, api.abeysone.cloud/storage/...) still
+    // came out blank on real iPhones even after the nginx CORS fix and
+    // useCORS:true here - couldn't reproduce it with Playwright's WebKit
+    // (photo rendered fine there), which points at something environment-
+    // specific to real iOS Safari (ITP being stricter about a hidden
+    // offscreen iframe's cross-origin subresource loads, a slow-network
+    // race against html2canvas's own internal re-fetch of "CORS" images
+    // for canvas-safe pixel data - which is a SEPARATE request from the
+    // <img> tag's own load this code already waited for, a content
+    // blocker, etc.) that a desktop-hosted WebKit build won't reproduce.
+    // Converting the photo to a data: URI *before* it ever reaches the
+    // iframe sidesteps all of that at once: a data: URI has no origin to
+    // taint the canvas with and nothing left to fetch during capture.
+    const photoUrl = getPhotoUrl(worker);
+    const photoDataUri = photoUrl ? await toDataUri(photoUrl) : null;
+    const htmlWithInlinedPhoto = cardHtml(worker, templateUri, photoDataUri);
+
     const iframe = document.createElement('iframe');
     iframe.style.position = 'fixed';
     iframe.style.left = '-9999px';
@@ -165,7 +209,7 @@ export async function downloadPdfCard(worker: IdCardWorker) {
     try {
       await new Promise<void>((resolve) => {
         iframe.onload = () => resolve();
-        iframe.srcdoc = html;
+        iframe.srcdoc = htmlWithInlinedPhoto;
       });
       const iframeDoc = iframe.contentDocument!;
       // The template background and (if set) face photo load async even
