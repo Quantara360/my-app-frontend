@@ -154,6 +154,84 @@ export default function AdminDashboard() {
 
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
 
+  // ── Manage Users: admin-assisted password reset ──────────────────────────
+  type ManagedUser = { id: number; name: string; username: string; email: string; role: string };
+  const [users, setUsers] = useState<ManagedUser[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [userSearch, setUserSearch] = useState("");
+  const [resetPasswordTarget, setResetPasswordTarget] = useState<ManagedUser | null>(null);
+  const [resetPasswordFields, setResetPasswordFields] = useState({ next: "", confirm: "" });
+  const [resetPasswordSaving, setResetPasswordSaving] = useState(false);
+  const [resetPasswordError, setResetPasswordError] = useState<string | null>(null);
+
+  const loadUsersData = async () => {
+    setUsersLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/users`, {
+        headers: await getAuthHeaders(),
+      });
+      const data = await res.json();
+      setUsers(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error("Failed to load users", e);
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
+  const openResetPassword = (u: ManagedUser) => {
+    setResetPasswordTarget(u);
+    setResetPasswordFields({ next: "", confirm: "" });
+    setResetPasswordError(null);
+  };
+
+  const closeResetPassword = () => {
+    setResetPasswordTarget(null);
+    setResetPasswordFields({ next: "", confirm: "" });
+    setResetPasswordError(null);
+    setResetPasswordSaving(false);
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetPasswordTarget || resetPasswordSaving) return;
+    setResetPasswordError(null);
+
+    if (resetPasswordFields.next.length < 8) {
+      setResetPasswordError("New password must be at least 8 characters.");
+      return;
+    }
+    if (resetPasswordFields.next !== resetPasswordFields.confirm) {
+      setResetPasswordError("New password and confirmation don't match.");
+      return;
+    }
+
+    setResetPasswordSaving(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/users/${resetPasswordTarget.id}/reset-password`, {
+        method: "PUT",
+        headers: await getAuthHeaders(),
+        body: JSON.stringify({
+          new_password: resetPasswordFields.next,
+          new_password_confirmation: resetPasswordFields.confirm,
+        }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const firstFieldError = body?.errors ? (Object.values(body.errors)[0] as string[] | undefined)?.[0] : undefined;
+        throw new Error(firstFieldError || body?.message || "Failed to reset password.");
+      }
+      setResetPasswordTarget(null);
+      setResetPasswordFields({ next: "", confirm: "" });
+      setSuccessModalTitle("Password Reset Successfully!");
+      setSuccessButtonText("Ok");
+      setShowSuccessModal(true);
+    } catch (e: any) {
+      setResetPasswordError(e?.message || "Failed to reset password. Please try again.");
+    } finally {
+      setResetPasswordSaving(false);
+    }
+  };
+
   const [selectedView, setSelectedView] = useState<
     | "dashboard"
     | "machineries"
@@ -170,6 +248,7 @@ export default function AdminDashboard() {
     | "adminAccounts"
     | "adminCashInHand"
     | "adminBank"
+    | "manageUsers"
   >("dashboard");
 
   // ── Admin Accounts: Cash-in-Hand state ────────────────────────────────────
@@ -2452,6 +2531,36 @@ export default function AdminDashboard() {
             );
           })()}
         </View>
+
+        {/* Manage Users - admin-assisted password reset (there's no
+            email-based self-service "forgot password" flow, so an admin
+            picks the account and sets a new one directly instead). */}
+        <View style={styles.cardsRow}>
+          {(() => {
+            const scaleValue = getCardScaleValue("manageUsers");
+            return (
+              <AnimatedPressable
+                key="manageUsers"
+                style={[
+                  styles.card,
+                  { backgroundColor: "#ffd8a8", transform: [{ scale: scaleValue }] },
+                ]}
+                onPress={() => {
+                  setSelectedView("manageUsers");
+                  loadUsersData();
+                }}
+              >
+                <Text style={styles.cardIcon}>👤🔑</Text>
+                <ThemedText
+                  type="smallBold"
+                  style={[styles.cardTitle, { color: "#1f1d21" }]}
+                >
+                  Manage Users
+                </ThemedText>
+              </AnimatedPressable>
+            );
+          })()}
+        </View>
       </View>
     </>
   );
@@ -4568,6 +4677,140 @@ export default function AdminDashboard() {
     );
   };
 
+  const renderManageUsersView = () => {
+    const filteredUsers = users.filter((u) => {
+      const q = userSearch.trim().toLowerCase();
+      if (!q) return true;
+      return u.name.toLowerCase().includes(q) || u.username.toLowerCase().includes(q);
+    });
+
+    return (
+      <View style={styles.workersContainer}>
+        <View style={styles.workersHeader}>
+          <Pressable onPress={() => setSelectedView("dashboard")} style={styles.backButton}>
+            <Text style={styles.backButtonIcon}>‹</Text>
+          </Pressable>
+          <ThemedText type="subtitle" style={styles.workersTitle}>Manage Users</ThemedText>
+          <View style={{ width: 44 }} />
+        </View>
+
+        {/* No email-based "forgot password" flow exists (see change-password
+            work) - this is that recovery path: an admin sets a new
+            password for any account directly, without needing the old
+            one. */}
+        <View style={{ backgroundColor: isDark ? "#1c2a1c" : "#eef7ee", borderRadius: 10, padding: 12, marginBottom: 14, borderLeftWidth: 3, borderLeftColor: "#22c55e" }}>
+          <Text style={{ color: isDark ? "#cde5cd" : "#3a4a3a", fontSize: 12, lineHeight: 18 }}>
+            💡 If someone forgets their password, reset it for them here - they don't need to know their old one.
+          </Text>
+        </View>
+
+        <View style={styles.searchContainer}>
+          <Text style={styles.searchIcon}>🔍</Text>
+          <TextInput
+            value={userSearch}
+            onChangeText={setUserSearch}
+            placeholder="Search by name or username"
+            placeholderTextColor={isDark ? "#b0b0b0" : "#8a8a8f"}
+            style={styles.searchInput}
+          />
+        </View>
+
+        <ScrollView style={styles.tableScrollContainer} showsVerticalScrollIndicator nestedScrollEnabled bounces={false} overScrollMode="never">
+          {/* Same width-stretch fix as the Workers table above: a
+              horizontal ScrollView's content container shrinks to its
+              own content by default, so without this the table would
+              stay stuck at ~620px even on the widened (1200px) page,
+              leaving a large empty margin next to it. */}
+          <ScrollView horizontal showsHorizontalScrollIndicator style={[styles.horizontalTableScroll, { width: '100%' }]} contentContainerStyle={{ minWidth: '100%' }}>
+            <View style={[styles.tableCard, { minWidth: '100%' }]}>
+              <View style={[styles.tableRow, styles.tableHeaderRow]}>
+                <Text style={[styles.tableCell, styles.tableHeaderCell, { flex: 1, minWidth: 140 }]}>Name</Text>
+                <Text style={[styles.tableCell, styles.tableHeaderCell, { width: 140, flexGrow: 0, flexShrink: 0 }]}>Username</Text>
+                <Text style={[styles.tableCell, styles.tableHeaderCell, { width: 110, flexGrow: 0, flexShrink: 0 }]}>Role</Text>
+                <Text style={[styles.tableCell, styles.tableHeaderCell, { width: 160, flexGrow: 0, flexShrink: 0, textAlign: "center" }]}>Actions</Text>
+              </View>
+
+              {usersLoading ? (
+                <ActivityIndicator style={{ marginVertical: 30 }} color={isDark ? "#fff" : "#000"} />
+              ) : filteredUsers.length === 0 ? (
+                <View style={styles.emptyRow}>
+                  <Text style={styles.emptyText}>No matching users found.</Text>
+                </View>
+              ) : (
+                filteredUsers.map((u) => (
+                  <View key={u.id} style={styles.tableRow}>
+                    <Text style={[styles.tableCell, { flex: 1, minWidth: 140 }]} numberOfLines={1}>{u.name}</Text>
+                    <Text style={[styles.tableCell, { width: 140, flexGrow: 0, flexShrink: 0 }]} numberOfLines={1}>{u.username}</Text>
+                    <Text style={[styles.tableCell, { width: 110, flexGrow: 0, flexShrink: 0 }]} numberOfLines={1}>{u.role}</Text>
+                    <View style={{ width: 160, flexGrow: 0, flexShrink: 0, alignItems: "center" }}>
+                      <Pressable
+                        onPress={() => openResetPassword(u)}
+                        style={{ backgroundColor: "#4b4fbf", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 }}
+                      >
+                        <Text style={{ color: "#fff", fontSize: 12, fontWeight: "700" }}>🔑 Reset Password</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                ))
+              )}
+            </View>
+          </ScrollView>
+        </ScrollView>
+
+        {/* Reset-password modal for the selected user */}
+        <Modal visible={!!resetPasswordTarget} transparent animationType="fade" onRequestClose={closeResetPassword}>
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalCard, { backgroundColor: isDark ? "#1e1e1e" : "#fff" }]}>
+              <View style={styles.modalHeader}>
+                <Text style={[styles.modalTitle, { color: isDark ? "#fff" : "#111" }]}>
+                  Reset Password{resetPasswordTarget ? ` – ${resetPasswordTarget.name}` : ""}
+                </Text>
+                <Pressable style={styles.modalClose} onPress={closeResetPassword}>
+                  <Text style={styles.modalCloseText}>✕</Text>
+                </Pressable>
+              </View>
+
+              <Text style={{ fontSize: 13, fontWeight: "600", color: isDark ? "#aaa" : "#666", marginBottom: 6 }}>New Password</Text>
+              <TextInput
+                style={{ backgroundColor: isDark ? "#2a2a2a" : "#f0f0f0", color: isDark ? "#fff" : "#000", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, marginBottom: 10 }}
+                secureTextEntry
+                autoCapitalize="none"
+                value={resetPasswordFields.next}
+                onChangeText={(v) => setResetPasswordFields((p) => ({ ...p, next: v }))}
+                placeholder="At least 8 characters"
+                placeholderTextColor={isDark ? "#888" : "#999"}
+              />
+
+              <Text style={{ fontSize: 13, fontWeight: "600", color: isDark ? "#aaa" : "#666", marginBottom: 6 }}>Confirm New Password</Text>
+              <TextInput
+                style={{ backgroundColor: isDark ? "#2a2a2a" : "#f0f0f0", color: isDark ? "#fff" : "#000", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15 }}
+                secureTextEntry
+                autoCapitalize="none"
+                value={resetPasswordFields.confirm}
+                onChangeText={(v) => setResetPasswordFields((p) => ({ ...p, confirm: v }))}
+                placeholder="Re-enter new password"
+                placeholderTextColor={isDark ? "#888" : "#999"}
+              />
+
+              {resetPasswordError ? (
+                <Text style={{ color: "#dc2626", fontSize: 13, marginTop: 12, fontWeight: "600" }}>{resetPasswordError}</Text>
+              ) : null}
+
+              <Pressable
+                onPress={handleResetPassword}
+                disabled={resetPasswordSaving}
+                style={{ marginTop: 18, backgroundColor: "#4b4fbf", borderRadius: 24, paddingVertical: 14, alignItems: "center", opacity: resetPasswordSaving ? 0.7 : 1 }}
+              >
+                {resetPasswordSaving ? <ActivityIndicator color="#fff" /> : <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>Save New Password</Text>}
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
+
+      </View>
+    );
+  };
+
   const renderWorkersView = () => (
     <View style={styles.workersContainer}>
       <View style={styles.workersHeader}>
@@ -5826,7 +6069,7 @@ export default function AdminDashboard() {
           // manage site, etc.) left a large empty margin next to the
           // table with nothing in it but a floating scrollbar (same
           // issue already fixed this way on the standalone Workers page).
-          style={{ maxWidth: selectedView === 'workers' ? 1200 : MaxContentWidth, alignSelf: 'center', width: '100%', overscrollBehavior: 'none' } as any}
+          style={{ maxWidth: (selectedView === 'workers' || selectedView === 'manageUsers') ? 1200 : MaxContentWidth, alignSelf: 'center', width: '100%', overscrollBehavior: 'none' } as any}
         >
           {selectedView === "attendance"
             ? renderAttendancesView()
@@ -5856,7 +6099,9 @@ export default function AdminDashboard() {
                                     ? renderAdminBankView()
                                     : selectedView === "hospitalShifts"
                                       ? renderHospitalShiftsView()
-                                      : null}
+                                      : selectedView === "manageUsers"
+                                        ? renderManageUsersView()
+                                        : null}
         </ScrollView>
       )}
       <ChangePasswordModal visible={changePasswordOpen} onClose={() => setChangePasswordOpen(false)} />
