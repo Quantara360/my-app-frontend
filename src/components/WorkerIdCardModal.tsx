@@ -6,6 +6,15 @@ import { ThemedText } from '@/components/themed-text';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { API_BASE_URL } from '@/services/authService';
 
+// Same lazy-require pattern as pdfVoucher.ts's generateAndShareVoucher -
+// both libraries are already a dependency for that feature.
+let html2canvas: any;
+let jsPDF: any;
+if (Platform.OS === 'web') {
+  html2canvas = require('html2canvas/dist/html2canvas.min.js');
+  jsPDF = require('jspdf/dist/jspdf.es.min.js').jsPDF;
+}
+
 // Base dimensions of the PSD template
 const BASE_W = 975;
 const BASE_H = 643;
@@ -97,22 +106,35 @@ function cardHtml(worker: IdCardWorker, templateUri: string): string {
     <div class="label row2">DESIGNATION</div><div class="colon row2">:</div><div class="val row2">${worker.role || "—"}</div>
     <div class="label row3">NIC NO.</div><div class="colon row3">:</div><div class="val row3">${worker.nic || "—"}</div>
   </div>
-  <script>
+</body>
+</html>`;
+}
+
+// printCard's popup wants the browser to actually invoke print (that's the
+// whole point of the button) - only that path gets the auto-print script;
+// downloadPdfCard renders the same markup into an offscreen iframe to
+// rasterize it, and injecting window.print()/window.close() into THAT
+// would just pop up (and immediately fight over) the OS print dialog
+// instead of producing a downloadable file, which used to be exactly the
+// bug: downloadPdfCard reused this same auto-printing HTML, so "Download
+// PDF" on Android opened the print dialog instead of downloading anything.
+function printTriggerHtml(worker: IdCardWorker, templateUri: string): string {
+  const html = cardHtml(worker, templateUri);
+  const script = `<script>
     Promise.all(Array.from(document.images).map(img => {
       if (img.complete) return Promise.resolve();
       return new Promise(resolve => { img.onload = resolve; img.onerror = resolve; });
     })).then(() => {
       setTimeout(() => { window.print(); window.close(); }, 300);
     });
-  <\/script>
-</body>
-</html>`;
+  <\/script>`;
+  return html.replace("</body>", `${script}</body>`);
 }
 
 export function printCard(worker: IdCardWorker) {
   if (Platform.OS !== "web") return;
   const templateAsset = Asset.fromModule(require("../../assets/images/id_card_template_clean.png"));
-  const html = cardHtml(worker, templateAsset.uri);
+  const html = printTriggerHtml(worker, templateAsset.uri);
   const win = window.open("", "_blank");
   if (win) { win.document.write(html); win.document.close(); }
 }
@@ -124,9 +146,52 @@ export async function downloadPdfCard(worker: IdCardWorker) {
   const html = cardHtml(worker, templateUri);
 
   if (Platform.OS === 'web') {
-    // On web mobile: open in new tab — browser's share sheet lets user save as PDF
-    const win = window.open('', '_blank');
-    if (win) { win.document.write(html); win.document.close(); }
+    // Same iframe -> html2canvas -> jsPDF pattern as pdfVoucher.ts's
+    // generateAndShareVoucher, which already works reliably cross-browser.
+    // jsPDF's .save() triggers a real Blob download via a synthesized
+    // <a download> click - unlike window.open(), that isn't a popup, so
+    // it isn't subject to Safari's "only inside a direct user-gesture
+    // call stack" popup blocking (the previous window.open() call here
+    // happened *after* an await, breaking that chain - Safari silently
+    // blocked it, which is why nothing downloaded on iPhone at all), and
+    // unlike the print-triggering HTML, it never opens the OS print
+    // dialog (the Android "goes to printer" symptom).
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.left = '-9999px';
+    iframe.style.width = `${BASE_W}px`;
+    iframe.style.height = `${BASE_H}px`;
+    document.body.appendChild(iframe);
+    try {
+      await new Promise<void>((resolve) => {
+        iframe.onload = () => resolve();
+        iframe.srcdoc = html;
+      });
+      const iframeDoc = iframe.contentDocument!;
+      // The template background and (if set) face photo load async even
+      // after the iframe itself has "loaded" - html2canvas only captures
+      // whatever's already painted, so wait for every <img> first.
+      await Promise.all(
+        Array.from(iframeDoc.images).map((img) =>
+          img.complete ? Promise.resolve() : new Promise<void>((resolve) => {
+            img.onload = () => resolve();
+            img.onerror = () => resolve();
+          })
+        )
+      );
+      const canvas = await html2canvas(iframeDoc.body, {
+        scale: 2,
+        useCORS: true,
+        windowWidth: BASE_W,
+        windowHeight: BASE_H,
+      });
+      const imgData = canvas.toDataURL('image/jpeg', 0.98);
+      const pdf = new jsPDF({ unit: 'pt', format: [BASE_W, BASE_H], orientation: 'landscape' });
+      pdf.addImage(imgData, 'JPEG', 0, 0, BASE_W, BASE_H);
+      pdf.save(`ID_Card_${worker.name.replace(/\s+/g, '_')}.pdf`);
+    } finally {
+      document.body.removeChild(iframe);
+    }
     return;
   }
 
