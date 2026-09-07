@@ -165,12 +165,21 @@ export default function DashboardScreen() {
                 centered layout. The supervisor dashboard below never
                 attempted this centering and renders correctly, so this now
                 matches that: content just flows naturally from the top. */}
-            <View style={[styles.staffHeader, { flexWrap: "wrap", rowGap: 10 }]}>
+            {/* Greeting on its own row now, buttons on the row below - back
+                to "Hii Office Staff, Welcome!" but at staffGreetingSmall's
+                smaller, fixed size (not adjustsFontSizeToFit, which is
+                what shrank it to an illegible, truncated "Hii Offi..." the
+                moment a second button had to share its row). Stacking
+                instead of sharing a row is what actually balances it: the
+                greeting and the buttons each get the full width to
+                themselves rather than competing for one row's worth of
+                space. */}
+            <View style={[styles.staffHeader, { flexDirection: "column", alignItems: "stretch", gap: 8 }]}>
               <Text
-                style={[styles.staffWelcome, { color: theme.text }]}
+                style={[styles.staffGreetingSmall, { color: theme.text }]}
                 numberOfLines={1}
               >
-                Office Staff
+                Hii Office Staff, Welcome!
               </Text>
               <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
                 <Pressable
@@ -508,6 +517,14 @@ const styles = StyleSheet.create({
     fontSize: rf(24, 18, 28),
     fontWeight: "900",
     lineHeight: rf(32, 24, 36),
+  },
+  // "Hii Office Staff, Welcome!" back as one line, but small and fixed
+  // (not adjustsFontSizeToFit) - now that it has the header row to itself
+  // (buttons moved to their own row below), it doesn't need to compete
+  // for space or shrink at all, at any screen width.
+  staffGreetingSmall: {
+    fontSize: 16,
+    fontWeight: "700",
   },
   staffMenuButton: {
     paddingVertical: Spacing.two,
