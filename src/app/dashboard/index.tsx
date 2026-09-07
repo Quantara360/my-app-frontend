@@ -165,27 +165,18 @@ export default function DashboardScreen() {
                 centered layout. The supervisor dashboard below never
                 attempted this centering and renders correctly, so this now
                 matches that: content just flows naturally from the top. */}
-            <View style={styles.staffHeader}>
-              <View style={{ flex: 1, paddingRight: 10 }}>
-                <Text
-                  style={[styles.staffGreeting, { color: theme.textSecondary }]}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                >
-                  Hii Office Staff,
-                </Text>
-                <Text
-                  style={[styles.staffWelcome, { color: theme.text }]}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                >
-                  Welcome!
-                </Text>
-              </View>
-              <View style={{ flexDirection: "row", gap: 8 }}>
+            <View style={[styles.staffHeader, { flexWrap: "wrap", rowGap: 10 }]}>
+              <Text
+                style={[styles.staffWelcome, { color: theme.text }]}
+                numberOfLines={1}
+              >
+                Office Staff
+              </Text>
+              <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
                 <Pressable
                   style={[
                     styles.staffMenuButton,
+                    styles.staffMenuButtonCompact,
                     {
                       backgroundColor: theme.backgroundElement,
                       borderColor: theme.backgroundSelected,
@@ -193,13 +184,14 @@ export default function DashboardScreen() {
                   ]}
                   onPress={() => setChangePasswordOpen(true)}
                 >
-                  <Text style={[styles.staffMenuText, { color: theme.text }]}>
+                  <Text style={[styles.staffMenuText, styles.staffMenuTextCompact, { color: theme.text }]}>
                     🔒 Change Password
                   </Text>
                 </Pressable>
                 <Pressable
                   style={[
                     styles.staffMenuButton,
+                    styles.staffMenuButtonCompact,
                     {
                       backgroundColor: theme.backgroundElement,
                       borderColor: theme.backgroundSelected,
@@ -207,7 +199,7 @@ export default function DashboardScreen() {
                   ]}
                   onPress={signOut}
                 >
-                  <Text style={[styles.staffMenuText, { color: theme.text }]}>
+                  <Text style={[styles.staffMenuText, styles.staffMenuTextCompact, { color: theme.text }]}>
                     Sign Out
                   </Text>
                 </Pressable>
@@ -528,6 +520,17 @@ const styles = StyleSheet.create({
   staffMenuText: {
     color: "#0F172A",
     fontWeight: "700",
+  },
+  // Two buttons now share this header (Change Password + Sign Out) instead
+  // of just one - smaller padding/font keeps both comfortably readable
+  // side by side on a phone-width screen instead of squeezing the
+  // "Office Staff" label next to them down to an illegible, truncated size.
+  staffMenuButtonCompact: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+  },
+  staffMenuTextCompact: {
+    fontSize: 12,
   },
   staffPanel: {
     backgroundColor: "#ffffffff",
