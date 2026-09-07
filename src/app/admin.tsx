@@ -4759,7 +4759,27 @@ export default function AdminDashboard() {
 
         {/* Reset-password modal for the selected user */}
         <Modal visible={!!resetPasswordTarget} transparent animationType="fade" onRequestClose={closeResetPassword}>
-          <View style={styles.modalOverlay}>
+          {/* styles.modalOverlay's backgroundColor is transparent by design
+              (fine for the near-full-height modals elsewhere in this file,
+              which visually dominate the screen regardless) - this one is
+              short, so without an actual dim behind it the search bar and
+              table rows stayed fully visible around its edges, reading as
+              a broken, disconnected floating card rather than a modal.
+              position:'fixed' on web also guarantees it covers the true
+              viewport regardless of the page's current scroll position,
+              matching the pattern used for other overlays in this app
+              (e.g. workers.tsx's formOverlay) rather than trusting
+              <Modal>'s own web positioning. */}
+          <View
+            style={[
+              styles.modalOverlay,
+              {
+                backgroundColor: "rgba(15, 23, 42, 0.65)",
+                position: Platform.OS === "web" ? ("fixed" as any) : "absolute",
+                top: 0, left: 0, right: 0, bottom: 0,
+              },
+            ]}
+          >
             <View style={[styles.modalCard, { backgroundColor: isDark ? "#1e1e1e" : "#fff" }]}>
               <View style={styles.modalHeader}>
                 <Text style={[styles.modalTitle, { color: isDark ? "#fff" : "#111" }]}>
