@@ -4,6 +4,7 @@ import { SafeView } from "@/components/safe-view";
 import { BackgroundPattern } from "@/components/BackgroundPattern";
 import { ConfirmModal } from "@/components/confirm-modal";
 import { WorkerIdCardModal, IdCardWorker } from "@/components/WorkerIdCardModal";
+import { ChangePasswordModal } from "@/components/ChangePasswordModal";
 import { resolveShiftConfig, timeToMinutes, computeShiftWindowSummaries, formatClock12h, DEFAULT_SHIFT_CONFIG, ShiftConfig } from "@/utils/shiftConfig";
 import { buildWorkerDisplayIdMap, getWorkerDisplayId } from "@/utils/workerDisplayId";
 import { SelectInput } from "@/components/ui/select-input";
@@ -150,6 +151,8 @@ export default function AdminDashboard() {
     type?: string;
     parent_id?: number | null;
   }
+
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
 
   const [selectedView, setSelectedView] = useState<
     | "dashboard"
@@ -2168,28 +2171,49 @@ export default function AdminDashboard() {
         <ThemedText type="subtitle" style={styles.greeting}>
           Admin
         </ThemedText>
-        <Pressable
-          onPress={async () => {
-            await signOut();
-            router.replace("/");
-          }}
-          style={{
-            paddingHorizontal: 12,
-            paddingVertical: 6,
-            backgroundColor: isDark ? "#333" : "#e0e0e0",
-            borderRadius: 8,
-          }}
-        >
-          <Text
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <Pressable
+            onPress={() => setChangePasswordOpen(true)}
             style={{
-              fontSize: 13,
-              fontWeight: "600",
-              color: isDark ? "#fff" : "#000",
+              paddingHorizontal: 12,
+              paddingVertical: 6,
+              backgroundColor: isDark ? "#333" : "#e0e0e0",
+              borderRadius: 8,
             }}
           >
-            Sign Out
-          </Text>
-        </Pressable>
+            <Text
+              style={{
+                fontSize: 13,
+                fontWeight: "600",
+                color: isDark ? "#fff" : "#000",
+              }}
+            >
+              🔒 Change Password
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={async () => {
+              await signOut();
+              router.replace("/");
+            }}
+            style={{
+              paddingHorizontal: 12,
+              paddingVertical: 6,
+              backgroundColor: isDark ? "#333" : "#e0e0e0",
+              borderRadius: 8,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 13,
+                fontWeight: "600",
+                color: isDark ? "#fff" : "#000",
+              }}
+            >
+              Sign Out
+            </Text>
+          </Pressable>
+        </View>
       </View>
 
       {/* Site Selection and Time/Date Row */}
@@ -5835,6 +5859,7 @@ export default function AdminDashboard() {
                                       : null}
         </ScrollView>
       )}
+      <ChangePasswordModal visible={changePasswordOpen} onClose={() => setChangePasswordOpen(false)} />
       {renderUpdateModal()}
       {renderPersonalAddModal()}
       {renderPersonalEditModal()}

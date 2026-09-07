@@ -16,6 +16,7 @@ import { getMachineries } from "@/services/adminMachineriesService";
 import { getChemicals } from "@/services/adminChemicalsService";
 import { getApprovals } from "@/services/adminApprovalsService";
 import { getAttendances } from "@/services/adminAttendancesService";
+import { ChangePasswordModal } from "@/components/ChangePasswordModal";
 
 interface WorksiteTile {
   id: number;
@@ -48,6 +49,7 @@ export default function DashboardScreen() {
   const [supervisorWorksites, setSupervisorWorksites] = useState<
     WorksiteTile[]
   >([]);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
 
   // --- Office Staff tile counts ---
   const [tileCounts, setTileCounts] = useState<Record<string, number | null>>({
@@ -180,20 +182,36 @@ export default function DashboardScreen() {
                   Welcome!
                 </Text>
               </View>
-              <Pressable
-                style={[
-                  styles.staffMenuButton,
-                  {
-                    backgroundColor: theme.backgroundElement,
-                    borderColor: theme.backgroundSelected,
-                  },
-                ]}
-                onPress={signOut}
-              >
-                <Text style={[styles.staffMenuText, { color: theme.text }]}>
-                  Sign Out
-                </Text>
-              </Pressable>
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <Pressable
+                  style={[
+                    styles.staffMenuButton,
+                    {
+                      backgroundColor: theme.backgroundElement,
+                      borderColor: theme.backgroundSelected,
+                    },
+                  ]}
+                  onPress={() => setChangePasswordOpen(true)}
+                >
+                  <Text style={[styles.staffMenuText, { color: theme.text }]}>
+                    🔒 Change Password
+                  </Text>
+                </Pressable>
+                <Pressable
+                  style={[
+                    styles.staffMenuButton,
+                    {
+                      backgroundColor: theme.backgroundElement,
+                      borderColor: theme.backgroundSelected,
+                    },
+                  ]}
+                  onPress={signOut}
+                >
+                  <Text style={[styles.staffMenuText, { color: theme.text }]}>
+                    Sign Out
+                  </Text>
+                </Pressable>
+              </View>
             </View>
 
             <View style={styles.staffGrid}>
@@ -233,6 +251,7 @@ export default function DashboardScreen() {
               </View>
           </ScrollView>
         </SafeAreaView>
+        <ChangePasswordModal visible={changePasswordOpen} onClose={() => setChangePasswordOpen(false)} />
       </ThemedView>
     );
   }
@@ -246,6 +265,20 @@ export default function DashboardScreen() {
           style={[styles.scrollContent, { flex: 1 }]}
         >
           <View style={styles.topRightControls}>
+            <Pressable
+              style={[
+                styles.menuButton,
+                {
+                  backgroundColor: theme.backgroundElement,
+                  borderColor: theme.backgroundSelected,
+                },
+              ]}
+              onPress={() => setChangePasswordOpen(true)}
+            >
+              <Text style={[styles.menuText, { color: theme.text }]}>
+                🔒 Change Password
+              </Text>
+            </Pressable>
             <Pressable
               style={[
                 styles.menuButton,
@@ -330,6 +363,7 @@ export default function DashboardScreen() {
           </View>
         </View>
       </SafeAreaView>
+      <ChangePasswordModal visible={changePasswordOpen} onClose={() => setChangePasswordOpen(false)} />
     </ThemedView>
   );
 }

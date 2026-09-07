@@ -105,6 +105,51 @@ export async function loginWithApi(params: {
   return result;
 }
 
+export async function changePasswordWithApi(params: {
+  token: string;
+  current_password: string;
+  new_password: string;
+  new_password_confirmation: string;
+}): Promise<{ message: string }> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/change-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        Authorization: `Bearer ${params.token}`,
+      },
+      body: JSON.stringify({
+        current_password: params.current_password,
+        new_password: params.new_password,
+        new_password_confirmation: params.new_password_confirmation,
+      }),
+    });
+  } catch (err) {
+    console.error('[authService] network error', err);
+    throw new Error('Could not reach the server. Check your connection and try again.');
+  }
+
+  let body: any = null;
+  try {
+    body = await response.json();
+  } catch (parseErr) {
+    console.error('[authService] non-JSON response', response.status, parseErr);
+  }
+
+  if (!response.ok) {
+    // Laravel validation errors (422) put field messages under `errors`,
+    // not the top-level `message` - surface the first one so "confirmed"
+    // mismatches etc. show something more specific than a generic failure.
+    const firstFieldError = body?.errors ? (Object.values(body.errors)[0] as string[] | undefined)?.[0] : undefined;
+    const message = firstFieldError || body?.message || `Request failed (${response.status})`;
+    throw new Error(message);
+  }
+
+  return body as { message: string };
+}
+
 export async function registerWithApi(params: {
   name: string;
   username: string;
