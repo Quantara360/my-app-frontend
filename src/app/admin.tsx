@@ -4781,7 +4781,7 @@ export default function AdminDashboard() {
             ]}
           >
             <View style={[styles.modalCard, { backgroundColor: isDark ? "#1e1e1e" : "#fff" }]}>
-              <View style={styles.modalHeader}>
+              <View style={[styles.modalHeader, { paddingHorizontal: Spacing.four, paddingTop: Spacing.four }]}>
                 <Text style={[styles.modalTitle, { color: isDark ? "#fff" : "#111" }]}>
                   Reset Password{resetPasswordTarget ? ` – ${resetPasswordTarget.name}` : ""}
                 </Text>
@@ -4790,39 +4790,46 @@ export default function AdminDashboard() {
                 </Pressable>
               </View>
 
-              <Text style={{ fontSize: 13, fontWeight: "600", color: isDark ? "#aaa" : "#666", marginBottom: 6 }}>New Password</Text>
-              <TextInput
-                style={{ backgroundColor: isDark ? "#2a2a2a" : "#f0f0f0", color: isDark ? "#fff" : "#000", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, marginBottom: 10 }}
-                secureTextEntry
-                autoCapitalize="none"
-                value={resetPasswordFields.next}
-                onChangeText={(v) => setResetPasswordFields((p) => ({ ...p, next: v }))}
-                placeholder="At least 8 characters"
-                placeholderTextColor={isDark ? "#888" : "#999"}
-              />
+              {/* Every other modal in this file wraps its fields in
+                  styles.modalBody for padding - this one had them as
+                  direct children of modalCard instead, which has none at
+                  all, so the inputs and button ran edge-to-edge with the
+                  card's rounded corners. */}
+              <View style={[styles.modalBody, { paddingBottom: Spacing.four }]}>
+                <Text style={{ fontSize: 13, fontWeight: "600", color: isDark ? "#aaa" : "#666", marginBottom: 6 }}>New Password</Text>
+                <TextInput
+                  style={{ backgroundColor: isDark ? "#2a2a2a" : "#f0f0f0", color: isDark ? "#fff" : "#000", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, marginBottom: 10 }}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  value={resetPasswordFields.next}
+                  onChangeText={(v) => setResetPasswordFields((p) => ({ ...p, next: v }))}
+                  placeholder="At least 8 characters"
+                  placeholderTextColor={isDark ? "#888" : "#999"}
+                />
 
-              <Text style={{ fontSize: 13, fontWeight: "600", color: isDark ? "#aaa" : "#666", marginBottom: 6 }}>Confirm New Password</Text>
-              <TextInput
-                style={{ backgroundColor: isDark ? "#2a2a2a" : "#f0f0f0", color: isDark ? "#fff" : "#000", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15 }}
-                secureTextEntry
-                autoCapitalize="none"
-                value={resetPasswordFields.confirm}
-                onChangeText={(v) => setResetPasswordFields((p) => ({ ...p, confirm: v }))}
-                placeholder="Re-enter new password"
-                placeholderTextColor={isDark ? "#888" : "#999"}
-              />
+                <Text style={{ fontSize: 13, fontWeight: "600", color: isDark ? "#aaa" : "#666", marginBottom: 6 }}>Confirm New Password</Text>
+                <TextInput
+                  style={{ backgroundColor: isDark ? "#2a2a2a" : "#f0f0f0", color: isDark ? "#fff" : "#000", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15 }}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  value={resetPasswordFields.confirm}
+                  onChangeText={(v) => setResetPasswordFields((p) => ({ ...p, confirm: v }))}
+                  placeholder="Re-enter new password"
+                  placeholderTextColor={isDark ? "#888" : "#999"}
+                />
 
-              {resetPasswordError ? (
-                <Text style={{ color: "#dc2626", fontSize: 13, marginTop: 12, fontWeight: "600" }}>{resetPasswordError}</Text>
-              ) : null}
+                {resetPasswordError ? (
+                  <Text style={{ color: "#dc2626", fontSize: 13, marginTop: 12, fontWeight: "600" }}>{resetPasswordError}</Text>
+                ) : null}
 
-              <Pressable
-                onPress={handleResetPassword}
-                disabled={resetPasswordSaving}
-                style={{ marginTop: 18, backgroundColor: "#4b4fbf", borderRadius: 24, paddingVertical: 14, alignItems: "center", opacity: resetPasswordSaving ? 0.7 : 1 }}
-              >
-                {resetPasswordSaving ? <ActivityIndicator color="#fff" /> : <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>Save New Password</Text>}
-              </Pressable>
+                <Pressable
+                  onPress={handleResetPassword}
+                  disabled={resetPasswordSaving}
+                  style={{ marginTop: 18, backgroundColor: "#4b4fbf", borderRadius: 24, paddingVertical: 14, alignItems: "center", opacity: resetPasswordSaving ? 0.7 : 1 }}
+                >
+                  {resetPasswordSaving ? <ActivityIndicator color="#fff" /> : <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>Save New Password</Text>}
+                </Pressable>
+              </View>
             </View>
           </View>
         </Modal>
