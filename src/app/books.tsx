@@ -50,8 +50,21 @@ export default function BooksPage() {
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [subSites, setSubSites] = useState<SubSite[]>([]);
   const [images, setImages] = useState<BookImage[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  // Starts true, not false: the very first effect run can land before
+  // AuthContext's async token restore resolves (token still null), and
+  // that early-returns without ever calling setIsLoading - if this
+  // started false, that landed on "No worksites found." immediately,
+  // indistinguishable from the list genuinely being empty, with no
+  // spinner ever shown. Whatever finally settles worksitesLoadError
+  // (below) is what turns this back off.
+  const [isLoading, setIsLoading] = useState(true);
   const [loadingStep, setLoadingStep] = useState("");
+  // Distinguishes "fetch failed" from "genuinely no worksites" - the old
+  // code funneled both into the same silent, console-only .catch(), which
+  // is indistinguishable on screen from an account with no worksites at
+  // all and gives the user no way to retry a transient failure.
+  const [worksitesLoadError, setWorksitesLoadError] = useState(false);
+  const [worksitesReloadKey, setWorksitesReloadKey] = useState(0);
 
   const [previewImage, setPreviewImage] = useState<BookImage | null>(null);
   const [activeBook, setActiveBook] = useState<number>(1);
@@ -114,14 +127,25 @@ export default function BooksPage() {
   };
 
   useEffect(() => {
+    // Keep showing the spinner (isLoading started true) rather than
+    // flipping to "No worksites found." while AuthContext's own async
+    // token restore is still in flight - this effect re-runs the moment
+    // token actually arrives, since it's the dependency.
     if (!token) return;
     setIsLoading(true);
+    setWorksitesLoadError(false);
     fetch(`${API_BASE_URL}/worksites`, { headers: authHeaders() })
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`Request failed (${r.status})`);
+        return r.json();
+      })
       .then((data) => { setWorksites(Array.isArray(data) ? data : data.data || []); })
-      .catch(console.error)
+      .catch((e) => {
+        console.error(e);
+        setWorksitesLoadError(true);
+      })
       .finally(() => setIsLoading(false));
-  }, [token]);
+  }, [token, worksitesReloadKey]);
 
   // HOSPITAL_ID_OFFSET: hospitals.id and sub_sites.id both start from 1,
   // so a bare hospital id can collide with an unrelated sub_site_id
@@ -208,13 +232,30 @@ export default function BooksPage() {
     : level === "books" ? selectedSubSite?.name ?? selectedHospital?.name ?? selectedWorksite?.name ?? "Books"
     : BOOK_NAMES[activeBook] ?? "Images";
 
-  const renderList = (items: { id: number; name: string }[], onSelect: (item: any) => void, emptyMsg: string) => {
+  const renderList = (
+    items: { id: number; name: string }[],
+    onSelect: (item: any) => void,
+    emptyMsg: string,
+    errorState?: { hasError: boolean; onRetry: () => void }
+  ) => {
     if (isLoading) return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color={theme.text} />
         <ThemedText type="small" style={{ marginTop: 12, color: theme.textSecondary }}>
           {loadingStep === "hospitals" ? "Checking hospitals…" : loadingStep === "subsites" ? "Checking sub-sites…" : "Loading…"}
         </ThemedText>
+      </View>
+    );
+    // Distinct from the genuinely-empty case below - a failed fetch used
+    // to land here too, reading as "no worksites" when it actually meant
+    // "couldn't check", with no way to retry short of leaving the page.
+    if (errorState?.hasError) return (
+      <View style={styles.centered}>
+        <Text style={styles.emptyIcon}>⚠️</Text>
+        <ThemedText type="small" style={styles.emptyText}>Couldn't load worksites. Check your connection and try again.</ThemedText>
+        <Pressable onPress={errorState.onRetry} style={styles.retryBtn}>
+          <Text style={styles.retryBtnText}>Retry</Text>
+        </Pressable>
       </View>
     );
     if (items.length === 0) return (
@@ -426,7 +467,10 @@ export default function BooksPage() {
         )}
 
         <View style={styles.content}>
-          {level === "worksites" && renderList(worksites, selectWorksite, "No worksites found.")}
+          {level === "worksites" && renderList(worksites, selectWorksite, "No worksites found.", {
+            hasError: worksitesLoadError,
+            onRetry: () => setWorksitesReloadKey((k) => k + 1),
+          })}
           {level === "hospitals" && renderList(hospitals, selectHospital, "No hospitals found.")}
           {level === "subsites" && renderList(subSites, selectSubSite, "No sub-sites found.")}
           {level === "books" && renderBooks()}
@@ -490,6 +534,8 @@ const styles = StyleSheet.create({
   centered: { flex: 1, alignItems: "center", justifyContent: "center", paddingTop: 60 },
   emptyIcon: { fontSize: 48, marginBottom: 12 },
   emptyText: { textAlign: "center", color: "#999", maxWidth: 280 },
+  retryBtn: { marginTop: 16, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, backgroundColor: "#4b4fbf" },
+  retryBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
   bookDot: { width: 10, height: 10, borderRadius: 5 },
   bookBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   bookBadgeText: { color: "#fff", fontSize: 11, fontWeight: "700" },
